@@ -40,7 +40,6 @@ class Promotable {
  private:
   dense_ptr_t       _dense_ptr;
   sparse_ptr_t      _sparse_ptr;
-  std::size_t       _compaction_threshold;
   std::size_t       _promotion_threshold;
   promotable_mode_t _mode;
 
@@ -56,8 +55,7 @@ class Promotable {
   Promotable(const std::size_t range_size,
              const std::size_t compaction_threshold,
              const std::size_t promotion_threshold)
-      : _compaction_threshold(compaction_threshold),
-        _promotion_threshold(promotion_threshold),
+      : _promotion_threshold(promotion_threshold),
         _mode(promotable_mode_t::sparse),
         _sparse_ptr(
             std::make_unique<sparse_t>(range_size, compaction_threshold)) {}
@@ -71,9 +69,7 @@ class Promotable {
    * @param rhs container to be copied.
    */
   Promotable(const promotable_t &rhs)
-      : _compaction_threshold(rhs._compaction_threshold),
-        _promotion_threshold(rhs._promotion_threshold),
-        _mode(rhs._mode) {
+      : _promotion_threshold(rhs._promotion_threshold), _mode(rhs._mode) {
     if (_mode == promotable_mode_t::sparse) {
       sparse_ptr_t sparse_ptr(std::make_unique<sparse_t>(*rhs._sparse_ptr));
       std::swap(sparse_ptr, _sparse_ptr);
@@ -106,7 +102,6 @@ class Promotable {
    * Swap boilerplate.
    */
   friend void swap(promotable_t &lhs, promotable_t &rhs) {
-    std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._promotion_threshold, rhs._promotion_threshold);
     std::swap(lhs._mode, rhs._mode);
     if (lhs._mode == promotable_mode_t::sparse) {
@@ -123,7 +118,7 @@ class Promotable {
 #if __has_include(<cereal/types/memory.hpp>)
   template <class Archive>
   void save(Archive &oarchive) const {
-    oarchive(_compaction_threshold, _promotion_threshold, _mode);
+    oarchive(_promotion_threshold, _mode);
     if (_mode == promotable_mode_t::sparse) {
       oarchive(_sparse_ptr);
     } else {
@@ -133,7 +128,7 @@ class Promotable {
 
   template <class Archive>
   void load(Archive &iarchive) {
-    iarchive(_compaction_threshold, _promotion_threshold, _mode);
+    iarchive(_promotion_threshold, _mode);
     if (_mode == promotable_mode_t::sparse) {
       iarchive(_sparse_ptr);
     } else {
@@ -169,19 +164,13 @@ class Promotable {
   }
 
   constexpr std::size_t size() const {
-    if (_mode == promotable_mode_t::sparse) {
-      return _sparse_ptr->size();
-    } else {
-      return _dense_ptr->size();
-    }
+    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->size()
+                                                : _dense_ptr->size();
   }
 
   constexpr bool is_compact() const {
-    if (_mode == promotable_mode_t::sparse) {
-      return _sparse_ptr->is_compact();
-    } else {
-      return true;
-    }
+    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->is_compact()
+                                                : true;
   }
 
   constexpr bool is_sparse() const {
@@ -190,22 +179,22 @@ class Promotable {
 
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
-  constexpr std::size_t get_compaction_threshold() const {
-    return _compaction_threshold;
-  }
-
   constexpr std::size_t get_promotion_threshold() const {
     return _promotion_threshold;
   }
 
   constexpr promotable_mode_t get_mode() const { return _mode; }
 
+  constexpr std::size_t get_compaction_threshold() const {
+    return (_mode == promotable_mode_t::sparse)
+               ? _sparse_ptr->get_compaction_threshold()
+               : _dense_ptr->get_compaction_threshold();
+  }
+
   std::vector<RegType> get_register_vector() const {
-    if (_mode == promotable_mode_t::sparse) {
-      return _sparse_ptr->get_register_vector();
-    } else {
-      return _dense_ptr->get_register_vector();
-    }
+    return (_mode == promotable_mode_t::sparse)
+               ? _sparse_ptr->get_register_vector()
+               : _dense_ptr->get_register_vector();
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -213,8 +202,7 @@ class Promotable {
   //////////////////////////////////////////////////////////////////////////////
 
   constexpr bool same_parameters(const promotable_t &rhs) const {
-    return _compaction_threshold == rhs._compaction_threshold &&
-           _promotion_threshold == rhs._promotion_threshold;
+    return _promotion_threshold == rhs._promotion_threshold;
   }
 
   /**
