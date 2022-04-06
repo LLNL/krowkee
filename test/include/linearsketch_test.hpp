@@ -741,7 +741,7 @@ void do_all_tests(const parameters_t &params) {
   perform_tests<FlatMapSparse32CountSketch, make_ptr_functor_t>(params);
   perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor_t>(params);
 #endif
-  perform_tests<Dense32FWHT, make_ptr_functor_t>(params);
+  // perform_tests<Dense32FWHT, make_ptr_functor_t>(params);
 }
 
 int do_main(int argc, char **argv) {
