@@ -332,8 +332,8 @@ struct communicable_check {
     sk1.compactify();
     sk2.compactify();
 
-    make_ygm_map_and_test<equality_test_t>(world, params, sk1.get_container(),
-                                           sk2.get_container());
+    make_ygm_map_and_test<equality_test_t>(world, params, sk1.container(),
+                                           sk2.container());
 
     make_ygm_map_and_test<equality_test_t>(world, params, sk1, sk2);
 

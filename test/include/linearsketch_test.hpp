@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <random>
 
 using sketch_type_t = krowkee::util::sketch_type_t;
 using cmap_type_t   = krowkee::util::cmap_type_t;
@@ -24,6 +25,8 @@ using cmap_type_t   = krowkee::util::cmap_type_t;
 struct parameters_t {
   std::uint64_t count;
   std::uint64_t range_size;
+  std::uint64_t domain_size;
+  std::uint64_t observation_count;
   std::size_t   compaction_threshold;
   std::size_t   promotion_threshold;
   std::uint64_t seed;
@@ -134,22 +137,143 @@ struct ingest_check {
     return ss.str();
   }
 
+  std::vector<std::vector<std::uint64_t>> get_uniform_inserts(
+      const parameters_t &params) const {
+    std::mt19937                                 gen(params.seed);
+    std::uniform_int_distribution<std::uint64_t> dist(0,
+                                                      params.domain_size - 1);
+
+    std::vector<std::vector<std::uint64_t>> inserts(
+        params.observation_count, std::vector<std::uint64_t>(params.count));
+
+    for (std::int64_t i(0); i < params.observation_count; ++i) {
+      for (std::int64_t j(0); j < params.count; ++j) {
+        inserts[i][j] = dist(gen);
+      }
+    }
+    return inserts;
+  }
+
+  template <typename T>
+  int _inner_product(const std::vector<T> &lhs,
+                     const std::vector<T> &rhs) const {
+    assert(lhs.size() == rhs.size());
+    int sum(0);
+    for (int i(0); i < lhs.size(); ++i) {
+      sum += lhs[i] * rhs[i];
+    }
+    return sum;
+  }
+
   void operator()(const parameters_t &params) const {
     make_ptr_t _make_ptr{};
     sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
-    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    std::uint64_t row_idx(17);
-    for (std::uint64_t i(0); i < params.count; ls.insert(i++, row_idx)) {
+    {
+      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+      std::uint64_t row_idx(17);
+      for (std::uint64_t i(0); i < params.count; ls.insert(i++, row_idx)) {
+      }
+      ls.compactify();
+      int    sum(accumulate(ls, 0.0));
+      double rel_mag((double)sum / params.count);
+      if (params.verbose == true) {
+        std::cout << "\t" << ls << std::endl;
+        std::cout << "\tregister sum (should be near zero): " << sum
+                  << ", relative magnitude: " << rel_mag << std::endl;
+      }
+      CHECK_CONDITION(rel_mag < 0.1,
+                      "register sum relative magnitude near zero");
     }
-    ls.compactify();
-    int    sum(accumulate(ls, 0.0));
-    double rel_mag((double)sum / params.count);
-    if (params.verbose == true) {
-      std::cout << "\t" << ls << std::endl;
-      std::cout << "\tregister sum (should be near zero): " << sum
-                << ", relative magnitude: " << rel_mag << std::endl;
+    {
+      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+      std::vector<std::vector<std::uint64_t>> inserts =
+          get_uniform_inserts(params);
+
+      if (params.verbose) {
+        // print out insert stream
+        std::cout << std::endl;
+        std::cout << "inserts:" << std::endl;
+        for (int i(0); i < params.observation_count; ++i) {
+          std::cout << "(" << i << ")\t";
+          for (int j(0); j < params.count; ++j) {
+            std::cout << " " << inserts[i][j];
+          }
+          std::cout << std::endl;
+        }
+      }
+      // create implicit observation vectors
+      std::vector<std::vector<std::uint64_t>> observations(
+          params.observation_count,
+          std::vector<std::uint64_t>(params.domain_size));
+      for (int i(0); i < params.observation_count; ++i) {
+        for (int j(0); j < params.count; ++j) {
+          observations[i][inserts[i][j]]++;
+        }
+      }
+      // print out implicit observation vectors
+      if (params.verbose) {
+        std::cout << std::endl;
+        std::cout << "observations:" << std::endl;
+        for (int i(0); i < params.observation_count; ++i) {
+          std::cout << "(" << i << ")\t";
+          for (int j(0); j < params.domain_size; ++j) {
+            std::cout << " " << observations[i][j];
+          }
+          std::cout << std::endl;
+        }
+      }
+      // feed streams into sketches
+      std::vector<ls_t> sketches(params.observation_count,
+                                 ls_t(sf_ptr, params.compaction_threshold,
+                                      params.promotion_threshold));
+      for (int i(0); i < params.observation_count; ++i) {
+        for (int j(0); j < params.count; ++j) {
+          sketches[i].insert(inserts[i][j]);
+        }
+      }
+      // print out sketches
+      if (params.verbose) {
+        std::cout << std::endl;
+        std::cout << "sketches:" << std::endl;
+        for (int i(0); i < params.observation_count; ++i) {
+          std::cout << "(" << i << ")\t" << sketches[i] << std::endl;
+        }
+      }
+      // get projected vectors
+      std::vector<std::vector<int>> projections;
+      for (int i(0); i < params.observation_count; ++i) {
+        projections.push_back(sketches[i].register_vector());
+        std::cout << "size: " << projections[i].size() << std::endl;
+      }
+      // print projected vectors
+      if (params.verbose) {
+        std::cout << std::endl;
+        std::cout << "projected vectors:" << std::endl;
+        for (int i(0); i < params.observation_count; ++i) {
+          std::cout << "(" << i << ")\t";
+          for (int j(0); j < params.range_size; ++j) {
+            std::cout << " " << projections[i][j];
+          }
+          std::cout << std::endl;
+        }
+      }
+      // compute inner products
+      if (params.verbose) {
+        std::cout << std::endl;
+        std::cout << "projected vectors:" << std::endl;
+        for (int i(0); i < params.observation_count; ++i) {
+          for (int j(0); j < params.observation_count; ++j) {
+            if (i == j) {
+              break;
+            }
+            int ob_inner = _inner_product(observations[i], observations[j]);
+            int sk_inner = _inner_product(projections[i], projections[j]);
+            std::cout << "\t(" << i << "," << j << ") ob " << ob_inner
+                      << ", sk " << sk_inner << std::endl;
+          }
+        }
+      }
     }
-    CHECK_CONDITION(rel_mag < 0.1, "register sum relative magnitude near zero");
   }
 };
 
@@ -294,7 +418,7 @@ struct serialize_check {
     }
     ls.compactify();
 
-    CHECK_ALL_ARCHIVES(ls.get_container(), "sketch container");
+    CHECK_ALL_ARCHIVES(ls.container(), "sketch container");
     CHECK_ALL_ARCHIVES(ls, "whole sketch object");
   }
 };
@@ -443,6 +567,8 @@ void print_help(char *exe_name) {
   std::cout << "\nusage:  " << exe_name << "\n"
             << "\t-c, --count <int>              - number of insertions\n"
             << "\t-r, --range <int>              - range of sketch transform\n"
+            << "\t-d, --domain <int>             - domain of sketch transform\n"
+            << "\t-b, --observation_count <int>  - number of sketches to test\n"
             << "\t-o, --compaction-thresh <int>  - compaction threshold\n"
             << "\t-p, --promotion-thresh <int>   - promotion threshold\n"
             << "\t-t, --sketch-type <str>        - sketch type "
@@ -468,6 +594,8 @@ void parse_args(int argc, char **argv, parameters_t &params) {
     static struct option long_options[] = {
         {"count", required_argument, NULL, 'c'},
         {"range", required_argument, NULL, 'r'},
+        {"domain", required_argument, NULL, 'd'},
+        {"observation-count", required_argument, NULL, 'b'},
         {"compaction-thresh", required_argument, NULL, 'o'},
         {"promotion-thresh", required_argument, NULL, 'p'},
         {"sketch-type", required_argument, NULL, 't'},
@@ -478,7 +606,7 @@ void parse_args(int argc, char **argv, parameters_t &params) {
         {NULL, 0, NULL, 0}};
 
     int curind = optind;
-    c          = getopt_long(argc, argv, "-:c:r:o:p:t:m:s:vh", long_options,
+    c          = getopt_long(argc, argv, "-:c:r:d:b:o:p:t:m:s:vh", long_options,
                              &option_index);
     if (c == -1) {
       break;
@@ -504,6 +632,12 @@ void parse_args(int argc, char **argv, parameters_t &params) {
         break;
       case 'r':
         params.range_size = std::atoll(optarg);
+        break;
+      case 'd':
+        params.domain_size = std::atoll(optarg);
+        break;
+      case 'b':
+        params.observation_count = std::atoll(optarg);
         break;
       case 'o':
         params.compaction_threshold = std::atoll(optarg);
@@ -580,6 +714,8 @@ void do_all_tests(const parameters_t &params) {
 int do_main(int argc, char **argv) {
   uint64_t      count(10000);
   std::uint64_t range_size(16);
+  std::uint64_t domain_size(4096);
+  std::uint64_t observation_count(16);
   std::uint64_t seed(krowkee::hash::default_seed);
   std::size_t   compaction_threshold(10);
   std::size_t   promotion_threshold(8);
@@ -590,6 +726,8 @@ int do_main(int argc, char **argv) {
 
   parameters_t params{count,
                       range_size,
+                      domain_size,
+                      observation_count,
                       compaction_threshold,
                       promotion_threshold,
                       seed,

@@ -89,7 +89,7 @@ class Sketch {
 #endif
 
   // For testing purposes. Might want to get rid of this.
-  const container_t &get_container() { return _con; }
+  const container_t &container() { return _con; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Insertion
@@ -185,12 +185,12 @@ class Sketch {
 
   constexpr std::size_t range_size() const { return _sf_ptr->range_size(); }
 
-  constexpr std::size_t get_compaction_threshold() const {
-    return _con.get_compaction_threshold();
+  constexpr std::size_t compaction_threshold() const {
+    return _con.compaction_threshold();
   }
 
-  std::vector<RegType> get_register_vector() const {
-    return _con.get_register_vector();
+  std::vector<RegType> register_vector() const {
+    return _con.register_vector();
   }
 
   //////////////////////////////////////////////////////////////////////////////

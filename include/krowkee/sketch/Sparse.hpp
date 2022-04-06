@@ -178,11 +178,11 @@ class Sparse {
 
   constexpr std::size_t range_size() const { return _range_size; }
 
-  constexpr std::size_t get_compaction_threshold() const {
-    return _registers.get_compaction_threshold();
+  constexpr std::size_t compaction_threshold() const {
+    return _registers.compaction_threshold();
   }
 
-  std::vector<RegType> get_register_vector() const {
+  std::vector<RegType> register_vector() const {
     std::vector<RegType> ret(range_size());
     std::for_each(std::cbegin(_registers), std::cend(_registers),
                   [&ret](const std::pair<KeyType, RegType> &elem) {

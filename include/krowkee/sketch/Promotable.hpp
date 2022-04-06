@@ -179,22 +179,21 @@ class Promotable {
 
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
-  constexpr std::size_t get_promotion_threshold() const {
+  constexpr std::size_t promotion_threshold() const {
     return _promotion_threshold;
   }
 
-  constexpr promotable_mode_t get_mode() const { return _mode; }
+  constexpr promotable_mode_t mode() const { return _mode; }
 
-  constexpr std::size_t get_compaction_threshold() const {
+  constexpr std::size_t compaction_threshold() const {
     return (_mode == promotable_mode_t::sparse)
-               ? _sparse_ptr->get_compaction_threshold()
-               : _dense_ptr->get_compaction_threshold();
+               ? _sparse_ptr->compaction_threshold()
+               : _dense_ptr->compaction_threshold();
   }
 
-  std::vector<RegType> get_register_vector() const {
-    return (_mode == promotable_mode_t::sparse)
-               ? _sparse_ptr->get_register_vector()
-               : _dense_ptr->get_register_vector();
+  std::vector<RegType> register_vector() const {
+    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->register_vector()
+                                                : _dense_ptr->register_vector();
   }
 
   //////////////////////////////////////////////////////////////////////////////

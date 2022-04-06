@@ -167,11 +167,11 @@ class Dense {
 
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
-  constexpr std::size_t get_compaction_threshold() const { return 0; }
+  constexpr std::size_t compaction_threshold() const { return 0; }
 
   const col_t get_registers() const { return _registers; }
 
-  col_t get_register_vector() const { return _registers; }
+  col_t register_vector() const { return _registers; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
