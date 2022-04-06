@@ -155,125 +155,157 @@ struct ingest_check {
   }
 
   template <typename T>
-  int _inner_product(const std::vector<T> &lhs,
-                     const std::vector<T> &rhs) const {
+  double _l2_distance_sq(const std::vector<T> &lhs,
+                         const std::vector<T> &rhs) const {
     assert(lhs.size() == rhs.size());
-    int sum(0);
+    double dist_sq(0);
     for (int i(0); i < lhs.size(); ++i) {
-      sum += lhs[i] * rhs[i];
+      dist_sq += std::pow(lhs[i] - rhs[i], 2);
     }
-    return sum;
+    return dist_sq;
+  }
+
+  void rel_mag_test(const sf_ptr_t &sf_ptr, const parameters_t &params) const {
+    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+    std::uint64_t row_idx(17);
+    for (std::uint64_t i(0); i < params.count; ls.insert(i++, row_idx)) {
+    }
+    ls.compactify();
+    int    sum(accumulate(ls, 0.0));
+    double rel_mag((double)sum / params.count);
+    if (params.verbose == true) {
+      std::cout << "\t" << ls << std::endl;
+      std::cout << "\tregister sum (should be near zero): " << sum
+                << ", relative magnitude: " << rel_mag << std::endl;
+    }
+    CHECK_CONDITION(rel_mag < 0.1, "register sum relative magnitude near zero");
+  }
+
+  template <typename T>
+  void print_mat(const char *name, std::vector<std::vector<T>> &inserts,
+                 const int nrows, const int ncols) const {
+    std::cout << std::endl;
+    std::cout << name << ":" << std::endl;
+    for (int i(0); i < nrows; ++i) {
+      std::cout << "(" << i << ")\t";
+      for (int j(0); j < ncols; ++j) {
+        std::cout << " " << inserts[i][j];
+      }
+      std::cout << std::endl;
+    }
+  }
+
+  void print_mat(std::vector<ls_t> &sketches, const int nrows) const {
+    std::cout << std::endl;
+    std::cout << "sketches:" << std::endl;
+    for (int i(0); i < nrows; ++i) {
+      std::cout << "(" << i << ")\t" << sketches[i] << std::endl;
+    }
+  }
+
+  std::vector<std::vector<int>> fill_observation_vector(
+      const std::vector<std::vector<std::uint64_t>> &inserts,
+      const parameters_t                            &params) const {
+    std::vector<std::vector<int>> observations(
+        params.observation_count, std::vector<int>(params.domain_size));
+    for (int i(0); i < params.observation_count; ++i) {
+      for (int j(0); j < params.count; ++j) {
+        observations[i][inserts[i][j]]++;
+      }
+    }
+    return observations;
+  }
+
+  std::vector<ls_t> fill_sketch_vector(
+      const sf_ptr_t                                &sf_ptr,
+      const std::vector<std::vector<std::uint64_t>> &inserts,
+      const parameters_t                            &params) const {
+    std::vector<ls_t> sketches(
+        params.observation_count,
+        ls_t(sf_ptr, params.compaction_threshold, params.promotion_threshold));
+    for (int i(0); i < params.observation_count; ++i) {
+      for (int j(0); j < params.count; ++j) {
+        sketches[i].insert(inserts[i][j]);
+      }
+    }
+    return sketches;
+  }
+
+  std::vector<std::vector<int>> fill_projection_vector(
+      const std::vector<ls_t> &sketches, const parameters_t &params) const {
+    std::vector<std::vector<int>> projections;
+    for (int i(0); i < params.observation_count; ++i) {
+      projections.push_back(sketches[i].register_vector());
+    }
+    return projections;
+  }
+
+  void lemma_check(const sf_ptr_t &sf_ptr, const parameters_t &params) const {
+    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+
+    std::vector<std::vector<std::uint64_t>> inserts =
+        get_uniform_inserts(params);
+
+    std::vector<std::vector<int>> observations =
+        fill_observation_vector(inserts, params);
+
+    std::vector<ls_t> sketches = fill_sketch_vector(sf_ptr, inserts, params);
+
+    std::vector<std::vector<int>> projections =
+        fill_projection_vector(sketches, params);
+
+    double epsilon =
+        std::sqrt(8 * std::log(params.observation_count) / params.range_size);
+    // compute inner products
+    if (params.verbose) {
+      print_mat("inserts", inserts, params.observation_count, params.count);
+      print_mat("observations", observations, params.observation_count,
+                params.domain_size);
+      print_mat(sketches, params.observation_count);
+      print_mat("projections", projections, params.observation_count,
+                params.range_size);
+      std::cout << std::endl;
+      std::cout << "projected vectors:" << std::endl;
+    }
+    double success_rate(0.0);
+    int    trials(0);
+    for (int i(0); i < params.observation_count; ++i) {
+      for (int j(0); j < params.observation_count; ++j) {
+        if (i == j) {
+          break;
+        }
+        ++trials;
+        double ob_dist = _l2_distance_sq(observations[i], observations[j]);
+        double sk_dist = _l2_distance_sq(projections[i], projections[j]);
+        if (in_bounds(ob_dist, sk_dist, epsilon)) {
+          success_rate += 1.0;
+        }
+        if (params.verbose) {
+          std::cout << "\t(" << i << "," << j << ") ob " << ob_dist << ", sk "
+                    << sk_dist
+                    << " (in bounds: " << in_bounds(ob_dist, sk_dist, epsilon)
+                    << ")" << std::endl;
+        }
+      }
+    }
+    success_rate /= trials;
+    bool lemma_guarantee_success = success_rate > 0.5;
+    CHECK_CONDITION(lemma_guarantee_success == true, "lemma guarantee (",
+                    trials, " trials, ", success_rate,
+                    " success rate, epsilon=", epsilon, ")");
   }
 
   void operator()(const parameters_t &params) const {
     make_ptr_t _make_ptr{};
     sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
-    {
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-      std::uint64_t row_idx(17);
-      for (std::uint64_t i(0); i < params.count; ls.insert(i++, row_idx)) {
-      }
-      ls.compactify();
-      int    sum(accumulate(ls, 0.0));
-      double rel_mag((double)sum / params.count);
-      if (params.verbose == true) {
-        std::cout << "\t" << ls << std::endl;
-        std::cout << "\tregister sum (should be near zero): " << sum
-                  << ", relative magnitude: " << rel_mag << std::endl;
-      }
-      CHECK_CONDITION(rel_mag < 0.1,
-                      "register sum relative magnitude near zero");
-    }
-    {
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-      std::vector<std::vector<std::uint64_t>> inserts =
-          get_uniform_inserts(params);
+    rel_mag_test(sf_ptr, params);
+    lemma_check(sf_ptr, params);
+  }
 
-      if (params.verbose) {
-        // print out insert stream
-        std::cout << std::endl;
-        std::cout << "inserts:" << std::endl;
-        for (int i(0); i < params.observation_count; ++i) {
-          std::cout << "(" << i << ")\t";
-          for (int j(0); j < params.count; ++j) {
-            std::cout << " " << inserts[i][j];
-          }
-          std::cout << std::endl;
-        }
-      }
-      // create implicit observation vectors
-      std::vector<std::vector<std::uint64_t>> observations(
-          params.observation_count,
-          std::vector<std::uint64_t>(params.domain_size));
-      for (int i(0); i < params.observation_count; ++i) {
-        for (int j(0); j < params.count; ++j) {
-          observations[i][inserts[i][j]]++;
-        }
-      }
-      // print out implicit observation vectors
-      if (params.verbose) {
-        std::cout << std::endl;
-        std::cout << "observations:" << std::endl;
-        for (int i(0); i < params.observation_count; ++i) {
-          std::cout << "(" << i << ")\t";
-          for (int j(0); j < params.domain_size; ++j) {
-            std::cout << " " << observations[i][j];
-          }
-          std::cout << std::endl;
-        }
-      }
-      // feed streams into sketches
-      std::vector<ls_t> sketches(params.observation_count,
-                                 ls_t(sf_ptr, params.compaction_threshold,
-                                      params.promotion_threshold));
-      for (int i(0); i < params.observation_count; ++i) {
-        for (int j(0); j < params.count; ++j) {
-          sketches[i].insert(inserts[i][j]);
-        }
-      }
-      // print out sketches
-      if (params.verbose) {
-        std::cout << std::endl;
-        std::cout << "sketches:" << std::endl;
-        for (int i(0); i < params.observation_count; ++i) {
-          std::cout << "(" << i << ")\t" << sketches[i] << std::endl;
-        }
-      }
-      // get projected vectors
-      std::vector<std::vector<int>> projections;
-      for (int i(0); i < params.observation_count; ++i) {
-        projections.push_back(sketches[i].register_vector());
-        std::cout << "size: " << projections[i].size() << std::endl;
-      }
-      // print projected vectors
-      if (params.verbose) {
-        std::cout << std::endl;
-        std::cout << "projected vectors:" << std::endl;
-        for (int i(0); i < params.observation_count; ++i) {
-          std::cout << "(" << i << ")\t";
-          for (int j(0); j < params.range_size; ++j) {
-            std::cout << " " << projections[i][j];
-          }
-          std::cout << std::endl;
-        }
-      }
-      // compute inner products
-      if (params.verbose) {
-        std::cout << std::endl;
-        std::cout << "projected vectors:" << std::endl;
-        for (int i(0); i < params.observation_count; ++i) {
-          for (int j(0); j < params.observation_count; ++j) {
-            if (i == j) {
-              break;
-            }
-            int ob_inner = _inner_product(observations[i], observations[j]);
-            int sk_inner = _inner_product(projections[i], projections[j]);
-            std::cout << "\t(" << i << "," << j << ") ob " << ob_inner
-                      << ", sk " << sk_inner << std::endl;
-          }
-        }
-      }
-    }
+  bool in_bounds(const double ob_dist, const double sk_dist,
+                 const double epsilon) const {
+    return (sk_dist < (1 + epsilon) * ob_dist) &&
+           (sk_dist > (1 - epsilon) * ob_dist);
   }
 };
 
@@ -713,7 +745,7 @@ void do_all_tests(const parameters_t &params) {
 
 int do_main(int argc, char **argv) {
   uint64_t      count(10000);
-  std::uint64_t range_size(16);
+  std::uint64_t range_size(512);
   std::uint64_t domain_size(4096);
   std::uint64_t observation_count(16);
   std::uint64_t seed(krowkee::hash::default_seed);
