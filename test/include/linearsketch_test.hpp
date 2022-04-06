@@ -227,6 +227,7 @@ struct ingest_check {
       for (int j(0); j < params.count; ++j) {
         sketches[i].insert(inserts[i][j]);
       }
+      sketches[i].compactify();
     }
     return sketches;
   }

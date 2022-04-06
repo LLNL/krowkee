@@ -183,6 +183,9 @@ class Sparse {
   }
 
   std::vector<RegType> register_vector() const {
+    if (is_compact() == false) {
+      throw std::logic_error("Bad attempt to export uncompacted map!");
+    }
     std::vector<RegType> ret(range_size());
     std::for_each(std::cbegin(_registers), std::cend(_registers),
                   [&ret](const std::pair<KeyType, RegType> &elem) {
