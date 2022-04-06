@@ -40,7 +40,6 @@ class Promotable {
  private:
   dense_ptr_t       _dense_ptr;
   sparse_ptr_t      _sparse_ptr;
-  std::size_t       _range_size;
   std::size_t       _compaction_threshold;
   std::size_t       _promotion_threshold;
   promotable_mode_t _mode;
@@ -57,8 +56,7 @@ class Promotable {
   Promotable(const std::size_t range_size,
              const std::size_t compaction_threshold,
              const std::size_t promotion_threshold)
-      : _range_size(range_size),
-        _compaction_threshold(compaction_threshold),
+      : _compaction_threshold(compaction_threshold),
         _promotion_threshold(promotion_threshold),
         _mode(promotable_mode_t::sparse),
         _sparse_ptr(
@@ -73,8 +71,7 @@ class Promotable {
    * @param rhs container to be copied.
    */
   Promotable(const promotable_t &rhs)
-      : _range_size(rhs._range_size),
-        _compaction_threshold(rhs._compaction_threshold),
+      : _compaction_threshold(rhs._compaction_threshold),
         _promotion_threshold(rhs._promotion_threshold),
         _mode(rhs._mode) {
     if (_mode == promotable_mode_t::sparse) {
@@ -102,32 +99,6 @@ class Promotable {
   // }
 
   //////////////////////////////////////////////////////////////////////////////
-  // Cereal Archives
-  //////////////////////////////////////////////////////////////////////////////
-
-#if __has_include(<cereal/types/memory.hpp>)
-  template <class Archive>
-  void save(Archive &oarchive) const {
-    oarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
-    if (_mode == promotable_mode_t::sparse) {
-      oarchive(_sparse_ptr);
-    } else {
-      oarchive(_dense_ptr);
-    }
-  }
-
-  template <class Archive>
-  void load(Archive &iarchive) {
-    iarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
-    if (_mode == promotable_mode_t::sparse) {
-      iarchive(_sparse_ptr);
-    } else {
-      iarchive(_dense_ptr);
-    }
-  }
-#endif
-
-  //////////////////////////////////////////////////////////////////////////////
   // Swaps
   //////////////////////////////////////////////////////////////////////////////
 
@@ -135,7 +106,6 @@ class Promotable {
    * Swap boilerplate.
    */
   friend void swap(promotable_t &lhs, promotable_t &rhs) {
-    std::swap(lhs._range_size, rhs._range_size);
     std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._promotion_threshold, rhs._promotion_threshold);
     std::swap(lhs._mode, rhs._mode);
@@ -145,6 +115,32 @@ class Promotable {
       std::swap(lhs._dense_ptr, rhs._dense_ptr);
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Cereal Archives
+  //////////////////////////////////////////////////////////////////////////////
+
+#if __has_include(<cereal/types/memory.hpp>)
+  template <class Archive>
+  void save(Archive &oarchive) const {
+    oarchive(_compaction_threshold, _promotion_threshold, _mode);
+    if (_mode == promotable_mode_t::sparse) {
+      oarchive(_sparse_ptr);
+    } else {
+      oarchive(_dense_ptr);
+    }
+  }
+
+  template <class Archive>
+  void load(Archive &iarchive) {
+    iarchive(_compaction_threshold, _promotion_threshold, _mode);
+    if (_mode == promotable_mode_t::sparse) {
+      iarchive(_sparse_ptr);
+    } else {
+      iarchive(_dense_ptr);
+    }
+  }
+#endif
 
   //////////////////////////////////////////////////////////////////////////////
   // Assignment
@@ -194,8 +190,6 @@ class Promotable {
 
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
-  constexpr std::size_t range_size() const { return _range_size; }
-
   constexpr std::size_t get_compaction_threshold() const {
     return _compaction_threshold;
   }
@@ -206,13 +200,20 @@ class Promotable {
 
   constexpr promotable_mode_t get_mode() const { return _mode; }
 
+  std::vector<RegType> get_register_vector() const {
+    if (_mode == promotable_mode_t::sparse) {
+      return _sparse_ptr->get_register_vector();
+    } else {
+      return _dense_ptr->get_register_vector();
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
   //////////////////////////////////////////////////////////////////////////////
 
   constexpr bool same_parameters(const promotable_t &rhs) const {
-    return _range_size == rhs._range_size &&
-           _compaction_threshold == rhs._compaction_threshold &&
+    return _compaction_threshold == rhs._compaction_threshold &&
            _promotion_threshold == rhs._promotion_threshold;
   }
 
@@ -391,7 +392,7 @@ class Promotable {
       throw std::logic_error("Attempt to promote uncompacted container!");
     }
 
-    _dense_ptr = std::make_unique<dense_t>(_range_size);
+    _dense_ptr = std::make_unique<dense_t>(_sparse_ptr->range_size());
     merge_from_sparse(*this);
     _sparse_ptr.reset();
     _mode = promotable_mode_t::dense;
