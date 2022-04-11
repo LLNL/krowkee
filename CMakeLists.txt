@@ -156,7 +156,9 @@ target_include_directories(
                       $<INSTALL_INTERFACE:include>
 )
 target_compile_features(krowkee INTERFACE cxx_std_17)
-target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} ygm::ygm)
+if (KROWKEE_USE_YGM)
+    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} ygm::ygm)
+endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
 endif ()
