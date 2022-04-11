@@ -125,7 +125,7 @@ struct insert_check {
     auto map_ns(std::chrono::duration_cast<ns_t>(end - map_start).count());
     std::cout << "Inserted " << params.count
               << " elements into compact map with compaction threshold "
-              << cm.get_compaction_threshold() << " in " << cm_ns
+              << cm.compaction_threshold() << " in " << cm_ns
               << " ns versus std::map in " << map_ns << " ns ("
               << ((double)cm_ns / (double)map_ns) << " slowdown)" << std::endl;
   }

@@ -8,9 +8,11 @@
 
 #include <krowkee/util/assert.hpp>
 
-inline void CHECK_CONDITION(const bool success, const std::string &msg) {
-  std::cout << ((success == true) ? "passed" : "failed") << " " << msg
-            << " test" << std::endl;
+template <typename... Args>
+inline void CHECK_CONDITION(const bool success, const Args &...args) {
+  std::cout << ((success == true) ? "passed" : "failed") << " ";
+  (std::cout << ... << args);
+  std::cout << " test" << std::endl;
   KROWKEE_ASSERT_RELEASE(success);
 }
 

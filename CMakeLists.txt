@@ -93,7 +93,7 @@ if (KROWKEE_USE_YGM)
             # Populate cereal
             FetchContent_Populate(cereal)
             # Include cereal root cmake boilerplate
-            add_subdirectory(${cereal_SOURCE_DIR})
+            add_subdirectory(${cereal_SOURCE_DIR} ${cereal_BINARY_DIR})
             message(STATUS ${PROJECT_NAME} " cloned cereal dependency: "
                            ${cereal_SOURCE_DIR}
             )
@@ -107,6 +107,9 @@ if (KROWKEE_USE_YGM)
         message(STATUS ${PROJECT_NAME} " found installed cereal dependency: "
                        ${cereal_DIR}
         )
+        if (${cereal_SOURCE_DIR} MATCHES "*_deps*")
+            add_subdirectory(${cereal_SOURCE_DIR} ${cereal_BINARY_DIR})
+        endif ()
         if (${cereal_DIR} MATCHES ".*spack.*")
             set(KROWKEE_CEREAL_TARGET "cereal")
         else ()
@@ -137,13 +140,16 @@ if (KROWKEE_USE_YGM)
             # Populate ygm
             FetchContent_Populate(ygm)
             # Include ygm cmake boilerplate
-            add_subdirectory(${ygm_SOURCE_DIR})
+            add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
             message(STATUS ${PROJECT_NAME} " cloned ygm dependency "
                            ${ygm_SOURCE_DIR}
             )
         endif ()
     else ()
         message(STATUS ${PROJECT_NAME} " found ygm dependency " ${ygm_DIR})
+        if (${ygm_SOURCE_DIR} MATCHES "*_deps*")
+            add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
+        endif ()
     endif ()
 else ()
     message(STATUS ${PROJECT_NAME} " building without ygm")
@@ -156,7 +162,9 @@ target_include_directories(
                       $<INSTALL_INTERFACE:include>
 )
 target_compile_features(krowkee INTERFACE cxx_std_17)
-target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} ygm::ygm)
+if (KROWKEE_USE_YGM)
+    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} ygm::ygm)
+endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
 endif ()
