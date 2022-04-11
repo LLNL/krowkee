@@ -93,7 +93,7 @@ if (KROWKEE_USE_YGM)
             # Populate cereal
             FetchContent_Populate(cereal)
             # Include cereal root cmake boilerplate
-            add_subdirectory(${cereal_SOURCE_DIR})
+            add_subdirectory(${cereal_SOURCE_DIR} ${cereal_BINARY_DIR})
             message(STATUS ${PROJECT_NAME} " cloned cereal dependency: "
                            ${cereal_SOURCE_DIR}
             )
@@ -137,7 +137,7 @@ if (KROWKEE_USE_YGM)
             # Populate ygm
             FetchContent_Populate(ygm)
             # Include ygm cmake boilerplate
-            add_subdirectory(${ygm_SOURCE_DIR})
+            add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
             message(STATUS ${PROJECT_NAME} " cloned ygm dependency "
                            ${ygm_SOURCE_DIR}
             )
