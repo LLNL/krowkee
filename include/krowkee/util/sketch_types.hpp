@@ -6,7 +6,10 @@
 #ifndef _KROWKEE_UTIL_SKETCH_TYPES_HPP
 #define _KROWKEE_UTIL_SKETCH_TYPES_HPP
 
+#include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <sstream>
 
 namespace krowkee {
 namespace util {
