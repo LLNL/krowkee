@@ -190,7 +190,7 @@ class compacting_map {
     return _dynamic_map.size() == 0 && _erased_count == 0;
   }
 
-  constexpr std::size_t get_compaction_threshold() const {
+  constexpr std::size_t compaction_threshold() const {
     return _compaction_threshold;
   }
 

@@ -36,18 +36,20 @@ class Sparse {
   typedef Sparse<RegType, MergeOp, MapType, KeyType> sparse_t;
 
  protected:
-  col_t _registers;
+  col_t       _registers;
+  std::size_t _range_size;
 
  public:
   template <typename... Args>
-  Sparse(const std::uint64_t s, const std::size_t compaction_threshold,
+  Sparse(const std::size_t range_size, const std::size_t compaction_threshold,
          const Args &...args)
-      : _registers(compaction_threshold) {}
+      : _range_size(range_size), _registers(compaction_threshold) {}
 
   /**
    * Copy constructor.
    */
-  Sparse(const sparse_t &rhs) : _registers(rhs._registers) {}
+  Sparse(const sparse_t &rhs)
+      : _range_size(rhs._range_size), _registers(rhs._registers) {}
 
   // default constructor
   Sparse() {}
@@ -56,12 +58,26 @@ class Sparse {
   // Sparse(sparse_t &&rhs) : sparse_t() { std::swap(*this, rhs); }
 
   //////////////////////////////////////////////////////////////////////////////
+  // Swaps
+  //////////////////////////////////////////////////////////////////////////////
+  /**
+   * Swap boilerplate.
+   *
+   * For some reason, calling std::swap on the registers here causes a segfault
+   * in Distributed::data_t::swap, but not Sketch::swap. Peculiar.
+   */
+  friend void swap(sparse_t &lhs, sparse_t &rhs) {
+    std::swap(lhs._range_size, rhs._range_size);
+    swap(lhs._registers, rhs._registers);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
   //////////////////////////////////////////////////////////////////////////////
 
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_registers);
+    archive(_range_size, _registers);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -160,37 +176,42 @@ class Sparse {
 
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
-  constexpr std::size_t get_compaction_threshold() const {
-    return _registers.get_compaction_threshold();
+  constexpr std::size_t range_size() const { return _range_size; }
+
+  constexpr std::size_t compaction_threshold() const {
+    return _registers.compaction_threshold();
+  }
+
+  std::vector<RegType> register_vector() const {
+    if (is_compact() == false) {
+      throw std::logic_error("Bad attempt to export uncompacted map!");
+    }
+    std::vector<RegType> ret(range_size());
+    std::for_each(std::cbegin(_registers), std::cend(_registers),
+                  [&ret](const std::pair<KeyType, RegType> &elem) {
+                    ret[elem.first] = elem.second;
+                  });
+    return ret;
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
   //////////////////////////////////////////////////////////////////////////////
+  constexpr bool same_parameters(const sparse_t &rhs) const {
+    return _range_size == rhs._range_size;
+  }
+
   constexpr bool same_registers(const sparse_t &rhs) const {
     return _registers == rhs._registers;
   }
 
   // template <typename RT>
   friend constexpr bool operator==(const sparse_t &lhs, const sparse_t &rhs) {
-    return lhs.same_registers(rhs);
+    return lhs.same_parameters(rhs) && lhs.same_registers(rhs);
   }
   // template <typename RT>
   friend constexpr bool operator!=(const sparse_t &lhs, const sparse_t &rhs) {
     return !operator==(lhs, rhs);
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Swaps
-  //////////////////////////////////////////////////////////////////////////////
-  /**
-   * Swap boilerplate.
-   *
-   * For some reason, calling std::swap on the registers here causes a segfault
-   * in Distributed::data_t::swap, but not Sketch::swap. Peculiar.
-   */
-  friend void swap(sparse_t &lhs, sparse_t &rhs) {
-    swap(lhs._registers, rhs._registers);
   }
 
   //////////////////////////////////////////////////////////////////////////////
