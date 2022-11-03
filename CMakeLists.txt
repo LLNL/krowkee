@@ -224,4 +224,5 @@ endif ()
 
 if (KROWKEE_MAIN_PROJECT)
     add_subdirectory(test)
+    add_subdirectory(performance)
 endif ()
