@@ -16,5 +16,5 @@ function (add_seq_krowkee_benchmark bench_name)
     add_test(${bench_exe} "${CMAKE_CURRENT_BINARY_DIR}/${bench_exe}")
 endfunction ()
 
-add_seq_krowkee_benchmark(vs_histogram)
-#add_seq_krowkee_benchmark(vs_graph)
+add_seq_krowkee_benchmark(histogram)
+#add_seq_krowkee_benchmark(graph)
