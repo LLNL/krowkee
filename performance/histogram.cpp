@@ -3,9 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <benchmark.hpp>
+#include <parameters.hpp>
 #include <sampling.hpp>
+#include <sketch_interface.hpp>
+#include <timing.hpp>
 #include <types.hpp>
+#include <utils.hpp>
 
 template <typename ValueType>
 struct vector_hist_t : public vector_t<ValueType> {
@@ -40,10 +43,27 @@ struct set_hist_t : set_t<KeyType> {
 
 void benchmark(const parameters_t &params) {
   using sample_t = std::uint64_t;
-  std::vector<sample_t> samples(make_samples(params));
+  std::vector<sample_t> samples(make_samples<sample_t>(params));
 
-  benchmark<sample_t, vector_hist_t<sample_t>, set_hist_t<sample_t>,
-            map_hist_t<sample_t, std::uint64_t>>(samples, params);
+#if __has_include(<boost/container/flat_map.hpp>)
+  auto sk_profiles = profile_sketches<sample_t, dense32_hist_cs_t<sample_t>,
+                                      map_sparse32_hist_cs_t<sample_t>,
+                                      map_promotable32_hist_cs_t<sample_t>,
+                                      flatmap_sparse32_hist_cs_t<sample_t>,
+                                      flatmap_promotable32_hist_cs_t<sample_t>>(
+      samples, params);
+#else
+  auto sk_profiles =
+      profile_sketches<sample_t, dense32_hist_cs_t<sample_t>,
+                       map_sparse32_hist_cs_t<sample_t>,
+                       map_promotable32_hist_cs_t<sample_t>>(samples, params);
+#endif
+
+  auto hist_profiles =
+      profile_histograms<sample_t, vector_hist_t<sample_t>,
+                         set_hist_t<sample_t>, map_hist_t<sample_t, sample_t>>(
+          samples, params);
+  print_profiles(sk_profiles, hist_profiles);
 }
 
 int main(int argc, char **argv) {

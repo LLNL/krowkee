@@ -27,19 +27,19 @@ struct timer_t {
   std::chrono::time_point<std::chrono::steady_clock> _start;
 };
 
-template <typename ContainerType>
-double time_insert(const std::vector<std::uint64_t> samples, ContainerType &con,
+template <typename ContainerType, typename SampleType>
+double time_insert(const std::vector<SampleType> samples, ContainerType &con,
                    const parameters_t &params) {
   timer_t timer;
-  for (const std::uint64_t sample : samples) {
+  for (const SampleType sample : samples) {
     con.insert(sample);
   }
   return timer.elapsed();
 }
 
-template <typename ContainerType>
-double time_insert(const std::vector<std::uint64_t> &samples,
-                   const parameters_t               &params) {
+template <typename ContainerType, typename SampleType>
+double time_insert(const std::vector<SampleType> &samples,
+                   const parameters_t            &params) {
   ContainerType con(params);
   return time_insert(samples, con, params);
 }
@@ -75,7 +75,8 @@ void profile_sketches(std::vector<std::pair<std::string, double>> &profiles,
   typedef std::shared_ptr<sf_t> sf_ptr_t;
 
   sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.seed));
-  sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold,
+              params);
   double   sk_time = time_insert(samples, sk, params);
   profiles.push_back({sk_t::full_name(), sk_time});
   if constexpr (sizeof...(SketchTypes) > 0) {

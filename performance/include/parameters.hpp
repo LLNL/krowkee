@@ -57,7 +57,7 @@ void print_help(char *exe_name) {
 
 parameters_t parse_args(int argc, char **argv) {
   uint64_t      count(10000);
-  std::uint64_t range_size(512);
+  std::uint64_t range_size(8);
   std::uint64_t domain_size(4096);
   std::uint64_t observation_count(16);
   std::uint64_t seed(krowkee::hash::default_seed);

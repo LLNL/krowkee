@@ -23,6 +23,8 @@ template <typename ValueType>
 struct vector_t {
   using value_t = ValueType;
   vector_t(const parameters_t &params) : _hist(params.domain_size) {}
+  vector_t(const parameters_t &params, const value_t &default_value)
+      : _hist(params.domain_size, default_value) {}
 
   static std::string      name() { return "std::vector"; }
   constexpr std::uint64_t size() const { return _hist.size(); }
