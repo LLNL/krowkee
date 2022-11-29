@@ -15,6 +15,6 @@ function (add_seq_krowkee_benchmark bench_name)
     )
 endfunction ()
 
-add_seq_krowkee_benchmark(histogram)
 add_seq_krowkee_benchmark(init)
-# add_seq_krowkee_benchmark(graph)
+add_seq_krowkee_benchmark(histogram)
+add_seq_krowkee_benchmark(graph)

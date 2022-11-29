@@ -73,12 +73,12 @@ void print_help(char *exe_name) {
 
 parameters_t parse_args(int argc, char **argv) {
   uint64_t      count(10000);
-  std::uint64_t range_size(8);
+  std::uint64_t range_size(128);
   std::uint64_t domain_size(4096);
   std::uint64_t observation_count(16);
   std::uint64_t seed(krowkee::hash::default_seed);
-  std::size_t   compaction_threshold(10);
-  std::size_t   promotion_threshold(8);
+  std::size_t   compaction_threshold(8);
+  std::size_t   promotion_threshold(32);
   std::size_t   iterations(10);
   sketch_type_t sketch_type(sketch_type_t::cst);
   cmap_type_t   cmap_type(cmap_type_t::std);
