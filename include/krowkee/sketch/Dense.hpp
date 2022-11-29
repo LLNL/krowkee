@@ -39,9 +39,8 @@ class Dense {
 
  public:
   template <typename... Args>
-  Dense(const std::size_t range_size, const Args &...args) {
-    _registers.resize(range_size);
-  }
+  Dense(const std::size_t range_size, const Args &...args)
+      : _registers(range_size) {}
 
   // copy constructor
   Dense(const dense_t &rhs) : _registers(rhs._registers) {}
