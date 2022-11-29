@@ -26,6 +26,7 @@ struct parameters_t {
   std::uint64_t observation_count;
   std::size_t   compaction_threshold;
   std::size_t   promotion_threshold;
+  std::size_t   iterations;
   std::uint64_t seed;
   sketch_type_t sketch_type;
   cmap_type_t   cmap_type;
@@ -40,6 +41,7 @@ void print_help(char *exe_name) {
             << "\t-b, --observation_count <int>  - number of sketches to test\n"
             << "\t-o, --compaction-thresh <int>  - compaction threshold\n"
             << "\t-p, --promotion-thresh <int>   - promotion threshold\n"
+            << "\t-i, --iterations <int>         - number of iterations\n"
             << "\t-t, --sketch-type <str>        - sketch type "
                "(cst, sparse_cst, promotable_cst, fwht)\n"
             << "\t-m, --map-type <str>           - map type "
@@ -63,6 +65,7 @@ parameters_t parse_args(int argc, char **argv) {
   std::uint64_t seed(krowkee::hash::default_seed);
   std::size_t   compaction_threshold(10);
   std::size_t   promotion_threshold(8);
+  std::size_t   iterations(10);
   sketch_type_t sketch_type(sketch_type_t::cst);
   cmap_type_t   cmap_type(cmap_type_t::std);
   bool          verbose(false);
@@ -74,6 +77,7 @@ parameters_t parse_args(int argc, char **argv) {
                       observation_count,
                       compaction_threshold,
                       promotion_threshold,
+                      iterations,
                       seed,
                       sketch_type,
                       cmap_type,
@@ -90,6 +94,7 @@ parameters_t parse_args(int argc, char **argv) {
         {"observation-count", required_argument, NULL, 'b'},
         {"compaction-thresh", required_argument, NULL, 'o'},
         {"promotion-thresh", required_argument, NULL, 'p'},
+        {"iterations", required_argument, NULL, 'i'},
         {"sketch-type", required_argument, NULL, 't'},
         {"map-type", required_argument, NULL, 'm'},
         {"seed", required_argument, NULL, 's'},
@@ -98,8 +103,8 @@ parameters_t parse_args(int argc, char **argv) {
         {NULL, 0, NULL, 0}};
 
     int curind = optind;
-    c          = getopt_long(argc, argv, "-:c:r:d:b:o:p:t:m:s:vh", long_options,
-                             &option_index);
+    c = getopt_long(argc, argv, "-:c:r:d:b:o:p:i:t:m:s:vh", long_options,
+                    &option_index);
     if (c == -1) {
       break;
     }
@@ -136,6 +141,9 @@ parameters_t parse_args(int argc, char **argv) {
         break;
       case 'p':
         params.promotion_threshold = std::atoll(optarg);
+        break;
+      case 'i':
+        params.iterations = std::atoll(optarg);
         break;
       case 't':
         params.sketch_type = krowkee::util::get_sketch_type(optarg);

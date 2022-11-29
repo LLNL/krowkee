@@ -13,8 +13,8 @@ function (add_seq_krowkee_benchmark bench_name)
         PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                 $<INSTALL_INTERFACE:include>
     )
-    add_test(${bench_exe} "${CMAKE_CURRENT_BINARY_DIR}/${bench_exe}")
 endfunction ()
 
 add_seq_krowkee_benchmark(histogram)
-#add_seq_krowkee_benchmark(graph)
+add_seq_krowkee_benchmark(init)
+# add_seq_krowkee_benchmark(graph)
