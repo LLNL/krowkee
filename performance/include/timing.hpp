@@ -45,7 +45,7 @@ double time_sketch_init(const parameters_t &params) {
   sf_ptr_t sf_ptr = std::make_shared<sf_t>(params.range_size, params.seed);
 
   timer_t timer;
-  sk_t    sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  sk_t    sk(sf_ptr, params);
   return timer.elapsed();
 }
 
@@ -151,7 +151,7 @@ void profile_sketch_histogram(
   typedef std::shared_ptr<sf_t> sf_ptr_t;
 
   sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.range_size, params.seed));
-  sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  sk_t     sk(sf_ptr, params);
   double   sk_time = time_insert(samples, sk);
   profiles.push_back({sk_t::full_name(), sk_time});
   if constexpr (sizeof...(SketchTypes) > 0) {
