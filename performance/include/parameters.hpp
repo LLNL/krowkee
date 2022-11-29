@@ -33,6 +33,20 @@ struct parameters_t {
   bool          verbose;
 };
 
+std::ostream &operator<<(std::ostream &os, const parameters_t &params) {
+  os << "parameters:";
+  os << "\n\tcount: " << params.count;
+  os << "\n\trange_size: " << params.range_size;
+  os << "\n\tdomain_size: " << params.domain_size;
+  os << "\n\tobservation_count: " << params.observation_count;
+  os << "\n\tcompaction_threshold: " << params.compaction_threshold;
+  os << "\n\tpromotion_threshold: " << params.promotion_threshold;
+  os << "\n\titerations: " << params.iterations;
+  os << "\n\tseed: " << params.seed;
+  os << "\n\tverbose: " << params.verbose;
+  return os;
+}
+
 void print_help(char *exe_name) {
   std::cout << "\nusage:  " << exe_name << "\n"
             << "\t-c, --count <int>              - number of insertions\n"
