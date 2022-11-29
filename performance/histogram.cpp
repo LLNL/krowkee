@@ -49,17 +49,17 @@ void benchmark(const parameters_t &params) {
 
 #if __has_include(<boost/container/flat_map.hpp>)
   auto sk_profiles =
-      profile_sketch_histogram<sample_t, dense32_hist_cs_t<sample_t>,
-                               map_sparse32_hist_cs_t<sample_t>,
-                               map_promotable32_hist_cs_t<sample_t>,
-                               flatmap_sparse32_hist_cs_t<sample_t>,
-                               flatmap_promotable32_hist_cs_t<sample_t>>(
+      profile_sketch_histogram<sample_t, dense32_cs_hist_t<sample_t>,
+                               map_sparse32_cs_hist_t<sample_t>,
+                               map_promotable32_cs_hist_t<sample_t>,
+                               flatmap_sparse32_cs_hist_t<sample_t>,
+                               flatmap_promotable32_cs_hist_t<sample_t>>(
           samples, params);
 #else
   auto sk_profiles =
-      profile_sketch_histogram<sample_t, dense32_hist_cs_t<sample_t>,
-                               map_sparse32_hist_cs_t<sample_t>,
-                               map_promotable32_hist_cs_t<sample_t>>(samples,
+      profile_sketch_histogram<sample_t, dense32_cs_hist_t<sample_t>,
+                               map_sparse32_cs_hist_t<sample_t>,
+                               map_promotable32_cs_hist_t<sample_t>>(samples,
                                                                      params);
 #endif
 

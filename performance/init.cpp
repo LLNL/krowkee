@@ -30,18 +30,17 @@ void benchmark(const parameters_t &params) {
   using sample_t = std::uint64_t;
 #if __has_include(<boost/container/flat_map.hpp>)
   auto sk_profiles =
-      profile_sketch_init<dense32_hist_cs_t<sample_t>,
-                          map_sparse32_hist_cs_t<sample_t>,
-                          map_promotable32_hist_cs_t<sample_t>,
-                          flatmap_sparse32_hist_cs_t<sample_t>,
-                          flatmap_promotable32_hist_cs_t<sample_t>>(params);
+      profile_sketch_init<dense32_cs_hist_t<sample_t>,
+                          map_sparse32_cs_hist_t<sample_t>,
+                          map_promotable32_cs_hist_t<sample_t>,
+                          flatmap_sparse32_cs_hist_t<sample_t>,
+                          flatmap_promotable32_cs_hist_t<sample_t>>(params);
 #else
   auto sk_profiles =
-      profile_sketch_init<dense32_hist_cs_t<sample_t>,
-                          map_sparse32_hist_cs_t<sample_t>,
-                          map_promotable32_hist_cs_t<sample_t>>(params);
+      profile_sketch_init<dense32_cs_hist_t<sample_t>,
+                          map_sparse32_cs_hist_t<sample_t>,
+                          map_promotable32_cs_hist_t<sample_t>>(params);
 #endif
-
   auto container_profiles =
       profile_container_init<vector_init_t<sample_t>, set_init_t<sample_t>,
                              map_init_t<sample_t, sample_t>>(params);
