@@ -28,10 +28,9 @@ struct timer_t {
 };
 
 template <typename ContainerType, typename SampleType>
-double time_insert(const std::vector<SampleType> samples, ContainerType &con,
-                   const parameters_t &params) {
+double time_insert(const std::vector<SampleType> &samples, ContainerType &con) {
   timer_t timer;
-  for (const SampleType sample : samples) {
+  for (const SampleType &sample : samples) {
     con.insert(sample);
   }
   return timer.elapsed();
@@ -41,7 +40,7 @@ template <typename ContainerType, typename SampleType>
 double time_insert(const std::vector<SampleType> &samples,
                    const parameters_t            &params) {
   ContainerType con(params);
-  return time_insert(samples, con, params);
+  return time_insert(samples, con);
 }
 
 template <typename ContainerType>
@@ -60,8 +59,7 @@ double time_sketch_init(const parameters_t &params) {
   sf_ptr_t sf_ptr = std::make_shared<sf_t>(params.range_size, params.seed);
 
   timer_t timer;
-  sk_t    sk(sf_ptr, params.compaction_threshold, params.promotion_threshold,
-             params);
+  sk_t    sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
   return timer.elapsed();
 }
 
@@ -96,10 +94,7 @@ void profile_sketch_init(std::vector<std::pair<std::string, double>> &profiles,
                          const parameters_t                          &params) {
   double init_time = 0.0;
   for (std::size_t i(0); i < params.iterations; ++i) {
-    double update = time_sketch_init<SketchType>(params);
-    init_time += update;
-    std::cout << SketchType::full_name() << " took " << update << "s"
-              << std::endl;
+    init_time += time_sketch_init<SketchType>(params);
   }
   init_time /= params.iterations;
   profiles.push_back({SketchType::full_name(), init_time});
@@ -152,9 +147,8 @@ void profile_sketch_histogram(
   typedef std::shared_ptr<sf_t> sf_ptr_t;
 
   sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.seed));
-  sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold,
-              params);
-  double   sk_time = time_insert(samples, sk, params);
+  sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  double   sk_time = time_insert(samples, sk);
   profiles.push_back({sk_t::full_name(), sk_time});
   if constexpr (sizeof...(SketchTypes) > 0) {
     profile_sketch_histogram<SampleType, SketchTypes...>(profiles, samples,

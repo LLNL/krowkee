@@ -12,18 +12,20 @@
 
 template <typename ValueType>
 struct vector_hist_t : public vector_t<ValueType> {
-  vector_hist_t(const parameters_t &params) : vector_t<ValueType>(params) {}
+  vector_hist_t(const parameters_t &params)
+      : vector_t<ValueType>(params.domain_size) {}
 
   template <typename KeyType>
   void insert(const KeyType idx) {
     this->check_bounds(idx);
-    this->_hist[idx]++;
+    this->_vec[idx]++;
   }
 };
 
 template <typename KeyType, typename ValueType>
 struct map_hist_t : map_t<KeyType, ValueType> {
-  map_hist_t(const parameters_t &params) : map_t<KeyType, ValueType>(params) {}
+  map_hist_t(const parameters_t &params)
+      : map_t<KeyType, ValueType>(params.domain_size) {}
 
   void insert(const KeyType idx) {
     this->check_bounds(idx);
@@ -33,7 +35,7 @@ struct map_hist_t : map_t<KeyType, ValueType> {
 
 template <typename KeyType>
 struct set_hist_t : set_t<KeyType> {
-  set_hist_t(const parameters_t &params) : set_t<KeyType>(params) {}
+  set_hist_t(const parameters_t &params) : set_t<KeyType>(params.domain_size) {}
 
   void insert(const KeyType idx) {
     this->check_bounds(idx);
@@ -71,6 +73,8 @@ void benchmark(const parameters_t &params) {
 
 int main(int argc, char **argv) {
   parameters_t params = parse_args(argc, argv);
+
+  std::cout << params << std::endl;
 
   benchmark(params);
   return 0;

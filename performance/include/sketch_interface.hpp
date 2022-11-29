@@ -17,8 +17,7 @@ struct hist_sketch_t {
   using sf_ptr_t = typename SketchType::sf_ptr_t;
   hist_sketch_t(const sf_ptr_t     &sf_ptr,
                 const std::uint64_t compaction_threshold,
-                const std::uint64_t promotion_threshold,
-                const parameters_t &params)
+                const std::uint64_t promotion_threshold)
       : _sk(sf_ptr, compaction_threshold, promotion_threshold) {}
 
   void insert(const ValueType &idx) { _sk.insert(idx); }
@@ -37,9 +36,9 @@ struct graph_sketch_t {
   graph_sketch_t(const sf_ptr_t     &sf_ptr,
                  const std::uint64_t compaction_threshold,
                  const std::uint64_t promotion_threshold,
-                 const parameters_t &params)
+                 const std::size_t   domain_size)
       : _sk() {
-    for (int i(0); i < params.domain_size; ++i) {
+    for (int i(0); i < domain_size; ++i) {
       _sk.push_back(std::make_unique<SketchType>(sf_ptr, compaction_threshold,
                                                  promotion_threshold));
       std::cout << "gets here: " << i << std::endl;
