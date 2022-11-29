@@ -27,21 +27,7 @@ struct timer_t {
   std::chrono::time_point<std::chrono::steady_clock> _start;
 };
 
-template <typename ContainerType, typename SampleType>
-double time_insert(const std::vector<SampleType> &samples, ContainerType &con) {
-  timer_t timer;
-  for (const SampleType &sample : samples) {
-    con.insert(sample);
-  }
-  return timer.elapsed();
-}
-
-template <typename ContainerType, typename SampleType>
-double time_insert(const std::vector<SampleType> &samples,
-                   const parameters_t            &params) {
-  ContainerType con(params);
-  return time_insert(samples, con);
-}
+//// Init timing
 
 template <typename ContainerType>
 double time_container_init(const parameters_t &params) {
@@ -112,6 +98,24 @@ std::vector<std::pair<std::string, double>> profile_sketch_init(
     profile_sketch_init<SketchTypes...>(profiles, params);
   }
   return profiles;
+}
+
+//// Histogram timing
+
+template <typename ContainerType, typename SampleType>
+double time_insert(const std::vector<SampleType> &samples, ContainerType &con) {
+  timer_t timer;
+  for (const SampleType &sample : samples) {
+    con.insert(sample);
+  }
+  return timer.elapsed();
+}
+
+template <typename ContainerType, typename SampleType>
+double time_insert(const std::vector<SampleType> &samples,
+                   const parameters_t            &params) {
+  ContainerType con(params);
+  return time_insert(samples, con);
 }
 
 template <typename SampleType, typename HistType, typename... HistTypes>
