@@ -57,7 +57,7 @@ double time_sketch_init(const parameters_t &params) {
   typedef typename sk_t::sf_t   sf_t;
   typedef std::shared_ptr<sf_t> sf_ptr_t;
 
-  sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.seed));
+  sf_ptr_t sf_ptr = std::make_shared<sf_t>(params.range_size, params.seed);
 
   timer_t timer;
   sk_t    sk(sf_ptr, params.compaction_threshold, params.promotion_threshold,

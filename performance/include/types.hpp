@@ -22,26 +22,26 @@ void _check_bounds(KeyType idx, std::size_t max) {
 template <typename ValueType>
 struct vector_t {
   using value_t = ValueType;
-  vector_t(const parameters_t &params) : _hist(params.domain_size) {}
+  vector_t(const parameters_t &params) : _vec(params.range_size) {}
   vector_t(const parameters_t &params, const value_t &default_value)
-      : _hist(params.domain_size, default_value) {}
+      : _vec(params.range_size, default_value) {}
 
   static std::string      name() { return "std::vector"; }
-  constexpr std::uint64_t size() const { return _hist.size(); }
+  constexpr std::uint64_t size() const { return _vec.size(); }
   template <typename KeyType>
   constexpr void check_bounds(KeyType idx) const {
     _check_bounds(idx, size());
   }
 
  protected:
-  std::vector<value_t> _hist;
+  std::vector<value_t> _vec;
 };
 
 template <typename KeyType, typename ValueType>
 struct map_t {
   using key_t   = KeyType;
   using value_t = ValueType;
-  map_t(const parameters_t &params) : _size(params.domain_size), _map() {}
+  map_t(const parameters_t &params) : _size(params.range_size), _map() {}
 
   static std::string      name() { return "std::map"; }
   constexpr std::uint64_t size() const { return _size; }
@@ -55,7 +55,7 @@ struct map_t {
 template <typename KeyType>
 struct set_t {
   using key_t = KeyType;
-  set_t(const parameters_t &params) : _size(params.domain_size), _set() {}
+  set_t(const parameters_t &params) : _size(params.range_size), _set() {}
 
   static std::string      name() { return "std::set"; }
   constexpr std::uint64_t size() const { return _size; }
