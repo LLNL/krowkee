@@ -146,7 +146,7 @@ void profile_sketch_histogram(
   typedef typename sk_t::sf_t   sf_t;
   typedef std::shared_ptr<sf_t> sf_ptr_t;
 
-  sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.seed));
+  sf_ptr_t sf_ptr(std::make_shared<sf_t>(params.range_size, params.seed));
   sk_t     sk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
   double   sk_time = time_insert(samples, sk);
   profiles.push_back({sk_t::full_name(), sk_time});
