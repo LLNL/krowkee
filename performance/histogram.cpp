@@ -27,7 +27,7 @@ struct map_hist_t : map_t<KeyType, ValueType> {
 
   void insert(const KeyType idx) {
     this->check_bounds(idx);
-    this->_hist[idx]++;
+    this->_map[idx]++;
   }
 };
 
@@ -37,7 +37,7 @@ struct set_hist_t : set_t<KeyType> {
 
   void insert(const KeyType idx) {
     this->check_bounds(idx);
-    this->_hist.insert(idx);
+    this->_set.insert(idx);
   }
 };
 
@@ -46,23 +46,26 @@ void benchmark(const parameters_t &params) {
   std::vector<sample_t> samples(make_samples<sample_t>(params));
 
 #if __has_include(<boost/container/flat_map.hpp>)
-  auto sk_profiles = profile_sketches<sample_t, dense32_hist_cs_t<sample_t>,
-                                      map_sparse32_hist_cs_t<sample_t>,
-                                      map_promotable32_hist_cs_t<sample_t>,
-                                      flatmap_sparse32_hist_cs_t<sample_t>,
-                                      flatmap_promotable32_hist_cs_t<sample_t>>(
-      samples, params);
+  auto sk_profiles =
+      profile_sketch_histogram<sample_t, dense32_hist_cs_t<sample_t>,
+                               map_sparse32_hist_cs_t<sample_t>,
+                               map_promotable32_hist_cs_t<sample_t>,
+                               flatmap_sparse32_hist_cs_t<sample_t>,
+                               flatmap_promotable32_hist_cs_t<sample_t>>(
+          samples, params);
 #else
   auto sk_profiles =
-      profile_sketches<sample_t, dense32_hist_cs_t<sample_t>,
-                       map_sparse32_hist_cs_t<sample_t>,
-                       map_promotable32_hist_cs_t<sample_t>>(samples, params);
+      profile_sketch_histogram<sample_t, dense32_hist_cs_t<sample_t>,
+                               map_sparse32_hist_cs_t<sample_t>,
+                               map_promotable32_hist_cs_t<sample_t>>(samples,
+                                                                     params);
 #endif
 
   auto hist_profiles =
-      profile_histograms<sample_t, vector_hist_t<sample_t>,
-                         set_hist_t<sample_t>, map_hist_t<sample_t, sample_t>>(
-          samples, params);
+      profile_container_histogram<sample_t, vector_hist_t<sample_t>,
+                                  set_hist_t<sample_t>,
+                                  map_hist_t<sample_t, sample_t>>(samples,
+                                                                  params);
   print_profiles(sk_profiles, hist_profiles);
 }
 

@@ -41,27 +41,27 @@ template <typename KeyType, typename ValueType>
 struct map_t {
   using key_t   = KeyType;
   using value_t = ValueType;
-  map_t(const parameters_t &params) : _size(params.domain_size), _hist() {}
+  map_t(const parameters_t &params) : _size(params.domain_size), _map() {}
 
   static std::string      name() { return "std::map"; }
   constexpr std::uint64_t size() const { return _size; }
   constexpr void check_bounds(key_t idx) const { _check_bounds(idx, size()); }
 
  protected:
-  std::map<key_t, value_t> _hist;
+  std::map<key_t, value_t> _map;
   std::size_t              _size;
 };
 
 template <typename KeyType>
 struct set_t {
   using key_t = KeyType;
-  set_t(const parameters_t &params) : _size(params.domain_size), _hist() {}
+  set_t(const parameters_t &params) : _size(params.domain_size), _set() {}
 
   static std::string      name() { return "std::set"; }
   constexpr std::uint64_t size() const { return _size; }
   constexpr void check_bounds(key_t idx) const { _check_bounds(idx, size()); }
 
  protected:
-  std::set<key_t> _hist;
+  std::set<key_t> _set;
   std::size_t     _size;
 };
