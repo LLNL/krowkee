@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
-struct timer_t {
-  timer_t() { reset(); }
+struct stopwatch_t {
+  stopwatch_t() { reset(); }
 
   double elapsed() {
     auto now = std::chrono::steady_clock::now();
@@ -31,9 +31,9 @@ struct timer_t {
 
 template <typename ContainerType>
 double time_container_init(const parameters_t &params) {
-  timer_t       timer;
+  stopwatch_t   stopwatch;
   ContainerType con(params);
-  return timer.elapsed();
+  return stopwatch.elapsed();
 }
 
 template <typename SketchType>
@@ -44,9 +44,9 @@ double time_sketch_init(const parameters_t &params) {
 
   sf_ptr_t sf_ptr = std::make_shared<sf_t>(params.range_size, params.seed);
 
-  timer_t timer;
-  sk_t    sk(sf_ptr, params);
-  return timer.elapsed();
+  stopwatch_t stopwatch;
+  sk_t        sk(sf_ptr, params);
+  return stopwatch.elapsed();
 }
 
 template <typename ContainerType, typename... ContainerTypes>
@@ -104,11 +104,11 @@ std::vector<std::pair<std::string, double>> profile_sketch_init(
 
 template <typename ContainerType, typename SampleType>
 double time_insert(const std::vector<SampleType> &samples, ContainerType &con) {
-  timer_t timer;
+  stopwatch_t stopwatch;
   for (const SampleType &sample : samples) {
     con.insert(sample);
   }
-  return timer.elapsed();
+  return stopwatch.elapsed();
 }
 
 template <typename ContainerType, typename SampleType>
