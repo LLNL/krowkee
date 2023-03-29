@@ -89,7 +89,7 @@ void benchmark(const parameters_t &params) {
   auto sk_profiles =
       profile_sketch_histogram<edge_t, dense32_cs_vector_graph_t<vertex_t>,
                                map_sparse32_cs_vector_graph_t<vertex_t>,
-                               map_promotable32_cs_graph_t<vertex_t>,
+                               map_promotable32_cs_map_graph_t<vertex_t>,
                                dense32_cs_map_graph_t<vertex_t>,
                                map_sparse32_cs_map_graph_t<vertex_t>,
                                map_promotable32_cs_map_graph_t<vertex_t>>(
