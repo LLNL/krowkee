@@ -28,6 +28,7 @@ if read_the_docs_build:
     configureDoxyfile(input_dir, output_dir)
     subprocess.call("doxygen", shell=True)
     breathe_projects["krowkee"] = output_dir + "/xml"
+    print("gets here")
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
