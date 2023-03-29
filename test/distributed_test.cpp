@@ -79,28 +79,27 @@ struct merge_test_t {
   void operator()(ygm::comm &world, M &dmap, const parameters_t &params,
                   const std::string &qualifier, const T &obj1, const T &obj2,
                   const T &obj3) const {
-    auto first_visit_lambda = [](auto pmap, auto kv_pair, bool verbose,
+    auto first_visit_lambda = [](auto pmap, auto key, auto &val, bool verbose,
                                  T expected_merge_val, std::string msg,
                                  int second_key) {
       if (verbose == true) {
         std::cout << "First visit:"
                   << "\nI am rank " << pmap->comm().rank()
                   << " and a rank is asking to forward the sketch"
-                  << "\n\tKey: " << kv_pair.first << "\n\tto destination "
-                  << second_key << std::endl;
+                  << "\n\tKey: " << key << "\n\tto destination " << second_key
+                  << std::endl;
       }
 
-      auto second_visit_lambda = [](auto pmap, auto kv_pair, bool verbose,
+      auto second_visit_lambda = [](auto pmap, auto key, auto val, bool verbose,
                                     T expected_merge_val, std::string msg,
                                     T fwd_val) {
-        T    merge_val = kv_pair.second + fwd_val;
+        T    merge_val = val + fwd_val;
         bool match     = merge_val == expected_merge_val;
         if (verbose == true) {
           std::cout << "Second visit:"
                     << "\nI am rank " << pmap->comm().rank()
                     << " and a rank is asking to merge"
-                    << "\n\tKey: " << kv_pair.first
-                    << "\n\tVal: " << kv_pair.second
+                    << "\n\tKey: " << key << "\n\tVal: " << val
                     << "\n\twith forwarded value: " << fwd_val
                     << "\n\tobtained merge: " << expected_merge_val
                     << "\n\texpected merge: " << expected_merge_val
@@ -123,7 +122,7 @@ struct merge_test_t {
       };
 
       pmap->async_visit(second_key, second_visit_lambda, verbose,
-                        expected_merge_val, msg, kv_pair.second);
+                        expected_merge_val, msg, val);
     };
     if (world.rank() == 3) {
       std::stringstream ss;
@@ -157,26 +156,26 @@ struct equality_test_t {
   void operator()(ygm::comm &world, M &dmap, const parameters_t &params,
                   const std::string &qualifier, const T &obj1,
                   const T &obj2) const {
-    auto first_visit_lambda = [](auto pmap, auto kv_pair, bool verbose,
+    auto first_visit_lambda = [](auto pmap, auto key, auto &val, bool verbose,
                                  bool expected_match, std::string msg,
                                  int second_key) {
       if (verbose == true) {
         std::cout << "First visit:"
                   << "\nI am rank " << pmap->comm().rank()
-                  << " and a rank is asking for a lookup of key "
-                  << kv_pair.first << " to be checked against another key "
-                  << second_key << "\n\tVal: " << kv_pair.second << std::endl;
+                  << " and a rank is asking for a lookup of key " << key
+                  << " to be checked against another key " << second_key
+                  << "\n\tVal: " << val << std::endl;
       }
 
-      auto second_visit_lambda = [](auto pmap, auto kv_pair, bool verbose,
+      auto second_visit_lambda = [](auto pmap, auto key, auto val, bool verbose,
                                     bool expected_match, std::string msg,
                                     T fwd_val) {
-        bool match = kv_pair.second == fwd_val;
+        bool match = val == fwd_val;
         if (verbose == true) {
           std::cout << "Second visit:"
                     << "\nI am rank " << pmap->comm().rank()
-                    << " and a rank is asking to check key " << kv_pair.first
-                    << "\n\tVal: " << kv_pair.second
+                    << " and a rank is asking to check key " << key
+                    << "\n\tVal: " << val
                     << "\n\tAgainst forwarded value: " << fwd_val
                     << "\n\tValues "
                     << ((match == true) ? "match!" : "don't match!")
@@ -199,7 +198,7 @@ struct equality_test_t {
       };
 
       pmap->async_visit(second_key, second_visit_lambda, verbose,
-                        expected_match, msg, kv_pair.second);
+                        expected_match, msg, val);
     };
     if (world.rank() == 3) {
       std::stringstream ss;
@@ -229,27 +228,26 @@ struct cross_map_equality_test_t {
   void operator()(ygm::comm &world, M &dmap1, M &dmap2,
                   const parameters_t &params,
                   const std::string  &qualifier) const {
-    auto first_visit_lambda = [](auto pmap1, auto kv_pair, auto pmap2,
+    auto first_visit_lambda = [](auto pmap1, auto key, auto &val, auto pmap2,
                                  bool verbose, bool expected_match,
                                  std::string msg) {
       if (verbose == true) {
         std::cout << "First visit:"
                   << "\nI am rank " << pmap1->comm().rank()
-                  << " and a rank is asking for a lookup of key "
-                  << kv_pair.first << " to be checked against the same key "
-                  << kv_pair.first << "\n\tVal: " << kv_pair.second
-                  << std::endl;
+                  << " and a rank is asking for a lookup of key " << key
+                  << " to be checked against the same key " << key
+                  << "\n\tVal: " << val << std::endl;
       }
 
-      auto second_visit_lambda = [](auto pmap, auto kv_pair, bool verbose,
+      auto second_visit_lambda = [](auto pmap, auto key, auto val, bool verbose,
                                     bool expected_match, std::string msg,
                                     T fwd_val) {
-        bool match = kv_pair.second == fwd_val;
+        bool match = val == fwd_val;
         if (verbose == true) {
           std::cout << "Second visit:"
                     << "\nI am rank " << pmap->comm().rank()
-                    << " and a rank is asking to check key " << kv_pair.first
-                    << "\n\tVal: " << kv_pair.second
+                    << " and a rank is asking to check key " << key
+                    << "\n\tVal: " << val
                     << "\n\tAgainst forwarded value: " << fwd_val
                     << "\n\tValues "
                     << ((match == true) ? "match!" : "don't match!")
@@ -271,8 +269,8 @@ struct cross_map_equality_test_t {
                            match);
       };
 
-      pmap2->async_visit(kv_pair.first, second_visit_lambda, verbose,
-                         expected_match, msg, kv_pair.second);
+      pmap2->async_visit(key, second_visit_lambda, verbose, expected_match, msg,
+                         val);
     };
     if (world.rank() == 3) {
       for (int i(1); i < 4; ++i) {
@@ -496,9 +494,9 @@ struct ingest_check {
     func(world, dsk.ygm_map(), params, "(distributed merge)", d1, d2);
     world.barrier();
 
-    dsk.for_all([](auto kv_pair) {
-      std::cout << "I am key " << kv_pair.first << " holding sketch of size "
-                << kv_pair.second.sk.size() << std::endl;
+    dsk.for_all([](auto key, auto &val) {
+      std::cout << "I am key " << val << " holding sketch of size "
+                << val.sk.size() << std::endl;
     });
   }
 
