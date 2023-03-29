@@ -118,13 +118,14 @@ if (KROWKEE_USE_YGM)
     endif ()
 
     # Load YGM
-    set(KROWKEE_YGM_VERSION 0.4)
+    set(KROWKEE_YGM_VERSION 0.5)
     find_package(ygm ${KROWKEE_YGM_VERSION} CONFIG QUIET)
     if (NOT ygm_FOUND)
         FetchContent_Declare(
             ygm
             GIT_REPOSITORY https://github.com/LLNL/ygm
-            GIT_TAG v${KROWKEE_YGM_VERSION}
+            # GIT_TAG v${KROWKEE_YGM_VERSION}
+            GIT_TAG develop
         )
         FetchContent_GetProperties(ygm)
         if (ygm_POPULATED)

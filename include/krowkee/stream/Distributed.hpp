@@ -107,9 +107,10 @@ class Distributed {
 
   template <typename... ItemArgs>
   inline void async_update(const KeyType &key, const ItemArgs &...args) {
-    auto update_visitor = [](auto &kv_pair, const ItemArgs &...args) {
+    auto update_visitor = [](const KeyType &key, data_t &data,
+                             const ItemArgs &...args) {
       // std::cout << "starting d1 value: " << kv_pair.second.sk << std::endl;
-      kv_pair.second.update(args...);
+      data.update(args...);
       // std::cout << "updated d1 value: " << kv_pair.second.sk << std::endl;
     };
     _sk_map.async_visit(key, update_visitor, args...);
@@ -120,22 +121,24 @@ class Distributed {
   //////////////////////////////////////////////////////////////////////////////
 
   inline void async_merge(const KeyType &fwd_key, const KeyType &rec_key) {
-    auto forward_visitor = [](auto pmap, auto &kv_pair, KeyType receiver_key) {
-      auto receive_visitor = [](auto &kv_pair, data_t data) {
-        kv_pair.second += data;
+    auto forward_visitor = [](auto pmap, const KeyType &forward_key,
+                              data_t &forward_data, KeyType receiver_key) {
+      auto receive_visitor = [](const KeyType &receiver_key,
+                                data_t &receiver_data, data_t forward_data) {
+        receiver_data += forward_data;
       };
-      pmap->async_visit(receiver_key, receive_visitor, kv_pair.second);
+      pmap->async_visit(receiver_key, receive_visitor, forward_data);
     };
     _sk_map.async_visit(fwd_key, forward_visitor, rec_key);
   }
 
   inline void async_merge(dsk_t &rhs, const KeyType &rhs_key,
                           const KeyType &lhs_key) {
-    auto rhs_visitor = [](auto &kv_pair, dsk_ptr_t lhs_ptr, KeyType lhs_key) {
-      auto lhs_visitor = [](auto &kv_pair, data_t data) {
-        kv_pair.second += data;
-      };
-      lhs_ptr->ygm_map().async_visit(lhs_key, lhs_visitor, kv_pair.second);
+    auto rhs_visitor = [](const KeyType &rhs_key, data_t &rhs_data,
+                          dsk_ptr_t lhs_ptr, KeyType lhs_key) {
+      auto lhs_visitor = [](const KeyType &lhs_key, data_t &lhs_data,
+                            data_t rhs_data) { lhs_data += rhs_data; };
+      lhs_ptr->ygm_map().async_visit(lhs_key, lhs_visitor, rhs_data);
     };
     rhs._sk_map.async_visit(rhs_key, rhs_visitor, _pthis, lhs_key);
   }
@@ -145,15 +148,15 @@ class Distributed {
   //////////////////////////////////////////////////////////////////////////////
 
   void compactify(const KeyType &key) {
-    auto compaction_visitor = [](auto &kv_pair) {
-      kv_pair.second.compactify();
+    auto compaction_visitor = [](const KeyType &key, data_t &data) {
+      data.compactify();
     };
     _sk_map.async_visit(key, compaction_visitor);
   }
 
   void compactify() {
-    auto compaction_visitor = [](auto &kv_pair) {
-      kv_pair.second.compactify();
+    auto compaction_visitor = [](const KeyType &key, data_t &data) {
+      data.compactify();
     };
     _sk_map.for_all(compaction_visitor);
   }
