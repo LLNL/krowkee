@@ -25,14 +25,11 @@ if (KROWKEE_MAIN_PROJECT)
     # the main CMakeLists
     include(CTest)
 
-    # Docs only available if this is the main app
-    find_package(Doxygen)
-    if (Doxygen_FOUND)
-        # add_subdirectory(docs)
-        message(STATUS "Doxygen found, skipping docs")
-    else ()
-        message(STATUS "Doxygen not found, not building docs")
-    endif ()
+    # # Docs only available if this is the main app find_package(Doxygen) if
+    # (Doxygen_FOUND) # add_subdirectory(docs) message(STATUS "Doxygen found,
+    # skipping docs") else () message(STATUS "Doxygen not found, not building
+    # docs") endif ()
+    set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 endif ()
 
@@ -224,6 +221,7 @@ if (JUST_INSTALL_KROWKEE)
 endif ()
 
 if (KROWKEE_MAIN_PROJECT)
+    add_subdirectory(docs)
     add_subdirectory(test)
     add_subdirectory(performance)
 endif ()
