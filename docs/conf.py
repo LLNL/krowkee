@@ -19,14 +19,14 @@ def configureDoxyfile(input_dir, output_dir):
 
 
 # check if we are running on ReadTheDoc's servers
-read_the_docs_build = os.environ.get("REDADTHEDOCS", None) == "True"
+read_the_docs_build = os.environ.get("READTHEDOCS", None) == "True"
 
 breathe_projects = {}
 if read_the_docs_build:
     input_dir = "../input"
     output_dir = "build"
     configureDoxyfile(input_dir, output_dir)
-    subprocess.call("cd ../doxygen; doxygen", shell=True)
+    subprocess.call("doxygen", shell=True)
     breathe_projects["krowkee"] = output_dir + "/xml"
 
 # -- Project information -----------------------------------------------------
