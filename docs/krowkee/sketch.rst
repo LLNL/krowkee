@@ -25,4 +25,14 @@ full.
    sketch/Sparse
    sketch/Promotable
 
+A sketch is also defined by the transform that it supports.
+This transform defines the way in which updates affect the set of registers, and
+is fundamental to the statistical guarantees of the associated sketch.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Transform Types:
+
+   transform/CountSketch
+
 .. doxygenclass:: krowkee::sketch::Sketch
