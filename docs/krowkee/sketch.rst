@@ -12,3 +12,4 @@ sketch
    sketch/Sketch
    sketch/Dense
    sketch/Sparse
+   sketch/Promotable

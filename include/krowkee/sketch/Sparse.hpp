@@ -172,8 +172,8 @@ class Sparse {
    * @brief Operator overload for convenience for embeddings without additional
    * consistency checks.
    *
-   * @param rhs the other Sparse. Care must be taken to ensure that
-   *     one does not merge subspace embeddings of different types.
+   * @param rhs the other Sparse. Care must be taken to ensure that one does not
+   * merge subspace embeddings of different types.
    * @return sparse_t& `this` Sparse, having been merged with `rhs`.
    */
   sparse_t &operator+=(const sparse_t &rhs) {
@@ -385,12 +385,12 @@ class Sparse {
   /**
    * @brief Serialize a Sparse container to human-readable output stream.
    *
-   * Output format is a list of (key, value) pairs.
+   * Output format is a list of (key, value) pairs, skipping empty registers.
    *
    * @note Intended for debugging only.
    *
    * @param os The output stream.
-   * @param sk The Dense object.
+   * @param sk The Sparse object.
    * @return std::ostream& The new stream state.
    * @throw std::logic_error if invoked on uncompacted sketch.
    */

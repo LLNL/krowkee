@@ -315,6 +315,8 @@ class Dense {
   /**
    * @brief Serialize a Dense container to human-readable output stream.
    *
+   * Output format is a space-delmined list of (key, value) pairs.
+   *
    * @note Intended for debugging only.
    *
    * @param os The output stream.
