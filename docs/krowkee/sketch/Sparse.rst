@@ -1,6 +1,6 @@
 .. _krowkee-sketch-Sparse:
 
-Sparse sketch container
+Sparse
 ===========================
 
 .. doxygenclass:: krowkee::sketch::Sparse

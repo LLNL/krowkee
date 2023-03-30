@@ -1,6 +1,6 @@
 .. _krowkee-sketch-Promotable:
 
-Promotable sketch container
+Promotable
 ===========================
 
 .. doxygenclass:: krowkee::sketch::Promotable
