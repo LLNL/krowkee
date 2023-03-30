@@ -35,9 +35,9 @@ namespace sketch {
 template <typename RegType, typename MergeOp>
 class Dense {
  public:
-  /** Alias for the register collection type */
+  /** Alias for the register collection type. */
   typedef std::vector<RegType> col_t;
-  /** Alias for the fully-tempalted Dense type*/
+  /** Alias for the fully-templated Dense type. */
   typedef Dense<RegType, MergeOp> dense_t;
 
  protected:
@@ -64,7 +64,7 @@ class Dense {
   Dense(const dense_t &rhs) : _registers(rhs._registers) {}
 
   /**
-   * @brief Construct a new Dense object
+   * @brief Default constructor for Dense
    *
    * @note Only used for move constructor.
    */
@@ -77,7 +77,7 @@ class Dense {
   // Swaps
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * @brief Swap two Dense container
+   * @brief Swap two Dense containers.
    *
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
@@ -295,12 +295,6 @@ class Dense {
   // Assignment
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * copy-and-swap assignment operator
-   *
-   *
-   */
-
-  /**
    * @brief Copy-and-swap assignment operator
    *
    * @note
@@ -346,7 +340,7 @@ class Dense {
    * @brief Accumulate sum of register values.
    *
    * @tparam RetType The value type to return.
-   * @param sk The sketch to accumulate.
+   * @param sk The Dense to accumulate.
    * @param init Initial value of return.
    * @return RetType The sum over all register values + `init`.
    */
