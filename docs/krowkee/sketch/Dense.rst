@@ -1,6 +1,6 @@
 .. _krowkee-sketch-Dense:
 
-Dense sketch container
+Dense
 ===========================
 
 .. doxygenclass:: krowkee::sketch::Dense

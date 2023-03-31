@@ -80,8 +80,9 @@ class Sketch {
   Sketch(const sk_t &rhs) : _con(rhs._con), _sf_ptr(rhs._sf_ptr) {}
 
   /**
-   * @brief default constructor (only use for move constructor!)
+   * @brief default constructor
    *
+   * @note Only used for move constructor.
    */
   Sketch() {}
   // Sketch() : _con(), _sf_ptr(std::make_shared<sf_t>(1)) {}
@@ -104,7 +105,7 @@ class Sketch {
 
 #if __has_include(<cereal/types/memory.hpp>)
   /**
-   * @brief Serialize sketch object to/from `cereal` archive.
+   * @brief Serialize Sketch object to/from `cereal` archive.
    *
    * @tparam Archive `cereal` archive type
    * @param archive The `cereal` archive to which to serialize the sketch.
@@ -116,7 +117,9 @@ class Sketch {
 #endif
 
   /**
-   * @brief For testing purposes. Might want to get rid of this.
+   * @brief Return a reference to the underlying container data structure.
+   *
+   * @note For testing purposes. Might want to get rid of this.
    *
    * @return const container_t& A reference to the internal register container
    * object.
@@ -194,43 +197,17 @@ class Sketch {
   // Register iterators
   //////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * @brief Get mutable begin iterator of container
-   *
-   * @return constexpr auto Iterator to the beginning of the sketch container.
-   */
+  /** Mutable begin iterator. */
   constexpr auto begin() { return std::begin(_con); }
-  /**
-   * @brief Get const begin iterator of container
-   *
-   * @return constexpr auto const Iterator to the beginning of the sketch
-   * container.
-   */
+  /** Const begin iterator. */
   constexpr auto begin() const { return std::cbegin(_con); }
-  /**
-   * @brief Get const begin iterator of container
-   *
-   * @return constexpr auto const Iterator to the beginning of the sketch
-   * container.
-   */
+  /** Const begin iterator. */
   constexpr auto cbegin() const { return std::cbegin(_con); }
-  /**
-   * @brief Get mutable end iterator of container
-   *
-   * @return constexpr auto Iterator to the end of the sketch container.
-   */
+  /** Mutable end iterator. */
   constexpr auto end() { return std::end(_con); }
-  /**
-   * @brief Get const end iterator of container
-   *
-   * @return constexpr auto const Iterator to the end of the sketch container.
-   */
+  /** Const end iterator. */
   constexpr auto end() const { return std::cend(_con); }
-  /**
-   * @brief Get const end iterator of container
-   *
-   * @return constexpr auto const Iterator to the end of the sketch container.
-   */
+  /** Const end iterator. */
   constexpr auto cend() { return std::cend(_con); }
 
   // constexpr const std::uint8_t &operator[](const std::uint64_t index) const {
@@ -283,11 +260,7 @@ class Sketch {
    */
   constexpr std::size_t size() const { return _con.size(); }
 
-  /**
-   * @brief Get the number of bytes used by each register
-   *
-   * @return constexpr std::size_t The size of `RegType`.
-   */
+  /** The number of bytes used by each register. */
   constexpr std::size_t reg_size() const { return sizeof(RegType); }
 
   /**
@@ -364,7 +337,7 @@ class Sketch {
   // Swaps
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * @brief Swap two sketch objects.
+   * @brief Swap two Sketch objects.
    *
    * @note For some reason, calling std::swap on the container here causes a "no
    * matching function compiler error". Peculiar.
@@ -380,12 +353,6 @@ class Sketch {
   //////////////////////////////////////////////////////////////////////////////
   // Assignment
   //////////////////////////////////////////////////////////////////////////////
-  /**
-   * copy-and-swap assignment operator
-   *
-   *
-   */
-
   /**
    * @brief Copy-and-swap assignment operator.
    *
@@ -411,7 +378,7 @@ class Sketch {
    *
    * @param os The output stream.
    * @param sk The sketch object.
-   * @return std::ostream&
+   * @return std::ostream& The new stream state.
    */
   friend std::ostream &operator<<(std::ostream &os, const sk_t &sk) {
     os << sk._con;
