@@ -73,7 +73,7 @@ if (KROWKEE_USE_YGM)
         # need to use this commit for now.
         FetchContent_Declare(
             cereal
-            GIT_REPOSITORY https://github.com/USCiLab/cereal
+            GIT_REPOSITORY https://github.com/USCiLab/cereal.git
             GIT_TAG af0700efb25e7dc7af637b9e6f970dbb94813bff
         )
         FetchContent_GetProperties(cereal)
@@ -120,7 +120,7 @@ if (KROWKEE_USE_YGM)
     if (NOT ygm_FOUND)
         FetchContent_Declare(
             ygm
-            GIT_REPOSITORY https://github.com/LLNL/ygm
+            GIT_REPOSITORY https://github.com/LLNL/ygm.git
             # GIT_TAG v${KROWKEE_YGM_VERSION}
             GIT_TAG develop
         )
