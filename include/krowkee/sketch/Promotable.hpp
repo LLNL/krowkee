@@ -50,6 +50,8 @@ class Promotable {
  private:
   dense_ptr_t       _dense_ptr;
   sparse_ptr_t      _sparse_ptr;
+  std::size_t       _range_size;
+  std::size_t       _compaction_threshold;
   std::size_t       _promotion_threshold;
   promotable_mode_t _mode;
 
@@ -66,7 +68,9 @@ class Promotable {
   Promotable(const std::size_t range_size,
              const std::size_t compaction_threshold,
              const std::size_t promotion_threshold)
-      : _promotion_threshold(promotion_threshold),
+      : _range_size(range_size),
+        _compaction_threshold(compaction_threshold),
+        _promotion_threshold(promotion_threshold),
         _mode(promotable_mode_t::sparse),
         _sparse_ptr(
             std::make_unique<sparse_t>(range_size, compaction_threshold)) {}
@@ -80,7 +84,10 @@ class Promotable {
    * @param rhs container to be copied.
    */
   Promotable(const promotable_t &rhs)
-      : _promotion_threshold(rhs._promotion_threshold), _mode(rhs._mode) {
+      : _range_size(rhs._range_size),
+        _compaction_threshold(rhs._compaction_threshold),
+        _promotion_threshold(rhs._promotion_threshold),
+        _mode(rhs._mode) {
     if (_mode == promotable_mode_t::sparse) {
       sparse_ptr_t sparse_ptr(std::make_unique<sparse_t>(*rhs._sparse_ptr));
       std::swap(sparse_ptr, _sparse_ptr);
@@ -117,6 +124,8 @@ class Promotable {
    * @param rhs The right-hand containr.
    */
   friend void swap(promotable_t &lhs, promotable_t &rhs) {
+    std::swap(lhs._range_size, rhs._range_size);
+    std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._promotion_threshold, rhs._promotion_threshold);
     std::swap(lhs._mode, rhs._mode);
     if (lhs._mode == promotable_mode_t::sparse) {
@@ -139,7 +148,7 @@ class Promotable {
    */
   template <class Archive>
   void save(Archive &oarchive) const {
-    oarchive(_promotion_threshold, _mode);
+    oarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
     if (_mode == promotable_mode_t::sparse) {
       oarchive(_sparse_ptr);
     } else {
@@ -155,7 +164,7 @@ class Promotable {
    */
   template <class Archive>
   void load(Archive &iarchive) {
-    iarchive(_promotion_threshold, _mode);
+    iarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
     if (_mode == promotable_mode_t::sparse) {
       iarchive(_sparse_ptr);
     } else {
@@ -316,6 +325,36 @@ class Promotable {
   void compactify() {
     if (_mode == promotable_mode_t::sparse) {
       _sparse_ptr->compactify();
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Clear & Empty
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * @brief Remove all state and reset to sparse mode.
+   */
+  void clear() {
+    if (_mode == promotable_mode_t::sparse) {
+      _sparse_ptr->clear();
+    } else {
+      _dense_ptr.reset(nullptr);
+      _mode = promotable_mode_t::sparse;
+      _sparse_ptr.reset(nullptr);
+      _sparse_ptr =
+          std::make_unique<sparse_t>(_range_size, _compaction_threshold);
+    }
+  }
+
+  /**
+   * @brief Remove all state and reset to sparse mode.
+   */
+  bool empty() const {
+    if (_mode == promotable_mode_t::sparse) {
+      return _sparse_ptr->empty();
+    } else {
+      return _dense_ptr->empty();
     }
   }
 
@@ -499,7 +538,7 @@ class Promotable {
 
     _dense_ptr = std::make_unique<dense_t>(_sparse_ptr->range_size());
     merge_from_sparse(*this);
-    _sparse_ptr.reset();
+    _sparse_ptr.reset(nullptr);
     _mode = promotable_mode_t::dense;
   }
 

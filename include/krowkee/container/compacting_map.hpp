@@ -247,6 +247,26 @@ class compacting_map {
   }
 
   //////////////////////////////////////////////////////////////////////////////
+  // Clear & Empty
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * @brief Clear all state.
+   */
+  void clear() {
+    _dynamic_map.clear();
+    _archive_map.clear();
+    _erased.clear();
+  }
+
+  /**
+   * @brief Check if there is any state.
+   */
+  bool empty() const {
+    return _dynamic_map.empty() && _archive_map.empty() && _erased.empty();
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
   // Insert
   //////////////////////////////////////////////////////////////////////////////
 
@@ -254,12 +274,12 @@ class compacting_map {
    * Insert a key-value pair.
    *
    * Checks for the existence of the key in the dynamic map. Failing to find
-   * that, calls `try_insert_archive` in an attempt to insert the pair into the
-   * archive (or, failing that, the dynamic set).
+   * that, calls `try_insert_archive` in an attempt to insert the pair into
+   * the archive (or, failing that, the dynamic set).
    *
    * @note[bwp]: currently does not support iterator return, breaking the
-   * conventional std::map API. This is probably necessary, as we do not want to
-   * return iterators to the dynamic set or archive set can get immediately
+   * conventional std::map API. This is probably necessary, as we do not want
+   * to return iterators to the dynamic set or archive set can get immediately
    * invalidated. Moreover, we do not want a user to attempt to increment or
    * decrement such an iterator, as its meaning is heavily dependent upon the
    * data structure's state.
