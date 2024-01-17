@@ -107,7 +107,27 @@ class Dense {
   // Compactify
   //////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * @brief A no-op for dense containers.
+   */
   void compactify() {}
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Clear & Empty
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * @brief Set all registers to 0.
+   */
+  void clear() { std::fill(std::begin(_registers), std::end(_registers), 0); }
+
+  /**
+   * @brief Check if all registers are 0.
+   */
+  bool empty() const {
+    return std::all_of(std::begin(_registers), std::end(_registers),
+                       [](const auto i) { return i == 0; });
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Erase

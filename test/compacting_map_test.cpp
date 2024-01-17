@@ -76,6 +76,25 @@ struct parameters_t {
   bool             verbose;
 };
 
+struct clear_check {
+  const char *name() { return "clear check"; }
+
+  template <typename MapType>
+  void operator()(MapType &cm, const parameters_t params) const {
+    bool init_empty = cm.empty();
+
+    CHECK_CONDITION(init_empty == true, "initial empty");
+
+    cm.insert({1, 1});
+    bool not_empty = cm.empty();
+    CHECK_CONDITION(not_empty == false, "post-insert not empty");
+
+    cm.clear();
+    bool clear_empty = cm.empty();
+    CHECK_CONDITION(clear_empty == true, "post-clear empty");
+  }
+};
+
 struct insert_check {
   const char *name() { return "insert check"; }
 
@@ -372,6 +391,7 @@ void do_experiment(const parameters_t params) {
   print_line();
   print_line();
   std::cout << std::endl;
+  do_test<clear_check>(cm, params);
   do_test<insert_check>(cm, params);
   do_test<find_check>(cm, params);
   do_test<accessor_check>(cm, params);
