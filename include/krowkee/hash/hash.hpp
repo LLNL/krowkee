@@ -13,6 +13,7 @@
 #include <cereal/types/base_class.hpp>
 #endif
 
+#include <cstdint>
 #include <random>
 
 namespace krowkee {

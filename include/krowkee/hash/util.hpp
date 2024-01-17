@@ -6,6 +6,7 @@
 #ifndef _KROWKEE_HASH_UTIL_HPP
 #define _KROWKEE_HASH_UTIL_HPP
 
+#include <cstdint>
 #include <type_traits>
 #include <typeinfo>
 #ifndef _MSC_VER
