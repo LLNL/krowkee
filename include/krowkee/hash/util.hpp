@@ -11,6 +11,7 @@
 #ifndef _MSC_VER
 #include <cxxabi.h>
 #endif
+#include <cstdint>
 #include <memory>
 #include <sstream>
 

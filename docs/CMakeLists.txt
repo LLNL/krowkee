@@ -56,7 +56,6 @@ set(KROWKEE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sketch.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sparse.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/interface.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Distributed.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Element.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Multi.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Summary.hpp
