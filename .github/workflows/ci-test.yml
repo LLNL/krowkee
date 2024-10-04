@@ -87,7 +87,7 @@ jobs:
         run: |
           sudo apt-get install doxygen
           sudo apt-get install python3-sphinx
-          sudo apt-get install breathe-doc
+          pip install breathe
       - name: Make
         run: |
           echo Run 'make'
