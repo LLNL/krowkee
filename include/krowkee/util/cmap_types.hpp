@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_CMAP_TYPES_HPP
-#define _KROWKEE_UTIL_CMAP_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -30,5 +29,3 @@ cmap_impl_type get_cmap_impl_type(char *arg) {
 }
 }  // namespace util
 }  // namespace krowkee
-
-#endif

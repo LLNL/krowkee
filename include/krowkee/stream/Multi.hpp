@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_STREAM_MULTI_HPP
-#define _KROWKEE_STREAM_MULTI_HPP
+#pragma once
 
 #include <krowkee/hash/util.hpp>
 
@@ -235,5 +234,3 @@ class Multi {
 
 }  // namespace stream
 }  // namespace krowkee
-
-#endif

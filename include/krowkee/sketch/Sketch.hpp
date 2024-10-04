@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_SKETCH_SKETCH_HPP
-#define _KROWKEE_SKETCH_SKETCH_HPP
+#pragma once
 
 #if __has_include(<cereal/types/memory.hpp>)
 #include <cereal/types/memory.hpp>
@@ -424,5 +423,3 @@ class Sketch {
 
 }  // namespace sketch
 }  // namespace krowkee
-
-#endif

@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_STREAM_ELEMENT_HPP
-#define _KROWKEE_STREAM_ELEMENT_HPP
+#pragma once
 
 #include <algorithm>
 #include <sstream>
@@ -47,5 +46,3 @@ std::ostream &operator<<(std::ostream &os, const Element<RegType> &item) {
 
 }  // namespace stream
 }  // namespace krowkee
-
-#endif

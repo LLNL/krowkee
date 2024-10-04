@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_HASH_UTIL_HPP
-#define _KROWKEE_HASH_UTIL_HPP
+#pragma once
 
 #include <cstdint>
 #include <type_traits>
@@ -139,5 +138,3 @@ std::string type_name() {
 }
 }  // namespace hash
 }  // namespace krowkee
-
-#endif

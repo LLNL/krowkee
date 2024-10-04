@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_HASH_HPP_
-#define _KROWKEE_HASH_HPP_
+#pragma once
 
 #include <krowkee/hash/util.hpp>
 // #include "xxhash.h"
@@ -307,4 +306,3 @@ std::ostream &operator<<(std::ostream &os, const Base &func) {
 }
 }  // namespace hash
 }  // namespace krowkee
-#endif

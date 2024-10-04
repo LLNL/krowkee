@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_TESTS_HPP
-#define _KROWKEE_UTIL_TESTS_HPP
+#pragma once
 
 #include <krowkee/util/check.hpp>
 
@@ -102,5 +101,3 @@ class online_statistics {
   std::uint64_t _count;
   double        _oldM, _newM, _oldS, _newS;
 };
-
-#endif

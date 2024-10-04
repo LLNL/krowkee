@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_SKETCH_SPARSE_HPP
-#define _KROWKEE_SKETCH_SPARSE_HPP
+#pragma once
 
 #include <krowkee/container/compacting_map.hpp>
 
@@ -464,5 +463,3 @@ class Sparse {
 
 }  // namespace sketch
 }  // namespace krowkee
-
-#endif

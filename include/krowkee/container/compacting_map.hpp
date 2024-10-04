@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_CONTAINER_COMPACTING_MAP_HPP
-#define _KROWKEE_CONTAINER_COMPACTING_MAP_HPP
+#pragma once
 
 #include <krowkee/hash/util.hpp>
 
@@ -711,5 +710,3 @@ class compacting_map {
 
 }  // namespace container
 }  // namespace krowkee
-
-#endif

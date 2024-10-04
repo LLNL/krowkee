@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_STREAM_SUMMARY_HPP
-#define _KROWKEE_STREAM_SUMMARY_HPP
+#pragma once
 
 #include <krowkee/stream/Element.hpp>
 
@@ -205,5 +204,3 @@ struct CountingSummary {
 
 }  // namespace stream
 }  // namespace krowkee
-
-#endif

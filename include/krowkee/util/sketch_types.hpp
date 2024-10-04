@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_SKETCH_TYPES_HPP
-#define _KROWKEE_UTIL_SKETCH_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -37,5 +36,3 @@ sketch_impl_type get_sketch_impl_type(char *arg) {
 }
 }  // namespace util
 }  // namespace krowkee
-
-#endif

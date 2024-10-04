@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_TRANSFORM_COUNTSKETCH_HPP
-#define _KROWKEE_TRANSFORM_COUNTSKETCH_HPP
+#pragma once
 
 #include <krowkee/stream/Element.hpp>
 
@@ -236,5 +235,3 @@ std::ostream &operator<<(std::ostream                                &os,
 }
 }  // namespace transform
 }  // namespace krowkee
-
-#endif

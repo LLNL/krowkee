@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_SKETCH_INTERFACE_HPP
-#define _KROWKEE_SKETCH_INTERFACE_HPP
+#pragma once
 
 #include <krowkee/hash/hash.hpp>
 
@@ -100,5 +99,3 @@ using FlatMapPromotable32 = FlatMapPromotable<RegType, MergeOp, std::uint32_t>;
 
 }  // namespace sketch
 }  // namespace krowkee
-
-#endif

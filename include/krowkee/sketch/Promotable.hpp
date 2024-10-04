@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_SKETCH_PROMOTABLE_HPP
-#define _KROWKEE_SKETCH_PROMOTABLE_HPP
+#pragma once
 
 #include <krowkee/sketch/Dense.hpp>
 #include <krowkee/sketch/Sparse.hpp>
@@ -615,5 +614,3 @@ class Promotable {
 
 }  // namespace sketch
 }  // namespace krowkee
-
-#endif

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 // write all need helper functions
-#ifndef _KROWKEE_TRANSFORM_FWHT_UTILS_HPP
-#define _KROWKEE_TRANSFORM_FWHT_UTILS_HPP
+#pragma once
 
 #include <krowkee/transform/fwht/utils_temp.hpp>
 
@@ -80,4 +79,3 @@ constexpr std::vector<RegType> get_sketch_vector(
 }  // namespace fwht
 }  // namespace transform
 }  // namespace krowkee
-#endif

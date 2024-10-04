@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 // write all need helper functions
-#ifndef _KROWKEE_TRANSFORM_FWHT_UTILS_TEMP_HPP
-#define _KROWKEE_TRANSFORM_FWHT_UTILS_TEMP_HPP
+#pragma once
 
 #include <krowkee/hash/util.hpp>
 
@@ -34,4 +33,3 @@ struct FWHT_no_hash {
 }  // namespace fwht
 }  // namespace transform
 }  // namespace krowkee
-#endif
