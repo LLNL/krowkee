@@ -11,9 +11,9 @@
 #include <utils.hpp>
 
 template <typename ValueType>
-struct vector_vector_graph_t : public vector_t<std::vector<ValueType>> {
-  vector_vector_graph_t(const parameters_t &params)
-      : vector_t<std::vector<ValueType>>(
+struct vector_vector_graph : public Vector<std::vector<ValueType>> {
+  vector_vector_graph(const Parameters &params)
+      : Vector<std::vector<ValueType>>(
             params.domain_size, std::vector<ValueType>(params.domain_size)) {}
 
   void insert(const edge_type<ValueType> edge) {
@@ -29,9 +29,9 @@ struct vector_vector_graph_t : public vector_t<std::vector<ValueType>> {
 
 // key type must equal value type because of how edge_type is constructed
 template <typename ValueType>
-struct map_vector_graph_t : public map_t<ValueType, std::vector<ValueType>> {
-  map_vector_graph_t(const parameters_t &params)
-      : map_t<ValueType, std::vector<ValueType>>(params.domain_size),
+struct map_vector_graph : public Map<ValueType, std::vector<ValueType>> {
+  map_vector_graph(const Parameters &params)
+      : Map<ValueType, std::vector<ValueType>>(params.domain_size),
         _default_value(params.domain_size) {}
 
   void insert(const edge_type<ValueType> edge) {
@@ -53,9 +53,9 @@ struct map_vector_graph_t : public map_t<ValueType, std::vector<ValueType>> {
 
 // key type must equal value type because of how edge_type is constructed
 template <typename ValueType>
-struct map_set_graph_t : public map_t<ValueType, std::set<ValueType>> {
-  map_set_graph_t(const parameters_t &params)
-      : map_t<ValueType, std::set<ValueType>>(params.domain_size) {}
+struct map_set_graph : public Map<ValueType, std::set<ValueType>> {
+  map_set_graph(const Parameters &params)
+      : Map<ValueType, std::set<ValueType>>(params.domain_size) {}
 
   void insert(const edge_type<ValueType> edge) {
     const auto [src, dst] = edge;
@@ -67,44 +67,42 @@ struct map_set_graph_t : public map_t<ValueType, std::set<ValueType>> {
   static std::string name() { return "std::map<std::set>"; }
 };
 
-void benchmark(const parameters_t &params) {
-  using vertex_t = std::uint64_t;
-  using edge_t   = edge_type<vertex_t>;
-  std::vector<edge_t> samples(make_edge_samples<vertex_t>(params));
+void benchmark(const Parameters &params) {
+  using vertex_type = std::uint64_t;
+  using edge_type   = edge_type<vertex_type>;
+  std::vector<edge_type> samples(make_edge_samples<vertex_type>(params));
 
 #if __has_include(<boost/container/flat_map.hpp>)
-  auto sk_profiles =
-      profile_sketch_histogram<edge_t, dense32_cs_vector_graph_t<vertex_t>,
-                               map_sparse32_cs_vector_graph_t<vertex_t>,
-                               map_promotable32_cs_vector_graph_t<vertex_t>,
-                               flatmap_sparse32_cs_vector_graph_t<vertex_t>,
-                               flatmap_promotable32_cs_vector_graph_t<vertex_t>,
-                               dense32_cs_map_graph_t<vertex_t>,
-                               map_sparse32_cs_map_graph_t<vertex_t>,
-                               map_promotable32_cs_map_graph_t<vertex_t>,
-                               flatmap_sparse32_cs_map_graph_t<vertex_t>,
-                               flatmap_promotable32_cs_map_graph_t<vertex_t>>(
-          samples, params);
+  auto sk_profiles = profile_sketch_histogram<
+      edge_type, dense32_cs_vector_graph<vertex_type>,
+      map_sparse32_cs_vector_graph<vertex_type>,
+      map_promotable32_cs_vector_graph<vertex_type>,
+      flatmap_sparse32_cs_vector_graph<vertex_type>,
+      flatmap_promotable32_cs_vector_graph<vertex_type>,
+      dense32_cs_map_graph<vertex_type>, map_sparse32_cs_map_graph<vertex_type>,
+      map_promotable32_cs_map_graph<vertex_type>,
+      flatmap_sparse32_cs_map_graph<vertex_type>,
+      flatmap_promotable32_cs_map_graph<vertex_type>>(samples, params);
 #else
   auto sk_profiles =
-      profile_sketch_histogram<edge_t, dense32_cs_vector_graph_t<vertex_t>,
-                               map_sparse32_cs_vector_graph_t<vertex_t>,
-                               map_promotable32_cs_map_graph_t<vertex_t>,
-                               dense32_cs_map_graph_t<vertex_t>,
-                               map_sparse32_cs_map_graph_t<vertex_t>,
-                               map_promotable32_cs_map_graph_t<vertex_t>>(
+      profile_sketch_histogram<edge_type, dense32_cs_vector_graph<vertex_type>,
+                               map_sparse32_cs_vector_graph<vertex_type>,
+                               map_promotable32_cs_map_graph<vertex_type>,
+                               dense32_cs_map_graph<vertex_type>,
+                               map_sparse32_cs_map_graph<vertex_type>,
+                               map_promotable32_cs_map_graph<vertex_type>>(
           samples, params);
 #endif
 
   auto container_profiles =
-      profile_container_histogram<edge_t, vector_vector_graph_t<vertex_t>,
-                                  map_vector_graph_t<vertex_t>,
-                                  map_set_graph_t<vertex_t>>(samples, params);
+      profile_container_histogram<edge_type, vector_vector_graph<vertex_type>,
+                                  map_vector_graph<vertex_type>,
+                                  map_set_graph<vertex_type>>(samples, params);
   print_profiles(sk_profiles, container_profiles);
 }
 
 int main(int argc, char **argv) {
-  parameters_t params = parse_args(argc, argv);
+  Parameters params = parse_args(argc, argv);
 
   std::cout << params << std::endl;
 

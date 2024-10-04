@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_STREAM_INTERFACE_HPP
-#define _KROWKEE_STREAM_INTERFACE_HPP
+#pragma once
 
 #include <krowkee/hash/hash.hpp>
 
@@ -51,5 +50,3 @@ using MultiLocalFWHT =
 
 }  // namespace stream
 }  // namespace krowkee
-
-#endif

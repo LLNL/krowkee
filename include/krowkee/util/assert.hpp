@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_ASSERT_HPP
-#define _KROWKEE_UTIL_ASSERT_HPP
+#pragma once
 
 #include <cassert>
 #include <iostream>
@@ -26,5 +25,3 @@ void krowkee_release_assert_fail(const char *assertion, const char *file,
   (static_cast<bool>(expr)           \
        ? void(0)                     \
        : krowkee_release_assert_fail(#expr, __FILE__, __LINE__, ""))
-
-#endif

@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_SKETCH_TYPES_HPP
-#define _KROWKEE_UTIL_SKETCH_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -13,22 +12,22 @@
 
 namespace krowkee {
 namespace util {
-enum class sketch_type_t : std::uint8_t {
+enum class sketch_impl_type : std::uint8_t {
   cst,
   fwht,
   sparse_cst,
   promotable_cst
 };
 
-sketch_type_t get_sketch_type(char *arg) {
+sketch_impl_type get_sketch_impl_type(char *arg) {
   if (strcmp(arg, "cst") == 0) {
-    return sketch_type_t::cst;
+    return sketch_impl_type::cst;
   } else if (strcmp(arg, "sparse_cst") == 0) {
-    return sketch_type_t::sparse_cst;
+    return sketch_impl_type::sparse_cst;
   } else if (strcmp(arg, "fwht") == 0) {
-    return sketch_type_t::fwht;
+    return sketch_impl_type::fwht;
   } else if (strcmp(arg, "promotable_cst") == 0) {
-    return sketch_type_t::promotable_cst;
+    return sketch_impl_type::promotable_cst;
   } else {
     std::stringstream ss;
     ss << "error: requested sketch type " << arg << " is not supported!";
@@ -37,5 +36,3 @@ sketch_type_t get_sketch_type(char *arg) {
 }
 }  // namespace util
 }  // namespace krowkee
-
-#endif

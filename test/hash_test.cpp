@@ -20,17 +20,17 @@
 #include <cstring>
 #include <iostream>
 
-typedef krowkee::hash::WangHash    wh_t;
-typedef krowkee::hash::MulShift    ms_t;
-typedef krowkee::hash::MulAddShift mas_t;
+using wang_hash_type     = krowkee::hash::WangHash;
+using mul_shift_type     = krowkee::hash::MulShift;
+using mul_add_shift_type = krowkee::hash::MulAddShift;
 
-typedef std::chrono::system_clock Clock;
-typedef std::chrono::nanoseconds  ns_t;
+using Clock   = std::chrono::system_clock;
+using ns_type = std::chrono::nanoseconds;
 
 /**
  * Struct bundling the experiment parameters.
  */
-struct parameters_t {
+struct Parameters {
   std::uint64_t count;
   std::uint64_t range;
   std::uint64_t seed;
@@ -44,7 +44,7 @@ struct pow2_check {
 
   template <typename T>
   void check_ceil2(bool &ceil_log2_success, const T val, const T target,
-                   const parameters_t &params) const {
+                   const Parameters &params) const {
     int pow(krowkee::hash::ceil_log2_64(val));
     if (pow != target) {
       ceil_log2_success = false;
@@ -54,7 +54,7 @@ struct pow2_check {
     }
   }
 
-  void operator()(const parameters_t &params) const {
+  void operator()(const Parameters &params) const {
     std::uint64_t one(1);
     bool          pow2_correct_success = true;
     for (std::uint64_t i(0); i < 64; ++i) {
@@ -90,7 +90,7 @@ struct pow2_check {
   }
 };
 
-void wh_init(std::uint64_t i) { wh_t hash{i}; }
+void wh_init(std::uint64_t i) { wang_hash_type hash{i}; }
 
 struct init_check {
   const char *name() const { return "hash initialization check"; }
@@ -108,8 +108,8 @@ struct empirical_histograms {
   const char *name() const { return "empirical histograms"; }
 
   template <typename HashType, typename... ARGS>
-  void empirical_histogram(const parameters_t params,
-                           const double std_dev_range, ARGS &&...args) const {
+  void empirical_histogram(const Parameters params, const double std_dev_range,
+                           ARGS &&...args) const {
     std::uint64_t m(
         std::max(krowkee::hash::ceil_pow2_64(params.range), std::uint64_t(2)));
     std::vector<std::uint64_t> hist(m);
@@ -129,7 +129,7 @@ struct empirical_histograms {
                 << HashType::name() << " with state:" << std::endl;
       std::cout
           << "[" << hash.state() << "], ("
-          << std::chrono::duration_cast<ns_t>(Clock::now() - start).count()
+          << std::chrono::duration_cast<ns_type>(Clock::now() - start).count()
           << " ns):";
 
       for (int i(0); i < m; ++i) {
@@ -148,10 +148,10 @@ struct empirical_histograms {
     CHECK_CONDITION(std_dev < target, ss.str());
   }
 
-  void operator()(const parameters_t &params) const {
-    empirical_histogram<wh_t>(params, 0.05);
-    empirical_histogram<ms_t>(params, 0.01);
-    empirical_histogram<mas_t>(params, 0.01);
+  void operator()(const Parameters &params) const {
+    empirical_histogram<wang_hash_type>(params, 0.05);
+    empirical_histogram<mul_shift_type>(params, 0.01);
+    empirical_histogram<mul_add_shift_type>(params, 0.01);
   }
 };
 
@@ -160,20 +160,20 @@ struct serialize_check {
   const char *name() { return "serialize check"; }
 
   template <typename HashType, typename... ARGS>
-  void serialize(const parameters_t &params, ARGS &&...args) const {
+  void serialize(const Parameters &params, ARGS &&...args) const {
     HashType hash{params.range, params.seed, args...};
     CHECK_ALL_ARCHIVES(hash, HashType::name());
   }
 
-  void operator()(const parameters_t params) const {
-    serialize<wh_t>(params);
-    serialize<ms_t>(params);
-    serialize<mas_t>(params);
+  void operator()(const Parameters params) const {
+    serialize<wang_hash_type>(params);
+    serialize<mul_shift_type>(params);
+    serialize<mul_add_shift_type>(params);
   }
 };
 #endif
 
-void do_experiment(const parameters_t params) {
+void do_experiment(const Parameters params) {
   print_line();
   print_line();
   std::cout << " Experimenting with " << params.count
@@ -201,7 +201,7 @@ void print_help(char *exe_name) {
             << std::endl;
 }
 
-void parse_args(int argc, char **argv, parameters_t &params) {
+void parse_args(int argc, char **argv, Parameters &params) {
   int c;
 
   while (1) {
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
   std::uint64_t seed(krowkee::hash::default_seed);
   bool          verbose(false);
 
-  parameters_t params{count, range, seed, verbose};
+  Parameters params{count, range, seed, verbose};
 
   parse_args(argc, argv, params);
 

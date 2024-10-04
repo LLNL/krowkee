@@ -5,7 +5,7 @@
 #
 function (add_seq_krowkee_test test_name)
     set(test_source "${test_name}.cpp")
-    set(test_exe "SEQ_${test_name}")
+    set(test_exe "${test_name}")
     add_executable(${test_exe} ${test_source})
     target_link_libraries(${test_exe} PRIVATE krowkee)
     target_include_directories(

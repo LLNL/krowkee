@@ -23,13 +23,13 @@ ygm::ygm_ptr<T> _make_ygm_ptr(T &t) {
  * Functor wrapping _make_ygm_ptr
  */
 template <typename T>
-struct make_ygm_ptr_functor_t {
-  typedef ygm::ygm_ptr<T> ptr_t;
+struct make_ygm_ptr_functor {
+  using ptr_type = ygm::ygm_ptr<T>;
 
-  make_ygm_ptr_functor_t() {}
+  make_ygm_ptr_functor() {}
 
   template <typename... Args>
-  ptr_t operator()(Args... args) {
+  ptr_type operator()(Args... args) {
     sptrs.push_back(std::make_unique<T>(args...));
     return _make_ygm_ptr<T>(*(sptrs.back()));
   }
@@ -41,14 +41,14 @@ struct make_ygm_ptr_functor_t {
 };
 
 template <typename T>
-using make_ptr_functor_t = make_ygm_ptr_functor_t<T>;
+using make_ptr_functor = make_ygm_ptr_functor<T>;
 #else
 
 template <typename T>
 using ptr_type = std::shared_ptr<T>;
 
 template <typename T>
-using make_ptr_functor_t = make_shared_functor_t<T>;
+using make_ptr_functor = make_shared_functor<T>;
 #endif
 
 using Dense32CountSketch = krowkee::sketch::CountSketch<krowkee::sketch::Dense,

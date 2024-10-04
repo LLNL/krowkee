@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_UTIL_CHECK_HPP
-#define _KROWKEE_UTIL_CHECK_HPP
+#pragma once
 
 #include <krowkee/util/assert.hpp>
 
@@ -48,5 +47,3 @@ inline void CHECK_DOES_NOT_THROW(const FuncType &func, const std::string &msg,
     KROWKEE_ASSERT_RELEASE(false);
   }
 }
-
-#endif

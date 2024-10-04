@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_TRANSFORM_COUNTSKETCH_HPP
-#define _KROWKEE_TRANSFORM_COUNTSKETCH_HPP
+#pragma once
 
 #include <krowkee/stream/Element.hpp>
 
@@ -41,9 +40,9 @@ using krowkee::stream::Element;
  */
 template <typename RegType, typename HashFunc>
 class CountSketchFunctor {
-  typedef CountSketchFunctor<RegType, HashFunc> csf_t;
-  HashFunc                                      _reg_hf;
-  HashFunc                                      _pol_hf;
+  using self_type = CountSketchFunctor<RegType, HashFunc>;
+  HashFunc _reg_hf;
+  HashFunc _pol_hf;
 
  public:
   /**
@@ -236,5 +235,3 @@ std::ostream &operator<<(std::ostream                                &os,
 }
 }  // namespace transform
 }  // namespace krowkee
-
-#endif

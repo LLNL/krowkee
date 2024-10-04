@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_STREAM_MULTI_HPP
-#define _KROWKEE_STREAM_MULTI_HPP
+#pragma once
 
 #include <krowkee/hash/util.hpp>
 
@@ -31,24 +30,23 @@ template <
     template <typename> class PtrType, typename... Args>
 class Multi {
  public:
-  typedef SketchFunc<RegType, Args...> sf_t;
-  typedef PtrType<sf_t>                sf_ptr_t;
-  typedef SketchType<SketchFunc, ContainerType, MergeOp, RegType, PtrType,
-                     Args...>
-                                  sk_t;
-  typedef DataType<sk_t, PtrType> data_t;
-  typedef Multi<DataType, SketchType, SketchFunc, ContainerType, MergeOp,
-                KeyType, RegType, PtrType, Args...>
-      msk_t;
+  using register_type      = RegType;
+  using transform_type     = SketchFunc<register_type, Args...>;
+  using transform_ptr_type = PtrType<transform_type>;
+  using sketch_type        = SketchType<SketchFunc, ContainerType, MergeOp,
+                                 register_type, PtrType, Args...>;
+  using data_type          = DataType<sketch_type, PtrType>;
+  using self_type = Multi<DataType, SketchType, SketchFunc, ContainerType,
+                          MergeOp, KeyType, register_type, PtrType, Args...>;
 
-  typedef std::map<KeyType, data_t>  sk_map_t;
-  typedef std::pair<KeyType, data_t> sk_pair_t;
+  using map_type  = std::map<KeyType, data_type>;
+  using pair_type = std::pair<KeyType, data_type>;
 
  private:
-  sf_ptr_t    _sf_ptr;  /// pointer to the shared sketch functor
-  sk_map_t    _sk_map;  /// map of indices to data
-  std::size_t _compaction_threshold;
-  std::size_t _promotion_threshold;
+  transform_ptr_type _transform_ptr;  /// pointer to the shared sketch functor
+  map_type           _sketch_map;     /// map of indices to data
+  std::size_t        _compaction_threshold;
+  std::size_t        _promotion_threshold;
 
  public:
   /**
@@ -60,30 +58,31 @@ class Multi {
    * @param promotion_threshold the size at which to promote a sparse sketch to
    *        a dense sketch. Only used by Promotable sketches.
    */
-  Multi(const sf_ptr_t &sf_ptr, const std::size_t compaction_threshold = 128,
-        const std::size_t promotion_threshold = 4096)
-      : _sf_ptr(sf_ptr),
+  Multi(const transform_ptr_type &sf_ptr,
+        const std::size_t         compaction_threshold = 128,
+        const std::size_t         promotion_threshold  = 4096)
+      : _transform_ptr(sf_ptr),
         _compaction_threshold(compaction_threshold),
         _promotion_threshold(promotion_threshold) {}
 
   /**
    * Copy constructor.
    */
-  Multi(const msk_t &rhs)
-      : _sf_ptr(rhs._sf_ptr),
-        _sk_map(rhs._sk_map),
+  Multi(const self_type &rhs)
+      : _transform_ptr(rhs._transform_ptr),
+        _sketch_map(rhs._sketch_map),
         _compaction_threshold(rhs._compaction_threshold),
         _promotion_threshold(rhs._promotion_threshold) {}
 
   static inline std::string name() {
     std::stringstream ss;
-    ss << "Multi " << sk_t::name();
+    ss << "Multi " << sketch_type::name();
     return ss.str();
   }
 
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << "Multi " << sk_t::full_name();
+    ss << "Multi " << sketch_type::full_name();
     return ss.str();
   }
 
@@ -107,13 +106,13 @@ class Multi {
    */
   template <typename... ItemArgs>
   inline void insert(const KeyType &key, const ItemArgs &...args) {
-    auto itr(_sk_map.find(key));
-    if (itr != std::end(_sk_map)) {
+    auto itr(_sketch_map.find(key));
+    if (itr != std::end(_sketch_map)) {
       itr->second.update(args...);
     } else {
-      data_t data{_sf_ptr, _compaction_threshold, _promotion_threshold,
-                  args...};
-      _sk_map[key] = data;
+      data_type data{_transform_ptr, _compaction_threshold,
+                     _promotion_threshold, args...};
+      _sketch_map[key] = data;
     }
   }
 
@@ -122,8 +121,8 @@ class Multi {
   //////////////////////////////////////////////////////////////////////////////
 
   void compactify(const KeyType key) {
-    auto itr(_sk_map.find(key));
-    if (itr != std::end(_sk_map)) {
+    auto itr(_sketch_map.find(key));
+    if (itr != std::end(_sketch_map)) {
       itr->second.compactify();
     } else {
       std::stringstream ss;
@@ -133,7 +132,7 @@ class Multi {
   }
 
   void compactify() {
-    std::for_each(std::begin(_sk_map), std::end(_sk_map),
+    std::for_each(std::begin(_sketch_map), std::end(_sketch_map),
                   [](auto &p) { p.second.compactify(); });
   }
 
@@ -141,20 +140,21 @@ class Multi {
   // Sketch Access
   //////////////////////////////////////////////////////////////////////////////
 
-  data_t &operator[](const KeyType key) {
-    auto itr(_sk_map.find(key));
-    if (itr != std::end(_sk_map)) {
+  data_type &operator[](const KeyType key) {
+    auto itr(_sketch_map.find(key));
+    if (itr != std::end(_sketch_map)) {
       return itr->second;
     } else {
-      data_t data{_sf_ptr, _compaction_threshold, _promotion_threshold};
-      _sk_map[key] = data;
-      return _sk_map[key];
+      data_type data{_transform_ptr, _compaction_threshold,
+                     _promotion_threshold};
+      _sketch_map[key] = data;
+      return _sketch_map[key];
     }
   }
 
-  data_t &at(const KeyType key) {
-    auto itr(_sk_map.find(key));
-    if (itr != std::end(_sk_map)) {
+  data_type &at(const KeyType key) {
+    auto itr(_sketch_map.find(key));
+    if (itr != std::end(_sketch_map)) {
       return itr->second;
     } else {
       std::stringstream ss;
@@ -163,9 +163,9 @@ class Multi {
     }
   }
 
-  constexpr const data_t &at(const KeyType key) const {
-    auto itr(_sk_map.find(key));
-    if (itr != std::end(_sk_map)) {
+  constexpr const data_type &at(const KeyType key) const {
+    auto itr(_sketch_map.find(key));
+    if (itr != std::end(_sketch_map)) {
       return itr->second.sk;
     } else {
       std::stringstream ss;
@@ -178,41 +178,43 @@ class Multi {
   // Register iterators
   //////////////////////////////////////////////////////////////////////////////
 
-  constexpr typename sk_map_t::iterator begin() { return std::begin(_sk_map); }
-  constexpr typename sk_map_t::const_iterator begin() const {
-    return std::cbegin(_sk_map);
+  constexpr typename map_type::iterator begin() {
+    return std::begin(_sketch_map);
   }
-  constexpr typename sk_map_t::const_iterator cbegin() const {
-    return std::cbegin(_sk_map);
+  constexpr typename map_type::const_iterator begin() const {
+    return std::cbegin(_sketch_map);
   }
-  constexpr typename sk_map_t::iterator end() { return std::end(_sk_map); }
-  constexpr typename sk_map_t::const_iterator end() const {
-    return std::cend(_sk_map);
+  constexpr typename map_type::const_iterator cbegin() const {
+    return std::cbegin(_sketch_map);
   }
-  constexpr typename sk_map_t::const_iterator cend() {
-    return std::cend(_sk_map);
+  constexpr typename map_type::iterator end() { return std::end(_sketch_map); }
+  constexpr typename map_type::const_iterator end() const {
+    return std::cend(_sketch_map);
+  }
+  constexpr typename map_type::const_iterator cend() {
+    return std::cend(_sketch_map);
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Getters
   //////////////////////////////////////////////////////////////////////////////
 
-  constexpr std::size_t size() const { return _sk_map.size(); }
+  constexpr std::size_t size() const { return _sketch_map.size(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Equality check
   //////////////////////////////////////////////////////////////////////////////
 
-  constexpr bool _params_agree(const msk_t &other) const {
-    return _sf_ptr == other._sf_ptr &&
+  constexpr bool _params_agree(const self_type &other) const {
+    return _transform_ptr == other._transform_ptr &&
            _promotion_threshold == other._promotion_threshold &&
            _compaction_threshold == other._compaction_threshold;
   }
 
-  constexpr bool _data_agree(const msk_t &other) const {
-    for (auto pair : _sk_map) {
-      auto other_itr = other._sk_map.find(pair.first);
-      if (other_itr == std::end(other._sk_map) ||
+  constexpr bool _data_agree(const self_type &other) const {
+    for (auto pair : _sketch_map) {
+      auto other_itr = other._sketch_map.find(pair.first);
+      if (other_itr == std::end(other._sketch_map) ||
           pair.second != other_itr->second) {
         return false;
       }
@@ -220,17 +222,15 @@ class Multi {
     return true;
   }
 
-  friend constexpr bool operator==(const msk_t &lhs, const msk_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs._params_agree(rhs) && lhs._data_agree(rhs) &&
            lhs.size() == rhs.size();
   }
 
-  friend constexpr bool operator!=(const msk_t &lhs, const msk_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !(lhs == rhs);
   }
 };
 
 }  // namespace stream
 }  // namespace krowkee
-
-#endif

@@ -24,10 +24,10 @@ void _check_bounds(KeyType idx, std::size_t max) {
 }
 
 template <typename ValueType>
-struct vector_t {
+struct Vector {
   using value_t = ValueType;
-  vector_t(const std::size_t size) : _vec(size) {}
-  vector_t(const std::size_t size, const value_t &default_value)
+  Vector(const std::size_t size) : _vec(size) {}
+  Vector(const std::size_t size, const value_t &default_value)
       : _vec(size, default_value) {}
 
   static std::string    name() { return "std::vector"; }
@@ -42,10 +42,10 @@ struct vector_t {
 };
 
 template <typename KeyType, typename ValueType>
-struct map_t {
+struct Map {
   using key_t   = KeyType;
   using value_t = ValueType;
-  map_t(const std::size_t size) : _size(size), _map() {}
+  Map(const std::size_t size) : _size(size), _map() {}
 
   static std::string    name() { return "std::map"; }
   constexpr std::size_t size() const { return _size; }
@@ -57,9 +57,9 @@ struct map_t {
 };
 
 template <typename KeyType>
-struct set_t {
+struct Set {
   using key_t = KeyType;
-  set_t(const std::size_t size) : _size(size), _set() {}
+  Set(const std::size_t size) : _size(size), _set() {}
 
   static std::string    name() { return "std::set"; }
   constexpr std::size_t size() const { return _size; }

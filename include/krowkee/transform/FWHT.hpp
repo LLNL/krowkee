@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef _KROWKEE_TRANSFORM_FWHT_HPP
-#define _KROWKEE_TRANSFORM_FWHT_HPP
+#pragma once
 
 #include <krowkee/transform/fwht/utils.hpp>
 
@@ -26,7 +25,7 @@ using krowkee::stream::Element;
  */
 template <typename RegType>
 class FWHTFunctor {
-  typedef FWHTFunctor<RegType> fwhtf_t;
+  using self_type = FWHTFunctor<RegType>;
 
  protected:
   std::uint64_t _range_size;
@@ -136,5 +135,3 @@ std::ostream &operator<<(std::ostream &os, const FWHTFunctor<RegType> &func) {
 }
 }  // namespace transform
 }  // namespace krowkee
-
-#endif

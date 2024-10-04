@@ -16,24 +16,24 @@
 #include <algorithm>
 #include <iostream>
 
-using sketch_type_t = krowkee::util::sketch_type_t;
-using cmap_type_t   = krowkee::util::cmap_type_t;
+using sketch_impl_type = krowkee::util::sketch_impl_type;
+using cmap_impl_type   = krowkee::util::cmap_impl_type;
 
-struct parameters_t {
-  std::uint64_t count;
-  std::uint64_t range_size;
-  std::uint64_t domain_size;
-  std::uint64_t observation_count;
-  std::size_t   compaction_threshold;
-  std::size_t   promotion_threshold;
-  std::size_t   iterations;
-  std::uint64_t seed;
-  sketch_type_t sketch_type;
-  cmap_type_t   cmap_type;
-  bool          verbose;
+struct Parameters {
+  std::uint64_t    count;
+  std::uint64_t    range_size;
+  std::uint64_t    domain_size;
+  std::uint64_t    observation_count;
+  std::size_t      compaction_threshold;
+  std::size_t      promotion_threshold;
+  std::size_t      iterations;
+  std::uint64_t    seed;
+  sketch_impl_type sketch_impl;
+  cmap_impl_type   cmap_impl;
+  bool             verbose;
 };
 
-std::ostream &operator<<(std::ostream &os, const parameters_t &params) {
+std::ostream &operator<<(std::ostream &os, const Parameters &params) {
   os << "parameters:";
   os << "\n\tcount: " << params.count;
   os << "\n\trange_size: " << params.range_size;
@@ -71,31 +71,31 @@ void print_help(char *exe_name) {
             << std::endl;
 }
 
-parameters_t parse_args(int argc, char **argv) {
-  uint64_t      count(10000);
-  std::uint64_t range_size(128);
-  std::uint64_t domain_size(4096);
-  std::uint64_t observation_count(16);
-  std::uint64_t seed(krowkee::hash::default_seed);
-  std::size_t   compaction_threshold(8);
-  std::size_t   promotion_threshold(32);
-  std::size_t   iterations(10);
-  sketch_type_t sketch_type(sketch_type_t::cst);
-  cmap_type_t   cmap_type(cmap_type_t::std);
-  bool          verbose(false);
-  bool          do_all(argc == 1);
+Parameters parse_args(int argc, char **argv) {
+  uint64_t         count(10000);
+  std::uint64_t    range_size(128);
+  std::uint64_t    domain_size(4096);
+  std::uint64_t    observation_count(16);
+  std::uint64_t    seed(krowkee::hash::default_seed);
+  std::size_t      compaction_threshold(8);
+  std::size_t      promotion_threshold(32);
+  std::size_t      iterations(10);
+  sketch_impl_type sketch_impl(sketch_impl_type::cst);
+  cmap_impl_type   cmap_impl(cmap_impl_type::std);
+  bool             verbose(false);
+  bool             do_all(argc == 1);
 
-  parameters_t params{count,
-                      range_size,
-                      domain_size,
-                      observation_count,
-                      compaction_threshold,
-                      promotion_threshold,
-                      iterations,
-                      seed,
-                      sketch_type,
-                      cmap_type,
-                      verbose};
+  Parameters params{count,
+                    range_size,
+                    domain_size,
+                    observation_count,
+                    compaction_threshold,
+                    promotion_threshold,
+                    iterations,
+                    seed,
+                    sketch_impl,
+                    cmap_impl,
+                    verbose};
 
   int c;
 
@@ -160,10 +160,10 @@ parameters_t parse_args(int argc, char **argv) {
         params.iterations = std::atoll(optarg);
         break;
       case 't':
-        params.sketch_type = krowkee::util::get_sketch_type(optarg);
+        params.sketch_impl = krowkee::util::get_sketch_impl_type(optarg);
         break;
       case 'm':
-        params.cmap_type = krowkee::util::get_cmap_type(optarg);
+        params.cmap_impl = krowkee::util::get_cmap_impl_type(optarg);
         break;
       case 's':
         params.seed = std::atol(optarg);
