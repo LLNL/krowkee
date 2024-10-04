@@ -17,10 +17,6 @@
 
 #include <krowkee/sketch/Sketch.hpp>
 
-#if __has_include(<ygm/comm.hpp>)
-#include <ygm/detail/ygm_ptr.hpp>
-#endif
-
 #if __has_include(<boost/container/flat_map.hpp>)
 #include <boost/container/flat_map.hpp>
 #endif
@@ -37,45 +33,23 @@ namespace sketch {
 
 template <template <typename, typename...> class SketchFunc,
           template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, typename RegType, typename... Args>
-using LocalSketch = Sketch<SketchFunc, ContainerType, MergeOp, RegType,
-                           std::shared_ptr, Args...>;
+          template <typename> class MergeOp, typename RegType,
+          template <typename> class PtrType, typename... Args>
+using LocalSketch =
+    Sketch<SketchFunc, ContainerType, MergeOp, RegType, PtrType, Args...>;
 
-template <template <typename, typename> class ContainerType, typename RegType>
-using LocalCountSketch =
+template <template <typename, typename> class ContainerType, typename RegType,
+          template <typename> class PtrType = std::shared_ptr>
+using CountSketch =
     LocalSketch<krowkee::transform::CountSketchFunctor, ContainerType,
-                std::plus, RegType, krowkee::hash::MulAddShift>;
+                std::plus, RegType, PtrType, krowkee::hash::MulAddShift>;
 
-template <typename RegType>
-using LocalFWHT = LocalSketch<krowkee::transform::FWHTFunctor,
-                              krowkee::sketch::Dense, std::plus, RegType>;
-
-}  // namespace sketch
-}  // namespace krowkee
-
-#if __has_include(<ygm/comm.hpp>)
-namespace krowkee {
-namespace sketch {
-
-template <template <typename, typename...> class SketchFunc,
-          template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, typename RegType, typename... Args>
-using CommunicableSketch =
-    Sketch<SketchFunc, ContainerType, MergeOp, RegType, ygm::ygm_ptr, Args...>;
-
-template <template <typename, typename> class ContainerType, typename RegType>
-using CommunicableCountSketch =
-    CommunicableSketch<krowkee::transform::CountSketchFunctor, ContainerType,
-                       std::plus, RegType, krowkee::hash::MulAddShift>;
-
-template <typename RegType>
-using CommunicableFWHT =
-    CommunicableSketch<krowkee::transform::FWHTFunctor, krowkee::sketch::Dense,
-                       std::plus, RegType>;
+template <typename RegType, template <typename> class PtrType = std::shared_ptr>
+using FWHT = LocalSketch<krowkee::transform::FWHTFunctor,
+                         krowkee::sketch::Dense, std::plus, RegType, PtrType>;
 
 }  // namespace sketch
 }  // namespace krowkee
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Sparse Container Presets

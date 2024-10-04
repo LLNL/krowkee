@@ -94,28 +94,27 @@ struct map_graph_sketch_t {
 
 template <typename ValueType>
 using dense32_cs_hist_t = hist_sketch_t<
-    krowkee::sketch::LocalCountSketch<krowkee::sketch::Dense, std::int32_t>,
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t>,
     ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_hist_t =
-    hist_sketch_t<krowkee::sketch::LocalCountSketch<
-                      krowkee::sketch::MapSparse32, std::int32_t>,
-                  ValueType>;
+using map_sparse32_cs_hist_t = hist_sketch_t<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t>,
+    ValueType>;
 template <typename ValueType>
 using map_promotable32_cs_hist_t =
-    hist_sketch_t<krowkee::sketch::LocalCountSketch<
-                      krowkee::sketch::MapPromotable32, std::int32_t>,
+    hist_sketch_t<krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32,
+                                               std::int32_t>,
                   ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
 using flatmap_sparse32_cs_hist_t =
-    hist_sketch_t<krowkee::sketch::LocalCountSketch<
-                      krowkee::sketch::FlatMapSparse32, std::int32_t>,
+    hist_sketch_t<krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32,
+                                               std::int32_t>,
                   ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_hist_t =
-    hist_sketch_t<krowkee::sketch::LocalCountSketch<
+    hist_sketch_t<krowkee::sketch::CountSketch<
                       krowkee::sketch::FlatMapPromotable32, std::int32_t>,
                   ValueType>;
 #endif
@@ -124,29 +123,28 @@ using flatmap_promotable32_cs_hist_t =
 
 template <typename ValueType>
 using dense32_cs_vector_graph_t = vector_graph_sketch_t<
-    krowkee::sketch::LocalCountSketch<krowkee::sketch::Dense, std::int32_t>,
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t>,
     ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_vector_graph_t =
-    vector_graph_sketch_t<krowkee::sketch::LocalCountSketch<
-                              krowkee::sketch::MapSparse32, std::int32_t>,
-                          ValueType>;
+using map_sparse32_cs_vector_graph_t = vector_graph_sketch_t<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t>,
+    ValueType>;
 template <typename ValueType>
 using map_promotable32_cs_vector_graph_t =
-    vector_graph_sketch_t<krowkee::sketch::LocalCountSketch<
+    vector_graph_sketch_t<krowkee::sketch::CountSketch<
                               krowkee::sketch::MapPromotable32, std::int32_t>,
                           ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
 using flatmap_sparse32_cs_vector_graph_t =
-    vector_graph_sketch_t<krowkee::sketch::LocalCountSketch<
+    vector_graph_sketch_t<krowkee::sketch::CountSketch<
                               krowkee::sketch::FlatMapSparse32, std::int32_t>,
                           ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_vector_graph_t = vector_graph_sketch_t<
-    krowkee::sketch::LocalCountSketch<krowkee::sketch::FlatMapPromotable32,
-                                      std::int32_t>,
+    krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
+                                 std::int32_t>,
     ValueType>;
 #endif
 
@@ -154,28 +152,27 @@ using flatmap_promotable32_cs_vector_graph_t = vector_graph_sketch_t<
 
 template <typename ValueType>
 using dense32_cs_map_graph_t = map_graph_sketch_t<
-    krowkee::sketch::LocalCountSketch<krowkee::sketch::Dense, std::int32_t>,
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t>,
     ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_map_graph_t =
-    map_graph_sketch_t<krowkee::sketch::LocalCountSketch<
-                           krowkee::sketch::MapSparse32, std::int32_t>,
-                       ValueType>;
+using map_sparse32_cs_map_graph_t = map_graph_sketch_t<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t>,
+    ValueType>;
 template <typename ValueType>
 using map_promotable32_cs_map_graph_t =
-    map_graph_sketch_t<krowkee::sketch::LocalCountSketch<
+    map_graph_sketch_t<krowkee::sketch::CountSketch<
                            krowkee::sketch::MapPromotable32, std::int32_t>,
                        ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
 using flatmap_sparse32_cs_map_graph_t =
-    map_graph_sketch_t<krowkee::sketch::LocalCountSketch<
+    map_graph_sketch_t<krowkee::sketch::CountSketch<
                            krowkee::sketch::FlatMapSparse32, std::int32_t>,
                        ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_map_graph_t =
-    map_graph_sketch_t<krowkee::sketch::LocalCountSketch<
+    map_graph_sketch_t<krowkee::sketch::CountSketch<
                            krowkee::sketch::FlatMapPromotable32, std::int32_t>,
                        ValueType>;
 #endif

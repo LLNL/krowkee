@@ -3,6 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Klugy, but includes need to be in this order.
+
+#include <check_archive.hpp>
+#include <sketch_types.hpp>
+
 #include <krowkee/hash/hash.hpp>
 #include <krowkee/util/cmap_types.hpp>
 #include <krowkee/util/sketch_types.hpp>
@@ -760,7 +765,7 @@ void do_all_tests(const parameters_t &params) {
   // perform_tests<Dense32FWHT, make_ptr_functor_t>(params);
 }
 
-int do_main(int argc, char **argv) {
+int main(int argc, char **argv) {
   uint64_t      count(10000);
   std::uint64_t range_size(512);
   std::uint64_t domain_size(4096);

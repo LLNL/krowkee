@@ -367,10 +367,6 @@ struct serialize_check {
         check_throws_uncompacted_archive<std::stringstream,
                                          cereal::BinaryOutputArchive, MapType>,
         "uncompacted archive (binary)", cm);
-    // CHECK_THROWS<std::logic_error>(
-    //     check_throws_uncompacted_archive<std::vector<char>,
-    //                                      cereal::YGMOutputArchive, MapType>,
-    //     "uncompacted archive (ygm)", cm);
     {
       MapType cm1(cm);
       cm1.compactify();

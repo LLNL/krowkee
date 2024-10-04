@@ -6,6 +6,10 @@
 #include <krowkee/util/check.hpp>
 
 #if __has_include(<cereal/cereal.hpp>)
+#if __has_include(<ygm/detail/ygm_cereal_archive.hpp>)
+#include <ygm/detail/ygm_cereal_archive.hpp>
+#endif
+
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/types/map.hpp>
@@ -41,6 +45,24 @@ bool ss_json_archive_test(const T &obj) {
       obj);
 }
 
+#if __has_include(<ygm/detail/ygm_cereal_archive.hpp>)
+template <typename T>
+bool ygm_archive_test(const T &obj1) {
+  std::vector<std::byte> packed;
+  {
+    cereal::YGMOutputArchive oarchive(packed);
+    oarchive(obj1);
+  }
+  T obj2;
+  {
+    cereal::YGMInputArchive iarchive(packed.data(), packed.size());
+    iarchive(obj2);
+  }
+  return obj1 == obj2;
+}
+#endif
+#endif
+
 template <typename FuncType, typename T>
 void CHECK_ARCHIVE(const FuncType &func, const T &obj, const std::string &name,
                    const std::string &msg) {
@@ -52,7 +74,11 @@ void CHECK_ARCHIVE(const FuncType &func, const T &obj, const std::string &name,
 
 template <typename T>
 void CHECK_ALL_ARCHIVES(const T &obj, const std::string &msg) {
+#if __has_include(<cereal/cereal.hpp>)
   CHECK_ARCHIVE(ss_bin_archive_test<T>, obj, "binary cereal archive", msg);
   CHECK_ARCHIVE(ss_json_archive_test<T>, obj, "JSON cereal archive", msg);
-}
+#if __has_include(<ygm/detail/ygm_cereal_archive.hpp>)
+  CHECK_ARCHIVE(ygm_archive_test<T>, obj, "YGM cereal archive", msg);
 #endif
+#endif
+}

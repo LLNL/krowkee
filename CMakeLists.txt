@@ -60,8 +60,9 @@ else ()
     message(STATUS ${PROJECT_NAME} " building without boost")
 endif ()
 
-option(KROWKEE_USE_YGM "Compile using YGM distributed memory features" ON)
-if (KROWKEE_USE_YGM)
+option(KROWKEE_USE_CEREAL "Compile using CEREAL memory features" ON)
+option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
+if (KROWKEE_USE_CEREAL)
     # Load cereal
     set(KROWKEE_CEREAL_VERSION 1.3.0)
     # Will do something like this upon new release and fix to spack
@@ -114,43 +115,47 @@ if (KROWKEE_USE_YGM)
         endif ()
     endif ()
 
-    # Load YGM
-    set(KROWKEE_YGM_VERSION 0.5)
-    find_package(ygm ${KROWKEE_YGM_VERSION} CONFIG QUIET)
-    if (NOT ygm_FOUND)
-        FetchContent_Declare(
-            ygm
-            GIT_REPOSITORY https://github.com/LLNL/ygm.git
-            # GIT_TAG v${KROWKEE_YGM_VERSION}
-            GIT_TAG develop
-        )
-        FetchContent_GetProperties(ygm)
-        if (ygm_POPULATED)
-            message(STATUS ${PROJECT_NAME}
-                           " found already populated ygm dependency: "
-                           ${ygm_SOURCE_DIR}
+    if (KROWKEE_USE_YGM)
+        # Load YGM
+        set(KROWKEE_YGM_VERSION 0.7)
+        find_package(ygm ${KROWKEE_YGM_VERSION} CONFIG QUIET)
+        if (NOT ygm_FOUND)
+            FetchContent_Declare(
+                ygm
+                GIT_REPOSITORY https://github.com/LLNL/ygm.git
+                # GIT_TAG v${KROWKEE_YGM_VERSION}
+                GIT_TAG v0.7-dev
             )
+            FetchContent_GetProperties(ygm)
+            if (ygm_POPULATED)
+                message(STATUS ${PROJECT_NAME}
+                               " found already populated ygm dependency: "
+                               ${ygm_SOURCE_DIR}
+                )
+            else ()
+                # Do not compile any ygm tests
+                set(JUST_INSTALL_YGM ON)
+                # Install ygm at ${CMAKE_INSTALL_PREFIX}
+                set(YGM_INSTALL ${KROWKEE_INSTALL})
+                # Populate ygm
+                FetchContent_Populate(ygm)
+                # Include ygm cmake boilerplate
+                add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
+                message(STATUS ${PROJECT_NAME} " cloned ygm dependency "
+                               ${ygm_SOURCE_DIR}
+                )
+            endif ()
         else ()
-            # Do not compile any ygm tests
-            set(JUST_INSTALL_YGM ON)
-            # Install ygm at ${CMAKE_INSTALL_PREFIX}
-            set(YGM_INSTALL ${KROWKEE_INSTALL})
-            # Populate ygm
-            FetchContent_Populate(ygm)
-            # Include ygm cmake boilerplate
-            add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
-            message(STATUS ${PROJECT_NAME} " cloned ygm dependency "
-                           ${ygm_SOURCE_DIR}
-            )
+            message(STATUS ${PROJECT_NAME} " found ygm dependency " ${ygm_DIR})
+            if (${ygm_SOURCE_DIR} MATCHES "*_deps*")
+                add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
+            endif ()
         endif ()
     else ()
-        message(STATUS ${PROJECT_NAME} " found ygm dependency " ${ygm_DIR})
-        if (${ygm_SOURCE_DIR} MATCHES "*_deps*")
-            add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
-        endif ()
+        message(STATUS ${PROJECT_NAME} " building without ygm")
     endif ()
 else ()
-    message(STATUS ${PROJECT_NAME} " building without ygm")
+    message(STATUS ${PROJECT_NAME} " building without cereal")
 endif ()
 
 add_library(krowkee INTERFACE)
@@ -159,9 +164,12 @@ target_include_directories(
     krowkee INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                       $<INSTALL_INTERFACE:include>
 )
-target_compile_features(krowkee INTERFACE cxx_std_17)
-if (KROWKEE_USE_YGM)
-    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} ygm::ygm)
+target_compile_features(krowkee INTERFACE cxx_std_20)
+if (KROWKEE_USE_CEREAL)
+    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET})
+    if (KROWKEE_USE_YGM)
+        target_link_libraries(krowkee INTERFACE ygm::ygm)
+    endif ()
 endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
@@ -220,8 +228,12 @@ if (JUST_INSTALL_KROWKEE)
     return()
 endif ()
 
+option(KROWKEE_BUILD_DOCS "Build documentation with Doxygen and SPHINX" OFF)
+
 if (KROWKEE_MAIN_PROJECT)
-    add_subdirectory(docs)
+    if (KROWKEE_BUILD_DOCS)
+        add_subdirectory(docs)
+    endif ()
     add_subdirectory(test)
     add_subdirectory(performance)
 endif ()
