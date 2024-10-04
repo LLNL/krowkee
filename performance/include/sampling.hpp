@@ -10,7 +10,7 @@
 #include <random>
 
 template <typename ValueType>
-std::vector<ValueType> make_samples(const parameters_t &params) {
+std::vector<ValueType> make_samples(const Parameters &params) {
   std::mt19937                             gen(params.seed);
   std::uniform_int_distribution<ValueType> dist(0, params.domain_size - 1);
 
@@ -23,8 +23,7 @@ std::vector<ValueType> make_samples(const parameters_t &params) {
 }
 
 template <typename VertexType>
-std::vector<edge_type<VertexType>> make_edge_samples(
-    const parameters_t &params) {
+std::vector<edge_type<VertexType>> make_edge_samples(const Parameters &params) {
   using vertex_t = VertexType;
   using edge_t   = edge_type<VertexType>;
 

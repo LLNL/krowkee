@@ -1,5 +1,5 @@
 // Copyright 2021-2022 Lawrence Livermore National Security, LLC and other
-// krowkee Project Developers. See the top-level COPYRIGHT file for details.
+// krowkee Project Developers. See the top-level COPYRIGHT file for detaisketch.
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,23 +21,23 @@
 #include <iostream>
 #include <random>
 
-using sketch_type_t = krowkee::util::sketch_type_t;
-using cmap_type_t   = krowkee::util::cmap_type_t;
+using sketch_impl_type = krowkee::util::sketch_impl_type;
+using cmap_impl_type   = krowkee::util::cmap_impl_type;
 
 /**
  * Struct bundling the experiment parameters.
  */
-struct parameters_t {
-  std::uint64_t count;
-  std::uint64_t range_size;
-  std::uint64_t domain_size;
-  std::uint64_t observation_count;
-  std::size_t   compaction_threshold;
-  std::size_t   promotion_threshold;
-  std::uint64_t seed;
-  sketch_type_t sketch_type;
-  cmap_type_t   cmap_type;
-  bool          verbose;
+struct Parameters {
+  std::uint64_t    count;
+  std::uint64_t    range_size;
+  std::uint64_t    domain_size;
+  std::uint64_t    observation_count;
+  std::size_t      compaction_threshold;
+  std::size_t      promotion_threshold;
+  std::uint64_t    seed;
+  sketch_impl_type sketch_impl;
+  cmap_impl_type   cmap_impl;
+  bool             verbose;
 };
 
 /**
@@ -45,87 +45,91 @@ struct parameters_t {
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct init_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " constructors";
+    ss << transform_type::name() << " constructors";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr = make_ptr_t();
+  void operator()(const Parameters &params) const {
+    make_ptr_type _make_ptr = make_ptr_type();
     for (std::uint64_t i(10); i < 100000; i *= 10) {
-      sf_ptr_t sf_ptr(_make_ptr(i));
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+      transform_ptr_type transform_ptr(_make_ptr(i));
+      sketch_type        sketch(transform_ptr, params.compaction_threshold,
+                                params.promotion_threshold);
       if (params.verbose == true) {
-        std::cout << "input s = " << i << " produces " << ls.size() << "/"
-                  << ls.range_size() << " registers of size " << ls.reg_size()
-                  << " bytes each " << std::endl;
+        std::cout << "input s = " << i << " produces " << sketch.size() << "/"
+                  << sketch.range_size() << " registers of size "
+                  << sketch.reg_size() << " bytes each " << std::endl;
       }
     }
     {
-      sf_ptr_t sf_ptr_1(_make_ptr(32));
-      sf_ptr_t sf_ptr_2(_make_ptr(32));
-      ls_t     ls_1(sf_ptr_1, params.compaction_threshold,
-                    params.promotion_threshold);
-      ls_t     ls_2(sf_ptr_2, params.compaction_threshold,
-                    params.promotion_threshold);
+      transform_ptr_type transform_ptr_1(_make_ptr(32));
+      transform_ptr_type transform_ptr_2(_make_ptr(32));
+      sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
+                                  params.promotion_threshold);
+      sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
+                                  params.promotion_threshold);
       for (int i(0); i < 1000; i++) {
-        ls_1.insert(i);
-        ls_2.insert(i);
+        sketch_1.insert(i);
+        sketch_2.insert(i);
       }
-      bool constructors_match = ls_1 == ls_2;
+      bool constructors_match = sketch_1 == sketch_2;
       if (constructors_match == false) {
-        std::cout << "ls_1 : " << ls_1 << std::endl;
-        std::cout << "ls_2 : " << ls_2 << std::endl;
+        std::cout << "sketch_1 : " << sketch_1 << std::endl;
+        std::cout << "sketch_2 : " << sketch_2 << std::endl;
       }
       CHECK_CONDITION(constructors_match == true,
                       "constructor/insert consistency");
     }
     {
-      sf_ptr_t sf_ptr(_make_ptr(32));
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-      for (int i(0); i < 1000; ls.insert(i++)) {
+      transform_ptr_type transform_ptr(_make_ptr(32));
+      sketch_type        sketch(transform_ptr, params.compaction_threshold,
+                                params.promotion_threshold);
+      for (int i(0); i < 1000; sketch.insert(i++)) {
       }
-      ls_t ls2(ls);
-      bool copy_matches = ls == ls2;
+      sketch_type sketch2(sketch);
+      bool        copy_matches = sketch == sketch2;
       if (copy_matches == false) {
-        std::cout << "ls : " << ls << std::endl;
-        std::cout << "ls2 : " << ls2 << std::endl;
+        std::cout << "sketch : " << sketch << std::endl;
+        std::cout << "sketch2 : " << sketch2 << std::endl;
       }
       CHECK_CONDITION(copy_matches == true, "copy constructor");
     }
     {
-      sf_ptr_t sf_ptr(_make_ptr(32));
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-      for (int i(0); i < 1000; ls.insert(i++)) {
+      transform_ptr_type transform_ptr(_make_ptr(32));
+      sketch_type        sketch(transform_ptr, params.compaction_threshold,
+                                params.promotion_threshold);
+      for (int i(0); i < 1000; sketch.insert(i++)) {
       }
-      ls_t ls2          = ls;
-      bool swap_matches = ls == ls2;
+      sketch_type sketch2      = sketch;
+      bool        swap_matches = sketch == sketch2;
       if (swap_matches == false) {
-        std::cout << "ls : " << ls << std::endl;
-        std::cout << "ls2 : " << ls2 << std::endl;
+        std::cout << "sketch : " << sketch << std::endl;
+        std::cout << "sketch2 : " << sketch2 << std::endl;
       }
       CHECK_CONDITION(swap_matches, "copy-and-swap assignment");
     }
     {
-      sf_ptr_t sf_ptr(_make_ptr(22));
-      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+      transform_ptr_type transform_ptr(_make_ptr(22));
+      sketch_type        sketch(transform_ptr, params.compaction_threshold,
+                                params.promotion_threshold);
 
-      bool init_empty = ls.empty();
+      bool init_empty = sketch.empty();
 
       CHECK_CONDITION(init_empty == true, "initial empty");
 
-      ls.insert(1);
-      bool not_empty = ls.empty();
+      sketch.insert(1);
+      bool not_empty = sketch.empty();
       CHECK_CONDITION(not_empty == false, "post-insert not empty");
 
-      ls.clear();
-      bool clear_empty = ls.empty();
+      sketch.clear();
+      bool clear_empty = sketch.empty();
       CHECK_CONDITION(clear_empty == true, "post-clear empty");
     }
   }
@@ -147,19 +151,19 @@ struct init_check {
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct ingest_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   inline std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " ingest";
+    ss << transform_type::name() << " ingest";
     return ss.str();
   }
 
   std::vector<std::vector<std::uint64_t>> get_uniform_inserts(
-      const parameters_t &params) const {
+      const Parameters &params) const {
     std::mt19937                                 gen(params.seed);
     std::uniform_int_distribution<std::uint64_t> dist(0,
                                                       params.domain_size - 1);
@@ -186,16 +190,18 @@ struct ingest_check {
     return dist_sq;
   }
 
-  void rel_mag_test(const sf_ptr_t &sf_ptr, const parameters_t &params) const {
-    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  void rel_mag_test(const transform_ptr_type &transform_ptr,
+                    const Parameters         &params) const {
+    sketch_type   sketch(transform_ptr, params.compaction_threshold,
+                         params.promotion_threshold);
     std::uint64_t row_idx(17);
-    for (std::uint64_t i(0); i < params.count; ls.insert(i++, row_idx)) {
+    for (std::uint64_t i(0); i < params.count; sketch.insert(i++, row_idx)) {
     }
-    ls.compactify();
-    int    sum(accumulate(ls, 0.0));
+    sketch.compactify();
+    int    sum(accumulate(sketch, 0.0));
     double rel_mag((double)sum / params.count);
     if (params.verbose == true) {
-      std::cout << "\t" << ls << std::endl;
+      std::cout << "\t" << sketch << std::endl;
       std::cout << "\tregister sum (should be near zero): " << sum
                 << ", relative magnitude: " << rel_mag << std::endl;
     }
@@ -204,19 +210,19 @@ struct ingest_check {
 
   template <typename T>
   void print_mat(const char *name, std::vector<std::vector<T>> &inserts,
-                 const int nrows, const int ncols) const {
+                 const int nrows, const int ncosketch) const {
     std::cout << std::endl;
     std::cout << name << ":" << std::endl;
     for (int i(0); i < nrows; ++i) {
       std::cout << "(" << i << ")\t";
-      for (int j(0); j < ncols; ++j) {
+      for (int j(0); j < ncosketch; ++j) {
         std::cout << " " << inserts[i][j];
       }
       std::cout << std::endl;
     }
   }
 
-  void print_mat(std::vector<ls_t> &sketches, const int nrows) const {
+  void print_mat(std::vector<sketch_type> &sketches, const int nrows) const {
     std::cout << std::endl;
     std::cout << "sketches:" << std::endl;
     for (int i(0); i < nrows; ++i) {
@@ -226,7 +232,7 @@ struct ingest_check {
 
   std::vector<std::vector<int>> fill_observation_vector(
       const std::vector<std::vector<std::uint64_t>> &inserts,
-      const parameters_t                            &params) const {
+      const Parameters                              &params) const {
     std::vector<std::vector<int>> observations(
         params.observation_count, std::vector<int>(params.domain_size));
     for (int i(0); i < params.observation_count; ++i) {
@@ -237,13 +243,14 @@ struct ingest_check {
     return observations;
   }
 
-  std::vector<ls_t> fill_sketch_vector(
-      const sf_ptr_t                                &sf_ptr,
+  std::vector<sketch_type> fill_sketch_vector(
+      const transform_ptr_type                      &transform_ptr,
       const std::vector<std::vector<std::uint64_t>> &inserts,
-      const parameters_t                            &params) const {
-    std::vector<ls_t> sketches(
+      const Parameters                              &params) const {
+    std::vector<sketch_type> sketches(
         params.observation_count,
-        ls_t(sf_ptr, params.compaction_threshold, params.promotion_threshold));
+        sketch_type(transform_ptr, params.compaction_threshold,
+                    params.promotion_threshold));
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.count; ++j) {
         sketches[i].insert(inserts[i][j]);
@@ -254,7 +261,8 @@ struct ingest_check {
   }
 
   std::vector<std::vector<int>> fill_projection_vector(
-      const std::vector<ls_t> &sketches, const parameters_t &params) const {
+      const std::vector<sketch_type> &sketches,
+      const Parameters               &params) const {
     std::vector<std::vector<int>> projections;
     for (int i(0); i < params.observation_count; ++i) {
       projections.push_back(sketches[i].register_vector());
@@ -262,8 +270,10 @@ struct ingest_check {
     return projections;
   }
 
-  void lemma_check(const sf_ptr_t &sf_ptr, const parameters_t &params) const {
-    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  void lemma_check(const transform_ptr_type &transform_ptr,
+                   const Parameters         &params) const {
+    sketch_type sketch(transform_ptr, params.compaction_threshold,
+                       params.promotion_threshold);
 
     std::vector<std::vector<std::uint64_t>> inserts =
         get_uniform_inserts(params);
@@ -271,7 +281,8 @@ struct ingest_check {
     std::vector<std::vector<int>> observations =
         fill_observation_vector(inserts, params);
 
-    std::vector<ls_t> sketches = fill_sketch_vector(sf_ptr, inserts, params);
+    std::vector<sketch_type> sketches =
+        fill_sketch_vector(transform_ptr, inserts, params);
 
     std::vector<std::vector<int>> projections =
         fill_projection_vector(sketches, params);
@@ -290,13 +301,13 @@ struct ingest_check {
       std::cout << "projected vectors:" << std::endl;
     }
     double success_rate(0.0);
-    int    trials(0);
+    int    triasketch(0);
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.observation_count; ++j) {
         if (i == j) {
           break;
         }
-        ++trials;
+        ++triasketch;
         double ob_dist = _l2_distance_sq(observations[i], observations[j]);
         double sk_dist = _l2_distance_sq(projections[i], projections[j]);
         if (in_bounds(ob_dist, sk_dist, epsilon)) {
@@ -310,18 +321,18 @@ struct ingest_check {
         }
       }
     }
-    success_rate /= trials;
+    success_rate /= triasketch;
     bool lemma_guarantee_success = success_rate > 0.5;
     CHECK_CONDITION(lemma_guarantee_success == true, "lemma guarantee (",
-                    trials, " trials, ", success_rate,
+                    triasketch, " triasketch, ", success_rate,
                     " success rate, epsilon=", epsilon, ")");
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr{};
-    sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
-    rel_mag_test(sf_ptr, params);
-    lemma_check(sf_ptr, params);
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr{};
+    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    rel_mag_test(transform_ptr, params);
+    lemma_check(transform_ptr, params);
   }
 
   bool in_bounds(const double ob_dist, const double sk_dist,
@@ -332,13 +343,13 @@ struct ingest_check {
 };
 
 template <typename SketchType>
-void check_throws_bad_plus_equals(SketchType &lhs, const SketchType &rhs) {
+void check_throws_bad_plus_equasketch(SketchType &lhs, const SketchType &rhs) {
   lhs += rhs;
 }
 
 template <typename SketchType>
 void check_throws_bad_plus(SketchType &lhs, const SketchType &rhs) {
-  SketchType ls = lhs += rhs;
+  SketchType sketch = lhs += rhs;
 }
 
 /**
@@ -346,40 +357,40 @@ void check_throws_bad_plus(SketchType &lhs, const SketchType &rhs) {
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct bad_merge_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   inline std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " bad merges";
+    ss << transform_type::name() << " bad merges";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr = make_ptr_t();
-    sf_ptr_t   sf_ptr_1(_make_ptr(16));
-    sf_ptr_t   sf_ptr_2(_make_ptr(32));
-    sf_ptr_t   sf_ptr_3(_make_ptr(32, 22));
-    ls_t       ls_1(sf_ptr_1, params.compaction_threshold,
-                    params.promotion_threshold);
-    ls_t       ls_2(sf_ptr_2, params.compaction_threshold,
-                    params.promotion_threshold);
-    ls_t       ls_3(sf_ptr_3, params.compaction_threshold,
-                    params.promotion_threshold);
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr = make_ptr_type();
+    transform_ptr_type transform_ptr_1(_make_ptr(16));
+    transform_ptr_type transform_ptr_2(_make_ptr(32));
+    transform_ptr_type transform_ptr_3(_make_ptr(32, 22));
+    sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
+                                params.promotion_threshold);
+    sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
+                                params.promotion_threshold);
+    sketch_type        sketch_3(transform_ptr_3, params.compaction_threshold,
+                                params.promotion_threshold);
     CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equals<SketchType>,
-        "bad merge (+=) with different functor domains", ls_1, ls_2);
+        check_throws_bad_plus_equasketch<SketchType>,
+        "bad merge (+=) with different functor domains", sketch_1, sketch_2);
     CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equals<SketchType>,
-        "bad merge (+=) with different functor seeds", ls_2, ls_3);
-    CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor domains", ls_1, ls_2);
+        check_throws_bad_plus_equasketch<SketchType>,
+        "bad merge (+=) with different functor seeds", sketch_2, sketch_3);
     CHECK_THROWS<std::invalid_argument>(
         check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor seeds", ls_2, ls_3);
+        "bad merge (+) with different functor domains", sketch_1, sketch_2);
+    CHECK_THROWS<std::invalid_argument>(
+        check_throws_bad_plus<SketchType>,
+        "bad merge (+) with different functor seeds", sketch_2, sketch_3);
   }
 };
 
@@ -388,26 +399,30 @@ struct bad_merge_check {
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct good_merge_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   inline std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " good merges";
+    ss << transform_type::name() << " good merges";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr = make_ptr_t();
-    sf_ptr_t   sf_ptr(_make_ptr(8));
-    ls_t first(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t middle(sf_ptr, params.compaction_threshold,
-                params.promotion_threshold);
-    ls_t last(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t both(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t all(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr = make_ptr_type();
+    transform_ptr_type transform_ptr(_make_ptr(8));
+    sketch_type        first(transform_ptr, params.compaction_threshold,
+                             params.promotion_threshold);
+    sketch_type        middle(transform_ptr, params.compaction_threshold,
+                              params.promotion_threshold);
+    sketch_type        last(transform_ptr, params.compaction_threshold,
+                            params.promotion_threshold);
+    sketch_type        both(transform_ptr, params.compaction_threshold,
+                            params.promotion_threshold);
+    sketch_type        all(transform_ptr, params.compaction_threshold,
+                           params.promotion_threshold);
     for (std::uint64_t i(0); i < 1000; ++i) {
       first.insert(i);
       both.insert(i);
@@ -427,14 +442,14 @@ struct good_merge_check {
     last.compactify();
     both.compactify();
     all.compactify();
-    ls_t bb = first + middle;
+    sketch_type bb = first + middle;
     bb.compactify();
     {
       bool merge_success = both == bb;
       CHECK_CONDITION(merge_success == true, "merge (+)");
     }
     {
-      ls_t aa = first + middle + last;
+      sketch_type aa = first + middle + last;
       aa.compactify();
       bool multimerge_success = all == aa;
       CHECK_CONDITION(multimerge_success == true, "multi-merge (+, +)");
@@ -450,30 +465,31 @@ struct good_merge_check {
 #if __has_include(<cereal/cereal.hpp>)
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct serialize_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   inline std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " serialize";
+    ss << transform_type::name() << " serialize";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr{};
-    sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr{};
+    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
 
-    CHECK_ALL_ARCHIVES(*sf_ptr, "sketch functor");
+    CHECK_ALL_ARCHIVES(*transform_ptr, "sketch functor");
 
-    ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    for (std::uint64_t i(0); i < params.count; ls.insert(i++)) {
+    sketch_type sketch(transform_ptr, params.compaction_threshold,
+                       params.promotion_threshold);
+    for (std::uint64_t i(0); i < params.count; sketch.insert(i++)) {
     }
-    ls.compactify();
+    sketch.compactify();
 
-    CHECK_ALL_ARCHIVES(ls.container(), "sketch container");
-    CHECK_ALL_ARCHIVES(ls, "whole sketch object");
+    CHECK_ALL_ARCHIVES(sketch.container(), "sketch container");
+    CHECK_ALL_ARCHIVES(sketch, "whole sketch object");
   }
 };
 #endif
@@ -483,27 +499,33 @@ struct serialize_check {
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
 struct promotion_check {
-  typedef SketchType              ls_t;
-  typedef typename ls_t::sf_t     sf_t;
-  typedef typename ls_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>       make_ptr_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   inline std::string name() const {
     std::stringstream ss;
-    ss << sf_t::name() << " promotion check";
+    ss << transform_type::name() << " promotion check";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr = make_ptr_t();
-    sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
-    ls_t s1(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t s2(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t d1(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t d2(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t d12(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    ls_t dall(sf_ptr, params.compaction_threshold, params.promotion_threshold);
-    int  pt(params.promotion_threshold);
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr = make_ptr_type();
+    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    sketch_type        s1(transform_ptr, params.compaction_threshold,
+                          params.promotion_threshold);
+    sketch_type        s2(transform_ptr, params.compaction_threshold,
+                          params.promotion_threshold);
+    sketch_type        d1(transform_ptr, params.compaction_threshold,
+                          params.promotion_threshold);
+    sketch_type        d2(transform_ptr, params.compaction_threshold,
+                          params.promotion_threshold);
+    sketch_type        d12(transform_ptr, params.compaction_threshold,
+                           params.promotion_threshold);
+    sketch_type        dall(transform_ptr, params.compaction_threshold,
+                            params.promotion_threshold);
+    int                pt(params.promotion_threshold);
     for (std::uint64_t i(0); i < pt - 1; ++i) {
       s1.insert(i);
       d12.insert(i);
@@ -532,20 +554,20 @@ struct promotion_check {
     d12.compactify();
     dall.compactify();
     {
-      ls_t d1_ = s1 + dall;
+      sketch_type d1_ = s1 + dall;
       d1_.compactify();
       bool sp_merge_success = d1_ == d1;
       CHECK_CONDITION(sp_merge_success == true, "merge (+) sparse/dense");
     }
     {
-      ls_t d1_ = dall + s1;
+      sketch_type d1_ = dall + s1;
       d1_.compactify();
       bool sp_merge_success = d1_ == d1;
       CHECK_CONDITION(sp_merge_success == true, "merge (+) dense/sparse");
     }
     {
-      ls_t dall12 = dall + s1 + s2;
-      ls_t d12_   = dall + d12;
+      sketch_type dall12 = dall + s1 + s2;
+      sketch_type d12_   = dall + d12;
       dall12.compactify();
       d12_.compactify();
       bool sp_multimerge_success = dall12 == d12_;
@@ -553,7 +575,7 @@ struct promotion_check {
                       "multi-merge (+) dense/sparse/sparse");
     }
     {
-      ls_t s11 = s1 + s1;
+      sketch_type s11 = s1 + s1;
       s11.compactify();
       bool sss_merge_success =
           accumulate(s11, 0.0) == 2 * accumulate(s1, 0.0) &&
@@ -562,7 +584,7 @@ struct promotion_check {
                       "merge (+) sparse/sparse (sparse)");
     }
     {
-      ls_t s12 = s1 + s2;
+      sketch_type s12 = s1 + s2;
       s12.compactify();
       bool ssd_merge_success = s12 == d12;
       CHECK_CONDITION(ssd_merge_success == true,
@@ -589,31 +611,31 @@ struct promotion_check {
  * Execute the batter of tests for the given sketch functor.
  */
 template <typename SketchType, template <typename> class MakePtrFunc>
-void perform_tests(const parameters_t &params) {
-  typedef SketchType          ls_t;
-  typedef typename ls_t::sf_t sf_t;
+void perform_tests(const Parameters &params) {
+  using sketch_type    = SketchType;
+  using transform_type = typename sketch_type::transform_type;
 
   MakePtrFunc<std::int32_t> mpf;
 
   print_line();
   print_line();
-  std::cout << "Testing " << ls_t::full_name() << std::endl;
+  std::cout << "Testing " << sketch_type::full_name() << std::endl;
   std::cout << "\tUsing " << mpf.name() << std::endl;
   print_line();
   print_line();
 
   std::cout << std::endl << std::endl;
 
-  do_test<init_check<ls_t, MakePtrFunc>>(params);
-  do_test<ingest_check<ls_t, MakePtrFunc>>(params);
-  do_test<bad_merge_check<ls_t, MakePtrFunc>>(params);
-  do_test<good_merge_check<ls_t, MakePtrFunc>>(params);
+  do_test<init_check<sketch_type, MakePtrFunc>>(params);
+  do_test<ingest_check<sketch_type, MakePtrFunc>>(params);
+  do_test<bad_merge_check<sketch_type, MakePtrFunc>>(params);
+  do_test<good_merge_check<sketch_type, MakePtrFunc>>(params);
 #if __has_include(<cereal/cereal.hpp>)
-  do_test<serialize_check<ls_t, MakePtrFunc>>(params);
+  do_test<serialize_check<sketch_type, MakePtrFunc>>(params);
 #endif
-  if (params.sketch_type == sketch_type_t::promotable_cst &&
+  if (params.sketch_impl == sketch_impl_type::promotable_cst &&
       params.promotion_threshold < params.range_size) {
-    do_test<promotion_check<ls_t, MakePtrFunc>>(params);
+    do_test<promotion_check<sketch_type, MakePtrFunc>>(params);
   }
 }
 
@@ -640,7 +662,7 @@ void print_help(char *exe_name) {
             << std::endl;
 }
 
-void parse_args(int argc, char **argv, parameters_t &params) {
+void parse_args(int argc, char **argv, Parameters &params) {
   int c;
 
   while (1) {
@@ -700,10 +722,10 @@ void parse_args(int argc, char **argv, parameters_t &params) {
         params.promotion_threshold = std::atoll(optarg);
         break;
       case 't':
-        params.sketch_type = krowkee::util::get_sketch_type(optarg);
+        params.sketch_impl = krowkee::util::get_sketch_impl_type(optarg);
         break;
       case 'm':
-        params.cmap_type = krowkee::util::get_cmap_type(optarg);
+        params.cmap_impl = krowkee::util::get_cmap_impl_type(optarg);
         break;
       case 's':
         params.seed = std::atol(optarg);
@@ -730,64 +752,64 @@ void parse_args(int argc, char **argv, parameters_t &params) {
   }
 }
 
-void choose_tests(const parameters_t &params) {
-  if (params.sketch_type == sketch_type_t::cst) {
-    perform_tests<Dense32CountSketch, make_ptr_functor_t>(params);
-  } else if (params.sketch_type == sketch_type_t::sparse_cst) {
-    if (params.cmap_type == cmap_type_t::std) {
-      perform_tests<MapSparse32CountSketch, make_ptr_functor_t>(params);
+void choose_tests(const Parameters &params) {
+  if (params.sketch_impl == sketch_impl_type::cst) {
+    perform_tests<Dense32CountSketch, make_ptr_functor>(params);
+  } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
+    if (params.cmap_impl == cmap_impl_type::std) {
+      perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_type == cmap_type_t::boost) {
-      perform_tests<FlatMapSparse32CountSketch, make_ptr_functor_t>(params);
+    } else if (params.cmap_impl == cmap_impl_type::boost) {
+      perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
 #endif
     }
-  } else if (params.sketch_type == sketch_type_t::promotable_cst) {
-    if (params.cmap_type == cmap_type_t::std) {
-      perform_tests<MapPromotable32CountSketch, make_ptr_functor_t>(params);
+  } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
+    if (params.cmap_impl == cmap_impl_type::std) {
+      perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_type == cmap_type_t::boost) {
-      perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor_t>(params);
+    } else if (params.cmap_impl == cmap_impl_type::boost) {
+      perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
 #endif
     }
-  } else if (params.sketch_type == sketch_type_t::fwht) {
-    perform_tests<Dense32FWHT, make_ptr_functor_t>(params);
+  } else if (params.sketch_impl == sketch_impl_type::fwht) {
+    perform_tests<Dense32FWHT, make_ptr_functor>(params);
   }
 }
 
-void do_all_tests(const parameters_t &params) {
-  perform_tests<Dense32CountSketch, make_ptr_functor_t>(params);
-  perform_tests<MapSparse32CountSketch, make_ptr_functor_t>(params);
-  perform_tests<MapPromotable32CountSketch, make_ptr_functor_t>(params);
+void do_all_tests(const Parameters &params) {
+  perform_tests<Dense32CountSketch, make_ptr_functor>(params);
+  perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
+  perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  perform_tests<FlatMapSparse32CountSketch, make_ptr_functor_t>(params);
-  perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor_t>(params);
+  perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
+  perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
 #endif
-  // perform_tests<Dense32FWHT, make_ptr_functor_t>(params);
+  // perform_tests<Dense32FWHT, make_ptr_functor>(params);
 }
 
 int main(int argc, char **argv) {
-  uint64_t      count(10000);
-  std::uint64_t range_size(512);
-  std::uint64_t domain_size(4096);
-  std::uint64_t observation_count(16);
-  std::uint64_t seed(krowkee::hash::default_seed);
-  std::size_t   compaction_threshold(10);
-  std::size_t   promotion_threshold(8);
-  sketch_type_t sketch_type(sketch_type_t::cst);
-  cmap_type_t   cmap_type(cmap_type_t::std);
-  bool          verbose(false);
-  bool          do_all(argc == 1);
+  uint64_t         count(10000);
+  std::uint64_t    range_size(512);
+  std::uint64_t    domain_size(4096);
+  std::uint64_t    observation_count(16);
+  std::uint64_t    seed(krowkee::hash::default_seed);
+  std::size_t      compaction_threshold(10);
+  std::size_t      promotion_threshold(8);
+  sketch_impl_type sketch_impl(sketch_impl_type::cst);
+  cmap_impl_type   cmap_impl(cmap_impl_type::std);
+  bool             verbose(false);
+  bool             do_all(argc == 1);
 
-  parameters_t params{count,
-                      range_size,
-                      domain_size,
-                      observation_count,
-                      compaction_threshold,
-                      promotion_threshold,
-                      seed,
-                      sketch_type,
-                      cmap_type,
-                      verbose};
+  Parameters params{count,
+                    range_size,
+                    domain_size,
+                    observation_count,
+                    compaction_threshold,
+                    promotion_threshold,
+                    seed,
+                    sketch_impl,
+                    cmap_impl,
+                    verbose};
 
   parse_args(argc, argv, params);
 

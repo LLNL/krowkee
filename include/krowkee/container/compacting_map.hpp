@@ -25,9 +25,6 @@
 namespace krowkee {
 namespace container {
 
-// template <typename KeyType, typename ValueType>
-// using pair_vector_t = std::vector<std::pair<const KeyType, ValueType>>;
-
 /**
  * Merge sorted key-value data structures, applying a binary operator to the
  * values of ties.
@@ -100,33 +97,32 @@ template <typename KeyType, typename ValueType,
 class compacting_map {
  public:
   // Key needs to be const to agree with runtime map iterator typing.
-  // typedef pair_vector_t<KeyType, ValueType>           vec_t;
-  typedef std::pair<KeyType, ValueType>               pair_t;
-  typedef std::vector<std::pair<KeyType, ValueType>>  vec_t;
-  typedef typename vec_t::iterator                    vec_iter_t;
-  typedef typename vec_t::const_iterator              vec_citer_t;
-  typedef MapType<KeyType, ValueType>                 map_t;
-  typedef typename map_t::iterator                    map_iter_t;
-  typedef typename map_t::const_iterator              map_citer_t;
-  typedef typename vec_t::iterator                    iterator;
-  typedef typename vec_t::const_iterator              const_iterator;
-  typedef compacting_map<KeyType, ValueType, MapType> cm_t;
+  using pair_type      = std::pair<KeyType, ValueType>;
+  using vec_type       = std::vector<std::pair<KeyType, ValueType>>;
+  using vec_iter_type  = typename vec_type::iterator;
+  using vec_citer_type = typename vec_type::const_iterator;
+  using map_type       = MapType<KeyType, ValueType>;
+  using map_iter_type  = typename map_type::iterator;
+  using map_citer_type = typename map_type::const_iterator;
+  using iterator       = typename vec_type::iterator;
+  using const_iterator = typename vec_type::const_iterator;
+  using self_type      = compacting_map<KeyType, ValueType, MapType>;
 
  protected:
   std::vector<bool> _erased;
-  vec_t             _archive_map;
-  map_t             _dynamic_map;
+  vec_type          _archive_map;
+  map_type          _dynamic_map;
   std::size_t       _compaction_threshold;
   int               _erased_count;
 
   struct compare_first_f {
-    bool operator()(const pair_t &lhs, const pair_t &rhs) const {
+    bool operator()(const pair_type &lhs, const pair_type &rhs) const {
       return lhs.first < rhs.first;
     }
-    bool operator()(const pair_t &lhs, const KeyType &key) const {
+    bool operator()(const pair_type &lhs, const KeyType &key) const {
       return lhs.first < key;
     }
-    bool operator()(const KeyType &key, const pair_t &rhs) const {
+    bool operator()(const KeyType &key, const pair_type &rhs) const {
       return key < rhs.first;
     }
   };
@@ -144,7 +140,7 @@ class compacting_map {
     _erased.reserve(_compaction_threshold);
   }
 
-  compacting_map(const cm_t &rhs)
+  compacting_map(const self_type &rhs)
       : _compaction_threshold(rhs._compaction_threshold),
         _erased_count(rhs._erased_count),
         _erased(rhs._erased),
@@ -153,7 +149,7 @@ class compacting_map {
 
   compacting_map() {}
 
-  // compacting_map(cm_t &&rhs) : cm_t() { std::swap(*this, rhs); }
+  // compacting_map(self_type &&rhs) : self_type() { std::swap(*this, rhs); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
@@ -206,7 +202,7 @@ class compacting_map {
 
   inline std::string full_name() const {
     std::stringstream ss;
-    ss << name() << " using " << krowkee::hash::type_name<map_t>()
+    ss << name() << " using " << krowkee::hash::type_name<map_type>()
        << " with threshold " << _compaction_threshold;
     return ss.str();
   }
@@ -226,7 +222,7 @@ class compacting_map {
       return;
     }
     // copy nondeleted elements
-    vec_t tmp1;
+    vec_type tmp1;
     tmp1.reserve(_archive_map.size());
     for (std::size_t i(0); i < _archive_map.size(); ++i) {
       if (_erased[i] == false) {
@@ -234,7 +230,7 @@ class compacting_map {
       }
     }
     // perform union
-    vec_t tmp2;
+    vec_type tmp2;
     tmp2.reserve(tmp2.size() + _dynamic_map.size());
     std::set_union(std::begin(tmp1), std::end(tmp1), std::begin(_dynamic_map),
                    std::end(_dynamic_map), std::back_inserter(tmp2),
@@ -284,7 +280,7 @@ class compacting_map {
    * decrement such an iterator, as its meaning is heavily dependent upon the
    * data structure's state.
    */
-  bool insert(const pair_t &pair) {
+  bool insert(const pair_type &pair) {
     auto it_dyn(_dynamic_map.find(pair.first));
     if (it_dyn != std::end(_dynamic_map)) {
       return false;
@@ -316,7 +312,7 @@ class compacting_map {
       --_erased_count;
       return axv_iter->second;
     } else if (axv_code == archive_code_t::absent) {
-      auto [dyn_iter, dyn_code] = dynamic_insert(pair_t{key, 0});
+      auto [dyn_iter, dyn_code] = dynamic_insert(pair_type{key, 0});
       if (dyn_code == dynamic_code_t::compaction) {
         auto [axv_iter2, axv_code2] = archive_find(key);
         if (axv_code2 != archive_code_t::present) {
@@ -426,7 +422,7 @@ class compacting_map {
    * @note[bwp] Not compact safe! Obtained iterators are invalidated once
    * compactify() occurs.
    */
-  std::size_t erase(const vec_iter_t &iter) {
+  std::size_t erase(const vec_iter_type &iter) {
     if (iter >= std::begin(_archive_map) && iter < std::end(_archive_map)) {
       _erased[iter - std::begin(_archive_map)] = true;
       ++_erased_count;
@@ -445,7 +441,7 @@ class compacting_map {
    *
    * @throw std::logic_error if invoked on an uncompacted map.
    */
-  vec_iter_t find(const KeyType &key) {
+  vec_iter_type find(const KeyType &key) {
     if (_dynamic_map.size() > 0) {
       throw std::logic_error("Bad invocation of `find` on uncompacted map!");
     }
@@ -463,7 +459,7 @@ class compacting_map {
    *
    * Throws an std::logic_error if invoked on an uncompacted map.
    */
-  vec_citer_t find(const KeyType &key) const {
+  vec_citer_type find(const KeyType &key) const {
     if (_dynamic_map.size() > 0) {
       throw std::logic_error("Bad invocation of `find` on uncompacted map!");
     }
@@ -485,23 +481,23 @@ class compacting_map {
    *
    * @note[bwp]: currently not compact safe!
    */
-  constexpr vec_iter_t  begin() { return std::begin(_archive_map); }
-  constexpr vec_citer_t begin() const { return std::cbegin(_archive_map); }
-  constexpr vec_citer_t cbegin() const { return std::cbegin(_archive_map); }
+  constexpr vec_iter_type  begin() { return std::begin(_archive_map); }
+  constexpr vec_citer_type begin() const { return std::cbegin(_archive_map); }
+  constexpr vec_citer_type cbegin() const { return std::cbegin(_archive_map); }
 
   /**
    * Return an interator to the end of the archive vector.
    *
    * @note[bwp]: currently not compact safe!
    */
-  constexpr vec_iter_t  end() { return std::end(_archive_map); }
-  constexpr vec_citer_t end() const { return std::cend(_archive_map); }
-  constexpr vec_citer_t cend() const { return std::cend(_archive_map); }
+  constexpr vec_iter_type  end() { return std::end(_archive_map); }
+  constexpr vec_citer_type end() const { return std::cend(_archive_map); }
+  constexpr vec_citer_type cend() const { return std::cend(_archive_map); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
   //////////////////////////////////////////////////////////////////////////////
-  constexpr bool same_maps(const cm_t &rhs) const {
+  constexpr bool same_maps(const self_type &rhs) const {
     return _compaction_threshold == rhs._compaction_threshold &&
            _dynamic_map.size() == rhs._dynamic_map.size() &&
            _erased_count == rhs._erased_count &&
@@ -515,10 +511,10 @@ class compacting_map {
                       std::cbegin(rhs._archive_map));
   }
 
-  friend constexpr bool operator==(const cm_t &lhs, const cm_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs.same_maps(rhs);
   }
-  friend constexpr bool operator!=(const cm_t &lhs, const cm_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
 
@@ -531,7 +527,7 @@ class compacting_map {
    *
    * @note[bwp]: Is this safe? Should we be checking for compatibility?
    */
-  friend void swap(cm_t &lhs, cm_t &rhs) {
+  friend void swap(self_type &lhs, self_type &rhs) {
     std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._erased_count, rhs._erased_count);
     std::swap(lhs._dynamic_map, rhs._dynamic_map);
@@ -547,7 +543,7 @@ class compacting_map {
    *
    * https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
    */
-  cm_t &operator=(cm_t rhs) {
+  self_type &operator=(self_type rhs) {
     std::swap(*this, rhs);
     return *this;
   }
@@ -564,7 +560,7 @@ class compacting_map {
    * @throw std::logic_error if invoked on uncompacted maps.
    */
   template <typename MergeOp>
-  inline void merge(const cm_t &rhs, MergeOp merge_op) {
+  inline void merge(const self_type &rhs, MergeOp merge_op) {
     if (is_compact() == false) {
       throw std::logic_error(
           "Bad attempt to merge on uncompacted left hand side!");
@@ -573,7 +569,7 @@ class compacting_map {
       throw std::logic_error(
           "Bad attempt to merge on uncompacted right hand side!");
     }
-    vec_t tmp;
+    vec_type tmp;
     tmp.reserve(_archive_map.size() + rhs._archive_map.size());
     merge_and_compact(std::begin(_archive_map), std::end(_archive_map),
                       std::cbegin(rhs._archive_map),
@@ -624,7 +620,7 @@ class compacting_map {
    * found else the end iterator. Returns a status code indicating whether the
    * desired key is absent, present, or present but deleted.
    */
-  inline std::pair<vec_iter_t, archive_code_t> archive_find(
+  inline std::pair<vec_iter_type, archive_code_t> archive_find(
       const KeyType &key) {
     auto axv_lb = std::lower_bound(std::begin(_archive_map),
                                    std::end(_archive_map), key, compare_first);
@@ -645,7 +641,7 @@ class compacting_map {
   /**
    * Const version of `archive_find`.
    */
-  inline std::pair<vec_citer_t, archive_code_t> archive_find(
+  inline std::pair<vec_citer_type, archive_code_t> archive_find(
       const KeyType &key) const {
     auto axv_lb = std::lower_bound(std::cbegin(_archive_map),
                                    std::cend(_archive_map), key, compare_first);
@@ -669,8 +665,8 @@ class compacting_map {
    * Calls the dynamic map's `insert` function. If this causes the size to
    * reach the compaction threshold, the compacts.
    */
-  inline std::pair<map_iter_t, dynamic_code_t> dynamic_insert(
-      const pair_t &pair) {
+  inline std::pair<map_iter_type, dynamic_code_t> dynamic_insert(
+      const pair_type &pair) {
     // this call to std::make_pair introduces an unnecessary copy, but seems
     // to be needed for compilation when `_dynamic_map` is a
     // boost::container::flat_map...
@@ -694,7 +690,7 @@ class compacting_map {
    * the key is present but deleted, the insert occurs in-place. If the key is
    * absent, call `dynamic_insert` and insert into the dynamic buffer.
    */
-  inline bool try_insert_archive(const pair_t &pair) {
+  inline bool try_insert_archive(const pair_type &pair) {
     auto [axv_lb, axv_code] = archive_find(pair.first);
 
     if (axv_code == archive_code_t::present) {

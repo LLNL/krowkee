@@ -20,26 +20,26 @@ namespace stream {
  */
 template <typename SketchType, template <typename> class PtrType>
 struct Summary {
-  typedef SketchType                   sk_t;
-  typedef typename sk_t::sf_t          sf_t;
-  typedef typename sk_t::sf_ptr_t      sf_ptr_t;
-  typedef typename sk_t::reg_t         reg_t;
-  typedef Summary<SketchType, PtrType> data_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using register_type      = typename sketch_type::register_type;
+  using self_type          = Summary<SketchType, PtrType>;
 
-  sk_t sk;
+  sketch_type sk;
 
-  Summary(const sf_ptr_t &ptr, const std::size_t compaction_threshold,
+  Summary(const transform_ptr_type &ptr, const std::size_t compaction_threshold,
           const std::size_t promotion_threshold)
       : sk(ptr, compaction_threshold, promotion_threshold) {}
 
   template <typename... ItemArgs>
-  Summary(const sf_ptr_t &ptr, const std::size_t compaction_threshold,
+  Summary(const transform_ptr_type &ptr, const std::size_t compaction_threshold,
           const std::size_t promotion_threshold, const ItemArgs &...args)
       : sk(ptr, compaction_threshold, promotion_threshold) {
     update(args...);
   }
 
-  Summary(const data_t &rhs) : sk(rhs.sk) {}
+  Summary(const self_type &rhs) : sk(rhs.sk) {}
   Summary() : sk() {}
 
   template <class Archive>
@@ -49,38 +49,39 @@ struct Summary {
 
   static inline std::string name() {
     std::stringstream ss;
-    ss << "Summary using " << sk_t::name();
+    ss << "Summary using " << sketch_type::name();
     return ss.str();
   }
 
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << "Summary using " << sk_t::full_name();
+    ss << "Summary using " << sketch_type::full_name();
     return ss.str();
   }
 
-  friend void swap(data_t &lhs, data_t &rhs) { swap(lhs.sk, rhs.sk); }
+  friend void swap(self_type &lhs, self_type &rhs) { swap(lhs.sk, rhs.sk); }
 
-  friend constexpr bool operator==(const data_t &lhs, const data_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs.sk == rhs.sk;
   }
 
-  friend constexpr bool operator!=(const data_t &lhs, const data_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !(lhs == rhs);
   }
 
-  data_t &operator=(data_t rhs) {
+  self_type &operator=(self_type rhs) {
     swap(*this, rhs);
     return *this;
   }
 
-  data_t &operator+=(const data_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     sk += rhs.sk;
     return *this;
   }
 
-  inline friend data_t operator+(const data_t &lhs, const data_t &rhs) {
-    data_t ret(lhs);
+  inline friend self_type operator+(const self_type &lhs,
+                                    const self_type &rhs) {
+    self_type ret(lhs);
     ret += rhs;
     return ret;
   }
@@ -92,7 +93,7 @@ struct Summary {
 
   void compactify() { sk.compactify(); }
 
-  friend std::ostream &operator<<(std::ostream &os, const data_t &data) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &data) {
     os << data.sk;
     return os;
   }
@@ -106,27 +107,29 @@ struct Summary {
  */
 template <typename SketchType, template <typename> class PtrType>
 struct CountingSummary {
-  typedef SketchType                           sk_t;
-  typedef typename sk_t::sf_t                  sf_t;
-  typedef typename sk_t::sf_ptr_t              sf_ptr_t;
-  typedef typename sk_t::reg_t                 reg_t;
-  typedef CountingSummary<SketchType, PtrType> data_t;
+  using sketch_type        = SketchType;
+  using transform_type     = typename sketch_type::transform_type;
+  using transform_ptr_type = typename sketch_type::transform_ptr_type;
+  using register_type      = typename sketch_type::register_type;
+  using self_type          = CountingSummary<SketchType, PtrType>;
 
-  sk_t          sk;
+  sketch_type   sk;
   std::uint64_t count;
-  CountingSummary(const sf_ptr_t &ptr, const std::size_t compaction_threshold,
-                  const std::size_t promotion_threshold)
+  CountingSummary(const transform_ptr_type &ptr,
+                  const std::size_t         compaction_threshold,
+                  const std::size_t         promotion_threshold)
       : sk(ptr, compaction_threshold, promotion_threshold), count(0) {}
 
   template <typename... ItemArgs>
-  CountingSummary(const sf_ptr_t &ptr, const std::size_t compaction_threshold,
-                  const std::size_t promotion_threshold,
+  CountingSummary(const transform_ptr_type &ptr,
+                  const std::size_t         compaction_threshold,
+                  const std::size_t         promotion_threshold,
                   const ItemArgs &...args)
       : sk(ptr, compaction_threshold, promotion_threshold), count(0) {
     update(args...);
   }
   /// copy-and-swap boilerplate
-  CountingSummary(const data_t &rhs) : sk(rhs.sk), count(rhs.count) {}
+  CountingSummary(const self_type &rhs) : sk(rhs.sk), count(rhs.count) {}
   CountingSummary() : sk() {}
 
   template <class Archive>
@@ -136,13 +139,13 @@ struct CountingSummary {
 
   static inline std::string name() {
     std::stringstream ss;
-    ss << "Counting Summary using " << sk_t::name();
+    ss << "Counting Summary using " << sketch_type::name();
     return ss.str();
   }
 
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << "Counting Summary using " << sk_t::full_name();
+    ss << "Counting Summary using " << sketch_type::full_name();
     return ss.str();
   }
 
@@ -152,32 +155,33 @@ struct CountingSummary {
    * For some reason, calling std::swap on the sketches here causes a
    * segfault. Peculiar.
    */
-  friend void swap(data_t &lhs, data_t &rhs) {
+  friend void swap(self_type &lhs, self_type &rhs) {
     std::swap(lhs.count, rhs.count);
     swap(lhs.sk, rhs.sk);
   }
 
-  friend constexpr bool operator==(const data_t &lhs, const data_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs.count == rhs.count && lhs.sk == rhs.sk;
   }
 
-  friend constexpr bool operator!=(const data_t &lhs, const data_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !(lhs == rhs);
   }
 
-  data_t &operator=(data_t rhs) {
+  self_type &operator=(self_type rhs) {
     swap(*this, rhs);
     return *this;
   }
 
-  data_t &operator+=(const data_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     sk += rhs.sk;
     count += rhs.count;
     return *this;
   }
 
-  inline friend data_t operator+(const data_t &lhs, const data_t &rhs) {
-    data_t ret(lhs);
+  inline friend self_type operator+(const self_type &lhs,
+                                    const self_type &rhs) {
+    self_type ret(lhs);
     ret += rhs;
     return ret;
   }
@@ -187,13 +191,13 @@ struct CountingSummary {
   void update(const ItemArgs &...args) {
     // This is kind of klugy. Probably should re-engineer.
     sk.insert(args...);
-    Element<reg_t> element(args...);
+    Element<register_type> element(args...);
     count += element.multiplicity;
   }
 
   void compactify() { sk.compactify(); }
 
-  friend std::ostream &operator<<(std::ostream &os, const data_t &data) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &data) {
     os << data.sk;
     return os;
   }

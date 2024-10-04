@@ -15,8 +15,8 @@
 #include <iostream>
 #include <memory>
 
-typedef std::chrono::system_clock Clock;
-typedef std::chrono::nanoseconds  ns_t;
+using Clock   = std::chrono::system_clock;
+using ns_type = std::chrono::nanoseconds;
 
 inline void print_line() {
   std::cout << "-----------------------------------------------------"
@@ -34,7 +34,7 @@ void do_test(Args &&...args) {
   auto start(Clock::now());
   func(args...);
   auto end(Clock::now());
-  auto ns(std::chrono::duration_cast<ns_t>(end - start).count());
+  auto ns(std::chrono::duration_cast<ns_type>(end - start).count());
   print_line();
   std::cout << "\tTest time: " << ((double)ns / 1e9) << "s" << std::endl;
   std::cout << std::endl << std::endl;
@@ -44,13 +44,13 @@ void do_test(Args &&...args) {
  * Functor wrapping std::make_shared
  */
 template <typename T>
-struct make_shared_functor_t {
-  typedef std::shared_ptr<T> ptr_t;
+struct make_shared_functor {
+  using ptr_type = std::shared_ptr<T>;
 
-  make_shared_functor_t() {}
+  make_shared_functor() {}
 
   template <typename... Args>
-  ptr_t operator()(Args... args) {
+  ptr_type operator()(Args... args) {
     return std::make_shared<T>(args...);
   }
 
@@ -97,10 +97,6 @@ class online_statistics {
   inline double M2() const { return ((_count > 1) ? _newS : 0.0); }
 
   inline double std_dev() const { return std::sqrt(variance()); }
-
-  // inline error_dist_t get_error_dist() const {
-  //   return {get_mean(), get_M2(), _count};
-  // }
 
  private:
   std::uint64_t _count;

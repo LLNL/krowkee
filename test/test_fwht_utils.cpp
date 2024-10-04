@@ -35,7 +35,7 @@ bool operator==(std::vector<T>& lhs, const std::vector<T>& rhs) {
   return true;
 }
 
-struct parameters_t {
+struct Parameters {
   std::uint64_t count;
   std::uint64_t sketch_size;
   std::uint64_t seed;
@@ -52,7 +52,7 @@ template <typename RegType>
 struct run_rademacher_test {
   std::string name() const { return "rademacher tests"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     std::vector<int32_t> test_vec(params.numtrials);
     for (int i = 0; i < params.numtrials; i++) {
       std::uint64_t new_seed = params.seed + i;
@@ -72,7 +72,7 @@ struct run_rademacher_test {
 struct run_uniform_sample_test {
   std::string name() const { return "uniform sampling"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     std::vector<uint64_t> test_vec_unif(params.sketch_size);
     std::int32_t          sum_indices    = 0;
     int                   input_size_int = (int)params.num_vertices;
@@ -114,7 +114,7 @@ struct run_uniform_sample_test {
 struct count_set_bits_test {
   std::string name() const { return "bit set counting"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     for (int i(0); i < 500; i++) {
       std::cout << "(" << i << ","
                 << krowkee::transform::fwht::count_set_bits(i) << ") ";
@@ -126,7 +126,7 @@ struct count_set_bits_test {
 struct get_parity_test {
   std::string name() const { return "parity"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     bool parity_success(true);
     for (int i(0); i < params.numtrials; ++i) {
       if (krowkee::transform::fwht::get_parity(i) != i % 2) {
@@ -141,7 +141,7 @@ template <typename RegType>
 struct get_hadamard_element_test {
   std::string name() const { return "Hadamard element lookup"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     RegType hadamard[params.size_mat][params.size_mat];
     RegType hadamard_truth[params.size_mat][params.size_mat];
     hadamard[0][0]       = RegType(1);
@@ -176,7 +176,7 @@ template <typename RegType>
 struct get_sketch_vector_test {
   std::string name() const { return "update vector"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     std::vector<int32_t> test_sketch_vec =
         krowkee::transform::fwht::get_sketch_vector<int32_t>(
             params.val, params.row_index, params.col_index, params.num_vertices,
@@ -219,7 +219,7 @@ struct get_sketch_vector_test {
 struct orthonormality_test {
   std::string name() const { return "orthonormality"; }
 
-  void operator()(const parameters_t& params) const {
+  void operator()(const Parameters& params) const {
     const std::uint64_t col_index(2);
     const std::uint64_t row_index(10);
 
@@ -259,7 +259,7 @@ void print_help(char* exe_name) {
 }
 
 // note{bwp} Should make this instrumentable at some point.
-void parse_args(int argc, char** argv, parameters_t& params) {
+void parse_args(int argc, char** argv, Parameters& params) {
   int c;
 
   while (1) {
@@ -323,9 +323,8 @@ int main(int argc, char** argv) {
   std::uint64_t size_mat(512);
   bool          verbose(false);
 
-  parameters_t params{count,     sketch_size, seed, num_vertices,
-                      col_index, row_index,   val,  numtrials,
-                      size_mat,  verbose};
+  Parameters params{count,     sketch_size, seed,      num_vertices, col_index,
+                    row_index, val,         numtrials, size_mat,     verbose};
 
   parse_args(argc, argv, params);
 

@@ -10,45 +10,45 @@
 #include <utils.hpp>
 
 template <typename ValueType>
-struct vector_init_t : vector_t<ValueType> {
-  vector_init_t(const parameters_t &params)
-      : vector_t<ValueType>(params.range_size) {}
+struct vector_init : Vector<ValueType> {
+  vector_init(const Parameters &params)
+      : Vector<ValueType>(params.range_size) {}
 };
 
 template <typename KeyType, typename ValueType>
-struct map_init_t : map_t<KeyType, ValueType> {
-  map_init_t(const parameters_t &params)
-      : map_t<KeyType, ValueType>(params.range_size) {}
+struct map_init : Map<KeyType, ValueType> {
+  map_init(const Parameters &params)
+      : Map<KeyType, ValueType>(params.range_size) {}
 };
 
 template <typename KeyType>
-struct set_init_t : set_t<KeyType> {
-  set_init_t(const parameters_t &params) : set_t<KeyType>(params.range_size) {}
+struct set_init : Set<KeyType> {
+  set_init(const Parameters &params) : Set<KeyType>(params.range_size) {}
 };
 
-void benchmark(const parameters_t &params) {
-  using sample_t = std::uint64_t;
+void benchmark(const Parameters &params) {
+  using sample_type = std::uint64_t;
 #if __has_include(<boost/container/flat_map.hpp>)
   auto sk_profiles =
-      profile_sketch_init<dense32_cs_hist_t<sample_t>,
-                          map_sparse32_cs_hist_t<sample_t>,
-                          map_promotable32_cs_hist_t<sample_t>,
-                          flatmap_sparse32_cs_hist_t<sample_t>,
-                          flatmap_promotable32_cs_hist_t<sample_t>>(params);
+      profile_sketch_init<dense32_cs_hist<sample_type>,
+                          map_sparse32_cs_hist<sample_type>,
+                          map_promotable32_cs_hist<sample_type>,
+                          flatmap_sparse32_cs_hist<sample_type>,
+                          flatmap_promotable32_cs_hist<sample_type>>(params);
 #else
   auto sk_profiles =
-      profile_sketch_init<dense32_cs_hist_t<sample_t>,
-                          map_sparse32_cs_hist_t<sample_t>,
-                          map_promotable32_cs_hist_t<sample_t>>(params);
+      profile_sketch_init<dense32_cs_hist<sample_type>,
+                          map_sparse32_cs_hist<sample_type>,
+                          map_promotable32_cs_hist<sample_type>>(params);
 #endif
   auto container_profiles =
-      profile_container_init<vector_init_t<sample_t>, set_init_t<sample_t>,
-                             map_init_t<sample_t, sample_t>>(params);
+      profile_container_init<vector_init<sample_type>, set_init<sample_type>,
+                             map_init<sample_type, sample_type>>(params);
   print_profiles(sk_profiles, container_profiles);
 }
 
 int main(int argc, char **argv) {
-  parameters_t params = parse_args(argc, argv);
+  Parameters params = parse_args(argc, argv);
 
   std::cout << params << std::endl;
 

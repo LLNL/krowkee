@@ -42,20 +42,20 @@ template <template <typename, typename...> class SketchFunc,
 class Sketch {
  public:
   /** Alias for Register type */
-  typedef RegType reg_t;
+  using register_type = RegType;
   /** Alias for fully-templated container type */
-  typedef ContainerType<RegType, MergeOp<RegType>> container_t;
+  using container_type = ContainerType<register_type, MergeOp<register_type>>;
   /** Alias for fully-templated sketch functor type*/
-  typedef SketchFunc<RegType, Args...> sf_t;
+  using transform_type = SketchFunc<register_type, Args...>;
   /** Alias for fully-templated sketch functor pointer type*/
-  typedef PtrType<sf_t> sf_ptr_t;
+  using transform_ptr_type = PtrType<transform_type>;
   /** Alias for fully-templated self type*/
-  typedef Sketch<SketchFunc, ContainerType, MergeOp, RegType, PtrType, Args...>
-      sk_t;
+  using self_type = Sketch<SketchFunc, ContainerType, MergeOp, register_type,
+                           PtrType, Args...>;
 
  private:
-  sf_ptr_t    _sf_ptr;
-  container_t _con;
+  transform_ptr_type _transform_ptr;
+  container_type     _con;
 
  public:
   /**
@@ -67,17 +67,19 @@ class Sketch {
    * @param promotion_threshold threshold at which promotable sketchs should
    * promote themselves.
    */
-  Sketch(const sf_ptr_t &sf_ptr, const std::size_t compaction_threshold = 100,
-         const std::size_t promotion_threshold = 4096)
+  Sketch(const transform_ptr_type &sf_ptr,
+         const std::size_t         compaction_threshold = 100,
+         const std::size_t         promotion_threshold  = 4096)
       : _con(sf_ptr->range_size(), compaction_threshold, promotion_threshold),
-        _sf_ptr(sf_ptr) {}
+        _transform_ptr(sf_ptr) {}
 
   /**
    * @brief Copy constructor
    *
    * @param rhs `krowkee::sketch::Sketch` to be copied
    */
-  Sketch(const sk_t &rhs) : _con(rhs._con), _sf_ptr(rhs._sf_ptr) {}
+  Sketch(const self_type &rhs)
+      : _con(rhs._con), _transform_ptr(rhs._transform_ptr) {}
 
   /**
    * @brief default constructor
@@ -85,9 +87,9 @@ class Sketch {
    * @note Only used for move constructor.
    */
   Sketch() {}
-  // Sketch() : _con(), _sf_ptr(std::make_shared<sf_t>(1)) {}
-  // Sketch() : _con(), _make_def_ptr(), _sf_ptr(_make_def_ptr(1)) {}
-  // Sketch() : _con(), _sf_ptr(_make_default_ptr()) {
+  // Sketch() : _con(), _transform_ptr(std::make_shared<transform_type>(1)) {}
+  // Sketch() : _con(), _make_def_ptr(), _transform_ptr(_make_def_ptr(1)) {}
+  // Sketch() : _con(), _transform_ptr(_make_default_ptr()) {
   //   std::cout << "GETS HERE!!!!!" << std::endl;
   // }
   // Sketch() { std::cout << "GETS HERE!!!!!" << std::endl; }
@@ -97,7 +99,7 @@ class Sketch {
   //  *
   //  * @param rhs krowkee::sketch::Sketch to be destructively copied.
   //  */
-  // Sketch(sk_t &&rhs) noexcept : Sketch() { std::swap(*this, rhs); }
+  // Sketch(self_type &&rhs) noexcept : Sketch() { std::swap(*this, rhs); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
@@ -112,7 +114,7 @@ class Sketch {
    */
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_sf_ptr, _con);
+    archive(_transform_ptr, _con);
   }
 #endif
 
@@ -121,10 +123,10 @@ class Sketch {
    *
    * @note For testing purposes. Might want to get rid of this.
    *
-   * @return const container_t& A reference to the internal register container
-   * object.
+   * @return const container_type& A reference to the internal register
+   * container object.
    */
-  const container_t &container() { return _con; }
+  const container_type &container() { return _con; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Insertion
@@ -142,7 +144,7 @@ class Sketch {
    */
   template <typename... ItemArgs>
   inline void insert(const ItemArgs &...args) {
-    (*_sf_ptr)(_con, args...);
+    (*_transform_ptr)(_con, args...);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -179,15 +181,15 @@ class Sketch {
    *
    * @param rhs the other Sketch embedding. Must use the same random
    *     seed.
-   * @return sk_t& The merge of the two sketches.
+   * @return self_type& The merge of the two sketches.
    * @throws std::invalid_argument if the `SketchFunc`s do not agree.
    */
-  sk_t &operator+=(const sk_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     if (!same_functors(rhs)) {
       std::stringstream ss;
       ss << "error: attempting to merge linear sketch objects with different "
             "hash functors : ("
-         << *(_sf_ptr) << ") and (" << *(rhs._sf_ptr) << ")";
+         << *(_transform_ptr) << ") and (" << *(rhs._transform_ptr) << ")";
       throw std::invalid_argument(ss.str());
     }
     _con += rhs._con;
@@ -199,10 +201,11 @@ class Sketch {
    *
    * @param lhs The left-hand sketch object.
    * @param rhs The right-hand sketch object.
-   * @return sk_t The merge of the two sketch objects.
+   * @return self_type The merge of the two sketch objects.
    */
-  inline friend sk_t operator+(const sk_t &lhs, const sk_t &rhs) {
-    sk_t ret(lhs);
+  inline friend self_type operator+(const self_type &lhs,
+                                    const self_type &rhs) {
+    self_type ret(lhs);
     ret += rhs;
     return ret;
   }
@@ -240,7 +243,7 @@ class Sketch {
    */
   static inline std::string name() {
     std::stringstream ss;
-    ss << container_t::name() << " " << sf_t::name();
+    ss << container_type::name() << " " << transform_type::name();
     return ss.str();
   }
 
@@ -255,7 +258,7 @@ class Sketch {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << container_t::full_name() << " " << sf_t::full_name();
+    ss << container_type::full_name() << " " << transform_type::full_name();
     return ss.str();
   }
 
@@ -275,7 +278,7 @@ class Sketch {
   constexpr std::size_t size() const { return _con.size(); }
 
   /** The number of bytes used by each register. */
-  constexpr std::size_t reg_size() const { return sizeof(RegType); }
+  constexpr std::size_t reg_size() const { return sizeof(register_type); }
 
   /**
    * @brief Get the number of possible range elements returned by the sketch
@@ -283,7 +286,9 @@ class Sketch {
    *
    * @return constexpr std::size_t The size of the sketch functor range.
    */
-  constexpr std::size_t range_size() const { return _sf_ptr->range_size(); }
+  constexpr std::size_t range_size() const {
+    return _transform_ptr->range_size();
+  }
 
   /**
    * @brief Get the compaction threshold of the container.
@@ -297,9 +302,9 @@ class Sketch {
   /**
    * @brief Get a copy of the raw vector of registers in the container.
    *
-   * @return std::vector<RegType> The register vector.
+   * @return std::vector<register_type> The register vector.
    */
-  std::vector<RegType> register_vector() const {
+  std::vector<register_type> register_vector() const {
     return _con.register_vector();
   }
 
@@ -313,8 +318,8 @@ class Sketch {
    * @return true The functors agree.
    * @return false The functors disagree.
    */
-  constexpr bool same_functors(const sk_t &rhs) const {
-    return *_sf_ptr == *rhs._sf_ptr;
+  constexpr bool same_functors(const self_type &rhs) const {
+    return *_transform_ptr == *rhs._transform_ptr;
   }
 
   /**
@@ -328,7 +333,7 @@ class Sketch {
    * @return true The sketches are equivalent.
    * @return false The sketches disagree.
    */
-  friend constexpr bool operator==(const sk_t &lhs, const sk_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     if (!lhs.same_functors(rhs)) {
       return false;
     }
@@ -343,7 +348,7 @@ class Sketch {
    * @return true The sketches disagree.
    * @return false The sketches are equivalent.
    */
-  friend constexpr bool operator!=(const sk_t &lhs, const sk_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
 
@@ -359,8 +364,8 @@ class Sketch {
    * @param lhs The left-hand sketch.
    * @param rhs The right-hand sketch.
    */
-  friend void swap(sk_t &lhs, sk_t &rhs) {
-    std::swap(lhs._sf_ptr, rhs._sf_ptr);
+  friend void swap(self_type &lhs, self_type &rhs) {
+    std::swap(lhs._transform_ptr, rhs._transform_ptr);
     swap(lhs._con, rhs._con);
   }
 
@@ -374,9 +379,9 @@ class Sketch {
    * https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
    *
    * @param rhs The right-hand sketch.
-   * @return sk_t& The new value of this sketch, swapped with `rhs`.
+   * @return self_type& The new value of this sketch, swapped with `rhs`.
    */
-  sk_t &operator=(sk_t rhs) {
+  self_type &operator=(self_type rhs) {
     std::swap(*this, rhs);
     return *this;
   }
@@ -394,7 +399,7 @@ class Sketch {
    * @param sk The sketch object.
    * @return std::ostream& The new stream state.
    */
-  friend std::ostream &operator<<(std::ostream &os, const sk_t &sk) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &sk) {
     os << sk._con;
     return os;
   }
@@ -412,7 +417,7 @@ class Sketch {
    * @return RetType The sum over all register values + `init`.
    */
   template <typename RetType>
-  friend RetType accumulate(const sk_t &sk, const RetType init) {
+  friend RetType accumulate(const self_type &sk, const RetType init) {
     return accumulate(sk._con, init);
   }
 };

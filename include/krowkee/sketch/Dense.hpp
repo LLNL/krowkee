@@ -35,13 +35,12 @@ namespace sketch {
 template <typename RegType, typename MergeOp>
 class Dense {
  public:
-  /** Alias for the register collection type. */
-  typedef std::vector<RegType> col_t;
-  /** Alias for the fully-templated Dense type. */
-  typedef Dense<RegType, MergeOp> dense_t;
+  using register_type  = RegType;
+  using registers_type = std::vector<register_type>;
+  using self_type      = Dense<register_type, MergeOp>;
 
  protected:
-  col_t _registers;
+  registers_type _registers;
 
  public:
   /**
@@ -61,7 +60,7 @@ class Dense {
    *
    * @param rhs The base Dense container to copy.
    */
-  Dense(const dense_t &rhs) : _registers(rhs._registers) {}
+  Dense(const self_type &rhs) : _registers(rhs._registers) {}
 
   /**
    * @brief Default constructor for Dense
@@ -71,7 +70,7 @@ class Dense {
   Dense() {}
 
   // // move constructor
-  // Dense(dense_t &&rhs) : dense_t() { std::swap(*this, rhs); }
+  // Dense(self_type &&rhs) : self_type() { std::swap(*this, rhs); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Swaps
@@ -82,7 +81,7 @@ class Dense {
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
    */
-  friend void swap(dense_t &lhs, dense_t &rhs) {
+  friend void swap(self_type &lhs, self_type &rhs) {
     std::swap(lhs._registers, rhs._registers);
   }
 
@@ -146,7 +145,7 @@ class Dense {
    * merge sketches of different types.
    * @throws std::invalid_argument if the register sizes do not match.
    */
-  inline void merge(const dense_t &rhs) {
+  inline void merge(const self_type &rhs) {
     if (size() != rhs.size()) {
       std::stringstream ss;
       ss << "error: attempting to merge embedding 1 of dimension " << size()
@@ -164,9 +163,9 @@ class Dense {
    *
    * @param rhs the other Dense. Care must be taken to ensure that
    *     one does not merge subspace embeddings of different types.
-   * @return dense_t& `this` Dense, having been merged with `rhs`.
+   * @return self_type& `this` Dense, having been merged with `rhs`.
    */
-  dense_t &operator+=(const dense_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     merge(rhs);
     return *this;
   }
@@ -176,9 +175,9 @@ class Dense {
    *
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
-   * @return dense_t The merge of the two container objects.
+   * @return self_type The merge of the two container objects.
    */
-  inline friend dense_t operator+(dense_t lhs, const dense_t &rhs) {
+  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -188,23 +187,27 @@ class Dense {
   //////////////////////////////////////////////////////////////////////////////
 
   /** Mutable begin iterator. */
-  constexpr typename col_t::iterator begin() { return std::begin(_registers); }
+  constexpr typename registers_type::iterator begin() {
+    return std::begin(_registers);
+  }
   /** Const begin iterator. */
-  constexpr typename col_t::const_iterator begin() const {
+  constexpr typename registers_type::const_iterator begin() const {
     return std::cbegin(_registers);
   }
   /** Const begin iterator. */
-  constexpr typename col_t::const_iterator cbegin() const {
+  constexpr typename registers_type::const_iterator cbegin() const {
     return std::cbegin(_registers);
   }
   /** Mutable end iterator. */
-  constexpr typename col_t::iterator end() { return std::end(_registers); }
+  constexpr typename registers_type::iterator end() {
+    return std::end(_registers);
+  }
   /** Const end iterator. */
-  constexpr typename col_t::const_iterator end() const {
+  constexpr typename registers_type::const_iterator end() const {
     return std::cend(_registers);
   }
   /** Const end iterator. */
-  constexpr typename col_t::const_iterator cend() {
+  constexpr typename registers_type::const_iterator cend() {
     return std::cend(_registers);
   }
 
@@ -213,9 +216,10 @@ class Dense {
    *
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
-   * @return constexpr const RegType& A const reference to `_registers[index]`.
+   * @return constexpr const register_type& A const reference to
+   * `_registers[index]`.
    */
-  constexpr const RegType &operator[](const std::uint64_t index) const {
+  constexpr const register_type &operator[](const std::uint64_t index) const {
     return _registers.get(index);
   }
 
@@ -224,9 +228,9 @@ class Dense {
    *
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
-   * @return RegType& A reference to `_registers[index]`.
+   * @return register_type& A reference to `_registers[index]`.
    */
-  RegType &operator[](const std::uint64_t index) {
+  register_type &operator[](const std::uint64_t index) {
     return _registers.at(index);
   }
 
@@ -255,23 +259,23 @@ class Dense {
   constexpr std::size_t size() const { return _registers.size(); }
 
   /** The number of bytes used by each register. */
-  constexpr std::size_t reg_size() const { return sizeof(RegType); }
+  constexpr std::size_t reg_size() const { return sizeof(register_type); }
 
   constexpr std::size_t compaction_threshold() const { return 0; }
 
   /**
    * @brief Get a copy of the raw registers vector.
    *
-   * @return const col_t The register vector.
+   * @return const registers_type The register vector.
    */
-  const col_t get_registers() const { return _registers; }
+  const registers_type get_registers() const { return _registers; }
 
   /**
    * @brief Get a copy of the raw registers vector.
    *
-   * @return const col_t The register vector.
+   * @return const registers_type The register vector.
    */
-  col_t register_vector() const { return _registers; }
+  registers_type register_vector() const { return _registers; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
@@ -283,7 +287,7 @@ class Dense {
    * @return true The registers agree.
    * @return false At least one register disagrees.
    */
-  constexpr bool same_registers(const dense_t &rhs) const {
+  constexpr bool same_registers(const self_type &rhs) const {
     return _registers == rhs._registers;
   }
 
@@ -295,7 +299,7 @@ class Dense {
    * @return true The registers agree.
    * @return false At least one register disagrees.
    */
-  friend constexpr bool operator==(const dense_t &lhs, const dense_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs.same_registers(rhs);
   }
 
@@ -307,7 +311,7 @@ class Dense {
    * @return true At least one register disagrees.
    * @return false The registers agree.
    */
-  friend constexpr bool operator!=(const dense_t &lhs, const dense_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
 
@@ -321,9 +325,9 @@ class Dense {
    * https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
    *
    * @param rhs The other container.
-   * @return dense_t& `this`, having been swapped with `rhs`.
+   * @return self_type& `this`, having been swapped with `rhs`.
    */
-  dense_t &operator=(dense_t rhs) {
+  self_type &operator=(self_type rhs) {
     std::swap(*this, rhs);
     return *this;
   }
@@ -343,7 +347,7 @@ class Dense {
    * @param sk The Dense object.
    * @return std::ostream& The new stream state.
    */
-  friend std::ostream &operator<<(std::ostream &os, const dense_t &sk) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &sk) {
     int idx = 0;
     for_each(sk, [&](const auto &p) {
       if (idx != 0) {
@@ -367,7 +371,7 @@ class Dense {
    * @return RetType The sum over all register values + `init`.
    */
   template <typename RetType>
-  friend RetType accumulate(const dense_t &sk, const RetType init) {
+  friend RetType accumulate(const self_type &sk, const RetType init) {
     return std::accumulate(std::cbegin(sk), std::cend(sk), init);
   }
 
@@ -379,7 +383,7 @@ class Dense {
    * @param func The particular function to apply.
    */
   template <typename Func>
-  friend void for_each(const dense_t &sk, const Func &func) {
+  friend void for_each(const self_type &sk, const Func &func) {
     std::for_each(std::cbegin(sk._registers), std::cend(sk._registers), func);
   }
 };

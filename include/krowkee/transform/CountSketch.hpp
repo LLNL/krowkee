@@ -41,9 +41,9 @@ using krowkee::stream::Element;
  */
 template <typename RegType, typename HashFunc>
 class CountSketchFunctor {
-  typedef CountSketchFunctor<RegType, HashFunc> csf_t;
-  HashFunc                                      _reg_hf;
-  HashFunc                                      _pol_hf;
+  using self_type = CountSketchFunctor<RegType, HashFunc>;
+  HashFunc _reg_hf;
+  HashFunc _pol_hf;
 
  public:
   /**

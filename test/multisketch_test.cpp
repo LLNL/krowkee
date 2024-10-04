@@ -18,8 +18,8 @@
 
 #include <cstring>
 
-using sketch_type_t = krowkee::util::sketch_type_t;
-using cmap_type_t   = krowkee::util::cmap_type_t;
+using sketch_impl_type = krowkee::util::sketch_impl_type;
+using cmap_impl_type   = krowkee::util::cmap_impl_type;
 
 using MultiLocalDense32CountSketch =
     krowkee::stream::MultiLocalCountSketch<krowkee::sketch::Dense,
@@ -48,38 +48,39 @@ using MultiLocalDense32FWHT =
 /**
  * Struct bundling the experiment parameters.
  */
-struct parameters_t {
-  std::uint64_t count;
-  std::uint64_t range_size;
-  std::size_t   compaction_threshold;
-  std::size_t   promotion_threshold;
-  std::uint64_t seed;
-  sketch_type_t sketch_type;
-  cmap_type_t   cmap_type;
-  bool          verbose;
+struct Parameters {
+  std::uint64_t    count;
+  std::uint64_t    range_size;
+  std::size_t      compaction_threshold;
+  std::size_t      promotion_threshold;
+  std::uint64_t    seed;
+  sketch_impl_type sketch_impl;
+  cmap_impl_type   cmap_impl;
+  bool             verbose;
 };
 
 /**
  * Verify that krowkee::Sketch::Multi correctly handles multiple SketchType
  * objects. Not sure how much more thorough I should be.
  */
-template <typename SketchType, template <typename> class MakePtrFunc>
+template <typename MultiType, template <typename> class MakePtrFunc>
 struct multi_ingest_check {
-  typedef SketchType               msk_t;
-  typedef typename msk_t::sf_t     sf_t;
-  typedef typename msk_t::sf_ptr_t sf_ptr_t;
-  typedef MakePtrFunc<sf_t>        make_ptr_t;
+  using multi_type         = MultiType;
+  using transform_type     = typename multi_type::transform_type;
+  using transform_ptr_type = typename multi_type::transform_ptr_type;
+  using make_ptr_type      = MakePtrFunc<transform_type>;
 
   std::string name() const {
     std::stringstream ss;
-    ss << msk_t::name() << " good merges";
+    ss << multi_type::name() << " good merges";
     return ss.str();
   }
 
-  void operator()(const parameters_t &params) const {
-    make_ptr_t _make_ptr = make_ptr_t();
-    sf_ptr_t   sf_ptr(_make_ptr(params.range_size, params.seed));
-    msk_t dsk(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+  void operator()(const Parameters &params) const {
+    make_ptr_type      _make_ptr = make_ptr_type();
+    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    multi_type         dsk(transform_ptr, params.compaction_threshold,
+                           params.promotion_threshold);
     for (int i(0); i < params.count; i++) {
       dsk.insert(0, i);
       dsk.insert(1, i);
@@ -151,8 +152,8 @@ struct multi_ingest_check {
     }
 
     {
-      msk_t dsk2(dsk);
-      bool  partial_copy_success = dsk.at(0) == dsk2.at(0);
+      multi_type dsk2(dsk);
+      bool       partial_copy_success = dsk.at(0) == dsk2.at(0);
       CHECK_CONDITION(partial_copy_success == true, "partial copy constructor");
       bool copy_success = dsk == dsk2;
       CHECK_CONDITION(copy_success == true, "full copy constructor");
@@ -184,7 +185,7 @@ void print_help(char *exe_name) {
             << std::endl;
 }
 
-void parse_args(int argc, char **argv, parameters_t &params) {
+void parse_args(int argc, char **argv, Parameters &params) {
   int c;
 
   while (1) {
@@ -236,10 +237,10 @@ void parse_args(int argc, char **argv, parameters_t &params) {
         params.promotion_threshold = std::atoll(optarg);
         break;
       case 't':
-        params.sketch_type = krowkee::util::get_sketch_type(optarg);
+        params.sketch_impl = krowkee::util::get_sketch_impl_type(optarg);
         break;
       case 'm':
-        params.cmap_type = krowkee::util::get_cmap_type(optarg);
+        params.cmap_impl = krowkee::util::get_cmap_impl_type(optarg);
         break;
       case 's':
         params.seed = std::atol(optarg);
@@ -270,84 +271,83 @@ void parse_args(int argc, char **argv, parameters_t &params) {
  * Execute the battery of tests for the given sketch functor.
  */
 template <typename MultiType, template <typename> class MakePtrFunc>
-void perform_tests(const parameters_t &params) {
-  typedef MultiType            msk_t;
-  typedef typename msk_t::sk_t sk_t;
-  typedef typename msk_t::sf_t sf_t;
+void perform_tests(const Parameters &params) {
+  using multi_type     = MultiType;
+  using sketch_type    = typename multi_type::sketch_type;
+  using transform_type = typename multi_type::transform_type;
 
   print_line();
   print_line();
-  std::cout << "Testing " << msk_t::full_name() << std::endl;
+  std::cout << "Testing " << multi_type::full_name() << std::endl;
   print_line();
   print_line();
 
   std::cout << std::endl << std::endl;
 
-  do_test<multi_ingest_check<msk_t, MakePtrFunc>>(params);
+  do_test<multi_ingest_check<multi_type, MakePtrFunc>>(params);
 }
 
-void choose_local_tests(const parameters_t &params) {
-  if (params.sketch_type == sketch_type_t::cst) {
-    perform_tests<MultiLocalDense32CountSketch, make_shared_functor_t>(params);
-  } else if (params.sketch_type == sketch_type_t::sparse_cst) {
-    if (params.cmap_type == cmap_type_t::std) {
-      perform_tests<MultiLocalMapSparse32CountSketch, make_shared_functor_t>(
+void choose_local_tests(const Parameters &params) {
+  if (params.sketch_impl == sketch_impl_type::cst) {
+    perform_tests<MultiLocalDense32CountSketch, make_shared_functor>(params);
+  } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
+    if (params.cmap_impl == cmap_impl_type::std) {
+      perform_tests<MultiLocalMapSparse32CountSketch, make_shared_functor>(
           params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_type == cmap_type_t::boost) {
-      perform_tests<MultiLocalFlatMapSparse32CountSketch,
-                    make_shared_functor_t>(params);
+    } else if (params.cmap_impl == cmap_impl_type::boost) {
+      perform_tests<MultiLocalFlatMapSparse32CountSketch, make_shared_functor>(
+          params);
 #endif
     }
-  } else if (params.sketch_type == sketch_type_t::promotable_cst) {
-    if (params.cmap_type == cmap_type_t::std) {
-      perform_tests<MultiLocalMapPromotable32CountSketch,
-                    make_shared_functor_t>(params);
+  } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
+    if (params.cmap_impl == cmap_impl_type::std) {
+      perform_tests<MultiLocalMapPromotable32CountSketch, make_shared_functor>(
+          params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_type == cmap_type_t::boost) {
+    } else if (params.cmap_impl == cmap_impl_type::boost) {
       perform_tests<MultiLocalFlatMapPromotable32CountSketch,
-                    make_shared_functor_t>(params);
+                    make_shared_functor>(params);
 #endif
     }
-  } else if (params.sketch_type == sketch_type_t::fwht) {
-    perform_tests<MultiLocalDense32FWHT, make_shared_functor_t>(params);
+  } else if (params.sketch_impl == sketch_impl_type::fwht) {
+    perform_tests<MultiLocalDense32FWHT, make_shared_functor>(params);
   }
 }
 
-void do_all_local_tests(const parameters_t &params) {
-  perform_tests<MultiLocalDense32CountSketch, make_shared_functor_t>(params);
-  perform_tests<MultiLocalMapSparse32CountSketch, make_shared_functor_t>(
-      params);
-  perform_tests<MultiLocalMapPromotable32CountSketch, make_shared_functor_t>(
+void do_all_local_tests(const Parameters &params) {
+  perform_tests<MultiLocalDense32CountSketch, make_shared_functor>(params);
+  perform_tests<MultiLocalMapSparse32CountSketch, make_shared_functor>(params);
+  perform_tests<MultiLocalMapPromotable32CountSketch, make_shared_functor>(
       params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  perform_tests<MultiLocalFlatMapSparse32CountSketch, make_shared_functor_t>(
+  perform_tests<MultiLocalFlatMapSparse32CountSketch, make_shared_functor>(
       params);
-  perform_tests<MultiLocalFlatMapPromotable32CountSketch,
-                make_shared_functor_t>(params);
+  perform_tests<MultiLocalFlatMapPromotable32CountSketch, make_shared_functor>(
+      params);
 #endif
-  perform_tests<MultiLocalDense32FWHT, make_shared_functor_t>(params);
+  perform_tests<MultiLocalDense32FWHT, make_shared_functor>(params);
 }
 
 int main(int argc, char **argv) {
-  std::uint64_t count(10000);
-  std::uint64_t range_size(16);
-  std::uint64_t seed(krowkee::hash::default_seed);
-  std::size_t   compaction_threshold(10);
-  std::size_t   promotion_threshold(8);
-  sketch_type_t sketch_type(sketch_type_t::cst);
-  cmap_type_t   cmap_type(cmap_type_t::std);
-  bool          verbose(false);
-  bool          do_all(argc == 1);
+  std::uint64_t    count(10000);
+  std::uint64_t    range_size(16);
+  std::uint64_t    seed(krowkee::hash::default_seed);
+  std::size_t      compaction_threshold(10);
+  std::size_t      promotion_threshold(8);
+  sketch_impl_type sketch_impl(sketch_impl_type::cst);
+  cmap_impl_type   cmap_impl(cmap_impl_type::std);
+  bool             verbose(false);
+  bool             do_all(argc == 1);
 
-  parameters_t params{count,
-                      range_size,
-                      compaction_threshold,
-                      promotion_threshold,
-                      seed,
-                      sketch_type,
-                      cmap_type,
-                      verbose};
+  Parameters params{count,
+                    range_size,
+                    compaction_threshold,
+                    promotion_threshold,
+                    seed,
+                    sketch_impl,
+                    cmap_impl,
+                    verbose};
 
   parse_args(argc, argv, params);
 

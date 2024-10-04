@@ -18,7 +18,7 @@
 namespace krowkee {
 namespace sketch {
 
-enum class promotable_mode_t : std::uint8_t { sparse, dense };
+enum class promotable_mode_type : std::uint8_t { sparse, dense };
 
 /**
  * @brief Sparse to Dense data structure for Sketch objects.
@@ -38,22 +38,24 @@ template <typename RegType, typename MergeOp,
 class Promotable {
  public:
   /** Alias for the fully-templated Dense container. */
-  typedef krowkee::sketch::Dense<RegType, MergeOp> dense_t;
-  typedef std::unique_ptr<dense_t>                 dense_ptr_t;
+  using register_type  = RegType;
+  using dense_type     = krowkee::sketch::Dense<register_type, MergeOp>;
+  using dense_ptr_type = std::unique_ptr<dense_type>;
   /** Alias for the fully-templated Sparse container. */
-  typedef krowkee::sketch::Sparse<RegType, MergeOp, MapType, KeyType> sparse_t;
-  typedef typename sparse_t::map_t                                    map_t;
-  typedef std::unique_ptr<sparse_t> sparse_ptr_t;
+  using sparse_type =
+      krowkee::sketch::Sparse<register_type, MergeOp, MapType, KeyType>;
+  using map_type        = typename sparse_type::map_type;
+  using sparse_ptr_type = std::unique_ptr<sparse_type>;
   /** Alias for the fully-templated Promotable container. */
-  typedef Promotable<RegType, MergeOp, MapType, KeyType> promotable_t;
+  using self_type = Promotable<register_type, MergeOp, MapType, KeyType>;
 
  private:
-  dense_ptr_t       _dense_ptr;
-  sparse_ptr_t      _sparse_ptr;
-  std::size_t       _range_size;
-  std::size_t       _compaction_threshold;
-  std::size_t       _promotion_threshold;
-  promotable_mode_t _mode;
+  dense_ptr_type       _dense_ptr;
+  sparse_ptr_type      _sparse_ptr;
+  std::size_t          _range_size;
+  std::size_t          _compaction_threshold;
+  std::size_t          _promotion_threshold;
+  promotable_mode_type _mode;
 
  public:
   /**
@@ -71,9 +73,9 @@ class Promotable {
       : _range_size(range_size),
         _compaction_threshold(compaction_threshold),
         _promotion_threshold(promotion_threshold),
-        _mode(promotable_mode_t::sparse),
+        _mode(promotable_mode_type::sparse),
         _sparse_ptr(
-            std::make_unique<sparse_t>(range_size, compaction_threshold)) {}
+            std::make_unique<sparse_type>(range_size, compaction_threshold)) {}
 
   /**
    * @brief Copy constructor.
@@ -83,16 +85,17 @@ class Promotable {
    *
    * @param rhs container to be copied.
    */
-  Promotable(const promotable_t &rhs)
+  Promotable(const self_type &rhs)
       : _range_size(rhs._range_size),
         _compaction_threshold(rhs._compaction_threshold),
         _promotion_threshold(rhs._promotion_threshold),
         _mode(rhs._mode) {
-    if (_mode == promotable_mode_t::sparse) {
-      sparse_ptr_t sparse_ptr(std::make_unique<sparse_t>(*rhs._sparse_ptr));
+    if (_mode == promotable_mode_type::sparse) {
+      sparse_ptr_type sparse_ptr(
+          std::make_unique<sparse_type>(*rhs._sparse_ptr));
       std::swap(sparse_ptr, _sparse_ptr);
     } else {
-      dense_ptr_t dense_ptr(std::make_unique<dense_t>(*rhs._dense_ptr));
+      dense_ptr_type dense_ptr(std::make_unique<dense_type>(*rhs._dense_ptr));
       std::swap(dense_ptr, _dense_ptr);
     }
   }
@@ -103,14 +106,14 @@ class Promotable {
    * @note Only use for move constructor.
    */
   Promotable()
-      : _mode(promotable_mode_t::sparse), _sparse_ptr(), _dense_ptr() {}
+      : _mode(promotable_mode_type::sparse), _sparse_ptr(), _dense_ptr() {}
 
   // /**
   //  * move constructor
   //  *
-  //  * @param rhs r-value promotable_t to be destructively copied.
+  //  * @param rhs r-value self_type to be destructively copied.
   //  */
-  // Promotable(promotable_t &&rhs) noexcept : Promotable() {
+  // Promotable(self_type &&rhs) noexcept : Promotable() {
   //   std::swap(*this, rhs);
   // }
 
@@ -123,12 +126,12 @@ class Promotable {
    * @param lhs The left-hand container.
    * @param rhs The right-hand containr.
    */
-  friend void swap(promotable_t &lhs, promotable_t &rhs) {
+  friend void swap(self_type &lhs, self_type &rhs) {
     std::swap(lhs._range_size, rhs._range_size);
     std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._promotion_threshold, rhs._promotion_threshold);
     std::swap(lhs._mode, rhs._mode);
-    if (lhs._mode == promotable_mode_t::sparse) {
+    if (lhs._mode == promotable_mode_type::sparse) {
       std::swap(lhs._sparse_ptr, rhs._sparse_ptr);
     } else {
       std::swap(lhs._dense_ptr, rhs._dense_ptr);
@@ -149,7 +152,7 @@ class Promotable {
   template <class Archive>
   void save(Archive &oarchive) const {
     oarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       oarchive(_sparse_ptr);
     } else {
       oarchive(_dense_ptr);
@@ -165,7 +168,7 @@ class Promotable {
   template <class Archive>
   void load(Archive &iarchive) {
     iarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       iarchive(_sparse_ptr);
     } else {
       iarchive(_dense_ptr);
@@ -184,9 +187,9 @@ class Promotable {
    * https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
    *
    * @param rhs The other container.
-   * @return sparse_t& `this`, having been swapped with `rhs`.
+   * @return sparse_type& `this`, having been swapped with `rhs`.
    */
-  promotable_t &operator=(promotable_t rhs) {
+  self_type &operator=(self_type rhs) {
     std::swap(*this, rhs);
     return *this;
   }
@@ -210,30 +213,30 @@ class Promotable {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << krowkee::hash::type_name<map_t>();
+    ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();
   }
 
   /** The size of the underlying Sparse or Dense container, depending on the
    * mode. */
   constexpr std::size_t size() const {
-    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->size()
-                                                : _dense_ptr->size();
+    return (_mode == promotable_mode_type::sparse) ? _sparse_ptr->size()
+                                                   : _dense_ptr->size();
   }
 
   /** True unless we are in Sparse mode and uncompacted. */
   constexpr bool is_compact() const {
-    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->is_compact()
-                                                : true;
+    return (_mode == promotable_mode_type::sparse) ? _sparse_ptr->is_compact()
+                                                   : true;
   }
 
   /** Return `true` if in sparse mode. */
   constexpr bool is_sparse() const {
-    return (_mode == promotable_mode_t::sparse) ? true : false;
+    return (_mode == promotable_mode_type::sparse) ? true : false;
   }
 
   /** The number of bytes used by each register. */
-  constexpr std::size_t reg_size() const { return sizeof(RegType); }
+  constexpr std::size_t reg_size() const { return sizeof(register_type); }
 
   /** The size at which we switch from Sparse mode to Dense mode. */
   constexpr std::size_t promotion_threshold() const {
@@ -241,11 +244,11 @@ class Promotable {
   }
 
   /** Get the current mode. */
-  constexpr promotable_mode_t mode() const { return _mode; }
+  constexpr promotable_mode_type mode() const { return _mode; }
 
   /** The size at which the compaction buffer will flush. */
   constexpr std::size_t compaction_threshold() const {
-    return (_mode == promotable_mode_t::sparse)
+    return (_mode == promotable_mode_type::sparse)
                ? _sparse_ptr->compaction_threshold()
                : _dense_ptr->compaction_threshold();
   }
@@ -256,11 +259,12 @@ class Promotable {
    * The vector will be sparse, with zeros for unset indices, if we are in
    * Sparse mode.
    *
-   * @return std::vector<RegType> Copy of the register vector.
+   * @return std::vector<register_type> Copy of the register vector.
    */
-  std::vector<RegType> register_vector() const {
-    return (_mode == promotable_mode_t::sparse) ? _sparse_ptr->register_vector()
-                                                : _dense_ptr->register_vector();
+  std::vector<register_type> register_vector() const {
+    return (_mode == promotable_mode_type::sparse)
+               ? _sparse_ptr->register_vector()
+               : _dense_ptr->register_vector();
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -275,7 +279,7 @@ class Promotable {
    * @return true The thresholds agree.
    * @return false The thresholds disagree.
    */
-  constexpr bool same_parameters(const promotable_t &rhs) const {
+  constexpr bool same_parameters(const self_type &rhs) const {
     return _promotion_threshold == rhs._promotion_threshold;
   }
 
@@ -291,12 +295,11 @@ class Promotable {
    * @return false At least one register disagrees or the promotion thresholds
    * disagree.
    */
-  friend constexpr bool operator==(const promotable_t &lhs,
-                                   const promotable_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     if (lhs.same_parameters(rhs) == false || lhs._mode != rhs._mode) {
       return false;
     }
-    if (lhs._mode == promotable_mode_t::sparse) {
+    if (lhs._mode == promotable_mode_type::sparse) {
       return *lhs._sparse_ptr == *rhs._sparse_ptr;
     } else {
       return *lhs._dense_ptr == *rhs._dense_ptr;
@@ -312,8 +315,7 @@ class Promotable {
    * disagree.
    * @return false The registers agree and promotion thresholds are the same.
    */
-  friend constexpr bool operator!=(const promotable_t &lhs,
-                                   const promotable_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
 
@@ -323,7 +325,7 @@ class Promotable {
 
   /** If in Sparse mode, flush the update buffer. */
   void compactify() {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       _sparse_ptr->compactify();
     }
   }
@@ -336,14 +338,14 @@ class Promotable {
    * @brief Remove all state and reset to sparse mode.
    */
   void clear() {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       _sparse_ptr->clear();
     } else {
       _dense_ptr.reset(nullptr);
-      _mode = promotable_mode_t::sparse;
+      _mode = promotable_mode_type::sparse;
       _sparse_ptr.reset(nullptr);
       _sparse_ptr =
-          std::make_unique<sparse_t>(_range_size, _compaction_threshold);
+          std::make_unique<sparse_type>(_range_size, _compaction_threshold);
     }
   }
 
@@ -351,7 +353,7 @@ class Promotable {
    * @brief Remove all state and reset to sparse mode.
    */
   bool empty() const {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return _sparse_ptr->empty();
     } else {
       return _dense_ptr->empty();
@@ -368,7 +370,7 @@ class Promotable {
    * @param index The index to erase.
    */
   inline void erase(const std::uint64_t index) {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       _sparse_ptr->erase(index);
     } else {
       _dense_ptr->erase(index);
@@ -381,7 +383,7 @@ class Promotable {
 
   /** Mutable begin iterator. */
   constexpr auto begin() {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::begin(*_sparse_ptr);
     } else {
       return std::begin(*_dense_ptr);
@@ -389,7 +391,7 @@ class Promotable {
   }
   /** Const begin iterator. */
   constexpr auto begin() const {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::cbegin(*_sparse_ptr);
     } else {
       return std::cbegin(*_dense_ptr);
@@ -397,7 +399,7 @@ class Promotable {
   }
   /** Const begin iterator. */
   constexpr auto cbegin() const {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::cbegin(*_sparse_ptr);
     } else {
       return std::cbegin(*_dense_ptr);
@@ -405,7 +407,7 @@ class Promotable {
   }
   /** Mutable end iterator. */
   constexpr auto end() {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::end(*_sparse_ptr);
     } else {
       return std::end(*_dense_ptr);
@@ -413,7 +415,7 @@ class Promotable {
   }
   /** Const end iterator. */
   constexpr auto end() const {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::cend(*_sparse_ptr);
     } else {
       return std::cend(*_dense_ptr);
@@ -421,7 +423,7 @@ class Promotable {
   }
   /** Const end iterator. */
   constexpr auto cend() const {
-    if (_mode == promotable_mode_t::sparse) {
+    if (_mode == promotable_mode_type::sparse) {
       return std::cend(*_sparse_ptr);
     } else {
       return std::cend(*_dense_ptr);
@@ -436,10 +438,10 @@ class Promotable {
    * @brief Access reference to the specified element.
    *
    * @param index The index to access.
-   * @return RegType& The accessed register.
+   * @return register_type& The accessed register.
    */
-  RegType &operator[](const std::uint64_t index) {
-    if (_mode == promotable_mode_t::sparse) {
+  register_type &operator[](const std::uint64_t index) {
+    if (_mode == promotable_mode_type::sparse) {
       if (size() == _promotion_threshold) {
         compactify();
         promote();
@@ -458,16 +460,16 @@ class Promotable {
    * @brief Merge other Promotable into `this`.
    *
    * @param rhs The other promotable. Must have the same parameters.
-   * @return promotable_t& `this` after merging rhs.
+   * @return self_type& `this` after merging rhs.
    */
-  promotable_t &operator+=(const promotable_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     if (same_parameters(rhs) == false) {
       throw std::invalid_argument(
           "containers do not have congruent parameters!");
     }
     if (_mode == rhs._mode) {
-      if (_mode == promotable_mode_t::sparse) {
-        // sparse_t tmp(*rhs._sparse_ptr);
+      if (_mode == promotable_mode_type::sparse) {
+        // sparse_type tmp(*rhs._sparse_ptr);
         // *_sparse_ptr += tmp;
         *_sparse_ptr += *rhs._sparse_ptr;
         if (size() >= _promotion_threshold) {
@@ -477,7 +479,7 @@ class Promotable {
         *_dense_ptr += *rhs._dense_ptr;
       }
     } else {
-      if (_mode == promotable_mode_t::sparse) {
+      if (_mode == promotable_mode_type::sparse) {
         // we are sparse; promote to dense and add rhs._dense_ptr
         // This will be slow; try to avoid it.
         promote();
@@ -497,16 +499,16 @@ class Promotable {
    *
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
-   * @return promotable_t The merge of the two containers.
+   * @return self_type The merge of the two containers.
    */
-  inline friend promotable_t operator+(const promotable_t &lhs,
-                                       const promotable_t &rhs) {
-    if (rhs._mode == promotable_mode_t::dense) {
-      promotable_t ret(rhs);
+  inline friend self_type operator+(const self_type &lhs,
+                                    const self_type &rhs) {
+    if (rhs._mode == promotable_mode_type::dense) {
+      self_type ret(rhs);
       ret += lhs;
       return ret;
     }
-    promotable_t ret(lhs);
+    self_type ret(lhs);
     ret += rhs;
     return ret;
   }
@@ -529,17 +531,17 @@ class Promotable {
    * @throws std::logic_error if the sparse container is not compacted.
    */
   void promote() {
-    if (_mode != promotable_mode_t::sparse) {
+    if (_mode != promotable_mode_type::sparse) {
       throw std::logic_error("Attempt to promote non-sparse container!");
     }
     if (_sparse_ptr->is_compact() == false) {
       throw std::logic_error("Attempt to promote uncompacted container!");
     }
 
-    _dense_ptr = std::make_unique<dense_t>(_sparse_ptr->range_size());
+    _dense_ptr = std::make_unique<dense_type>(_sparse_ptr->range_size());
     merge_from_sparse(*this);
     _sparse_ptr.reset(nullptr);
-    _mode = promotable_mode_t::dense;
+    _mode = promotable_mode_type::dense;
   }
 
   /**
@@ -551,15 +553,15 @@ class Promotable {
    * @param rhs The sparse container.
    * @throws std::logic_error if the rhs container is not in sparse mode.
    */
-  void merge_from_sparse(const promotable_t &rhs) {
-    if (rhs._mode != promotable_mode_t::sparse) {
+  void merge_from_sparse(const self_type &rhs) {
+    if (rhs._mode != promotable_mode_type::sparse) {
       throw std::logic_error("Attempt to dense merge a non-sparse rhs!");
     }
     if (rhs.is_compact() == false) {
       throw std::logic_error("Attempt to dense merge a non-compact rhs!");
     }
     for_each(*rhs._sparse_ptr, [&](const auto &p) {
-      RegType &val((*_dense_ptr)[p.first]);
+      register_type &val((*_dense_ptr)[p.first]);
       val = MergeOp()(val, p.second);
     });
   }
@@ -580,8 +582,8 @@ class Promotable {
    * @return std::ostream& The new stream state.
    * @throw std::logic_error if invoked on uncompacted sketch.
    */
-  friend std::ostream &operator<<(std::ostream &os, const promotable_t &con) {
-    if (con._mode == promotable_mode_t::sparse) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &con) {
+    if (con._mode == promotable_mode_type::sparse) {
       os << *con._sparse_ptr;
     } else {
       os << *con._dense_ptr;
@@ -602,8 +604,8 @@ class Promotable {
    * @return RetType The sum over all register values + `init`.
    */
   template <typename RetType>
-  friend RetType accumulate(const promotable_t &con, const RetType init) {
-    if (con._mode == promotable_mode_t::sparse) {
+  friend RetType accumulate(const self_type &con, const RetType init) {
+    if (con._mode == promotable_mode_type::sparse) {
       return accumulate(*con._sparse_ptr, init);
     } else {
       return accumulate(*con._dense_ptr, init);

@@ -120,8 +120,8 @@ constexpr std::uint64_t ceil_log2_64(const UIntType val) {
  */
 template <class T>
 std::string type_name() {
-  typedef typename std::remove_reference<T>::type TR;
-  std::unique_ptr<char, void (*)(void *)>         own(
+  using TR = typename std::remove_reference<T>::type;
+  std::unique_ptr<char, void (*)(void *)> own(
 #ifndef _MSC_VER
       abi::__cxa_demangle(typeid(TR).name(), nullptr, nullptr, nullptr),
 #else

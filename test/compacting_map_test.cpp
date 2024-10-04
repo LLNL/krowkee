@@ -32,22 +32,22 @@
 #include <random>
 #include <vector>
 
-using cmap_type_t = krowkee::util::cmap_type_t;
+using cmap_impl_type = krowkee::util::cmap_impl_type;
 
-typedef krowkee::container::compacting_map<int, int> csm_t;
+using cmap_type = krowkee::container::compacting_map<int, int>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
-typedef krowkee::container::compacting_map<int, int, boost::container::flat_map>
-    cbm_t;
+using cmap_boost_type =
+    krowkee::container::compacting_map<int, int, boost::container::flat_map>;
 #endif
 
-typedef std::map<int, int>  map_t;
-typedef std::pair<int, int> pair_t;
+using map_type  = std::map<int, int>;
+using pair_type = std::pair<int, int>;
 
-typedef std::chrono::system_clock Clock;
-typedef std::chrono::nanoseconds  ns_t;
+using Clock   = std::chrono::system_clock;
+using ns_type = std::chrono::nanoseconds;
 
-std::ostream &operator<<(std::ostream &os, const pair_t &pair) {
+std::ostream &operator<<(std::ostream &os, const pair_type &pair) {
   os << "(" << pair.first << "," << pair.second << ")";
   return os;
 }
@@ -67,12 +67,12 @@ std::vector<int> get_random_vector(const int count, const std::uint32_t seed) {
 /**
  * Struct bundling the experiment parameters.
  */
-struct parameters_t {
+struct Parameters {
   std::vector<int> to_insert;
   std::uint32_t    count;
   std::size_t      thresh;
   std::uint32_t    seed;
-  cmap_type_t      cmap_type;
+  cmap_impl_type   cmap_impl;
   bool             verbose;
 };
 
@@ -80,7 +80,7 @@ struct clear_check {
   const char *name() { return "clear check"; }
 
   template <typename MapType>
-  void operator()(MapType &cm, const parameters_t params) const {
+  void operator()(MapType &cm, const Parameters params) const {
     bool init_empty = cm.empty();
 
     CHECK_CONDITION(init_empty == true, "initial empty");
@@ -99,7 +99,7 @@ struct insert_check {
   const char *name() { return "insert check"; }
 
   template <typename MapType>
-  void operator()(MapType &cm, const parameters_t params) const {
+  void operator()(MapType &cm, const Parameters params) const {
     int  counter(0);
     bool all_success(true);
 
@@ -110,20 +110,20 @@ struct insert_check {
                     // auto [iter, success] = cm.insert({i, i});
                     counter++;
                     if (success == false) {
-                      std::cout << "FAILED " << pair_t{i, i} << std::endl;
+                      std::cout << "FAILED " << pair_type{i, i} << std::endl;
                       all_success == false;
                     }
                     if (params.verbose == true) {
                       std::cout << "on " << counter << "th insert (size "
-                                << cm.size() << ") : " << pair_t{i, i} << ":"
+                                << cm.size() << ") : " << pair_type{i, i} << ":"
                                 << std::endl;
                       std::cout << cm.print_state() << std::endl << std::endl;
                     }
                   });
     CHECK_CONDITION(all_success, "iterative insert");
 
-    map_t map;
-    auto  map_start(Clock::now());
+    map_type map;
+    auto     map_start(Clock::now());
     std::for_each(std::begin(params.to_insert), std::end(params.to_insert),
                   [&](const int i) {
                     auto [iter, success] = map.insert({i, i});
@@ -140,8 +140,9 @@ struct insert_check {
       // auto [iter, success] = cm.insert({to_insert[0], 1});
       CHECK_CONDITION(success == false, "archive insert");
     }
-    auto cm_ns(std::chrono::duration_cast<ns_t>(map_start - cm_start).count());
-    auto map_ns(std::chrono::duration_cast<ns_t>(end - map_start).count());
+    auto cm_ns(
+        std::chrono::duration_cast<ns_type>(map_start - cm_start).count());
+    auto map_ns(std::chrono::duration_cast<ns_type>(end - map_start).count());
     std::cout << "Inserted " << params.count
               << " elements into compact map with compaction threshold "
               << cm.compaction_threshold() << " in " << cm_ns
@@ -154,7 +155,7 @@ struct find_check {
   const char *name() { return "find check"; }
 
   template <typename MapType>
-  void operator()(MapType &cm, const parameters_t params) const {
+  void operator()(MapType &cm, const Parameters params) const {
     {  // Test whether * returns the correct reference from the find() iterator
       auto q            = cm.find(params.to_insert[params.count - 1]);
       bool find_success = (*q).second == params.to_insert[params.count - 1];
@@ -187,7 +188,7 @@ struct accessor_check {
   const char *name() { return "accessor check"; }
 
   template <typename MapType>
-  void operator()(MapType &cm, const parameters_t params) const {
+  void operator()(MapType &cm, const Parameters params) const {
     auto key = params.to_insert[params.count - 1];
     {
       auto q          = cm.find(key);
@@ -239,7 +240,7 @@ struct erase_check {
   const char *name() { return "erase check"; }
 
   template <typename MapType>
-  void operator()(MapType &cm, const parameters_t params) const {
+  void operator()(MapType &cm, const Parameters params) const {
     int newkey1 = -1;
     int newkey2 = -2;
     {
@@ -287,7 +288,7 @@ struct const_funcs_check {
   const char *name() { return "const funcs check"; }
 
   template <typename MapType>
-  void operator()(const MapType &cm, const parameters_t params) const {
+  void operator()(const MapType &cm, const Parameters params) const {
     int good_key = params.to_insert[0];
     int bad_key  = -4;
     {
@@ -336,7 +337,7 @@ struct copy_check {
   const char *name() { return "copy check"; }
 
   template <typename MapType>
-  void operator()(const MapType &cm, const parameters_t params) const {
+  void operator()(const MapType &cm, const Parameters params) const {
     int new_key = -4;
     {
       MapType cm2(cm);
@@ -362,7 +363,7 @@ struct serialize_check {
   const char *name() { return "serialize check"; }
 
   template <typename MapType>
-  void operator()(const MapType &cm, const parameters_t params) const {
+  void operator()(const MapType &cm, const Parameters params) const {
     CHECK_THROWS<std::logic_error>(
         check_throws_uncompacted_archive<std::stringstream,
                                          cereal::BinaryOutputArchive, MapType>,
@@ -377,7 +378,7 @@ struct serialize_check {
 #endif
 
 template <typename MapType>
-void do_experiment(const parameters_t params) {
+void do_experiment(const Parameters params) {
   MapType cm(params.thresh);
 
   print_line();
@@ -411,7 +412,7 @@ void print_help(char *exe_name) {
             << std::endl;
 }
 
-void parse_args(int argc, char **argv, parameters_t &params) {
+void parse_args(int argc, char **argv, Parameters &params) {
   int c;
 
   while (1) {
@@ -450,7 +451,7 @@ void parse_args(int argc, char **argv, parameters_t &params) {
         params.count = std::atol(optarg);
         break;
       case 'm':
-        params.cmap_type = krowkee::util::get_cmap_type(optarg);
+        params.cmap_impl = krowkee::util::get_cmap_impl_type(optarg);
         break;
       case 's':
         params.seed = std::atol(optarg);
@@ -481,24 +482,24 @@ void parse_args(int argc, char **argv, parameters_t &params) {
 }
 
 int main(int argc, char **argv) {
-  std::uint32_t count(1000);
-  std::uint32_t seed(0);
-  std::size_t   thresh(5);
-  cmap_type_t   cmap_type(cmap_type_t::std);
-  bool          verbose(false);
+  std::uint32_t  count(1000);
+  std::uint32_t  seed(0);
+  std::size_t    thresh(5);
+  cmap_impl_type cmap_impl(cmap_impl_type::std);
+  bool           verbose(false);
 
-  parameters_t params{
-      get_random_vector(count, seed), count, thresh, seed, cmap_type, verbose};
+  Parameters params{
+      get_random_vector(count, seed), count, thresh, seed, cmap_impl, verbose};
 
   parse_args(argc, argv, params);
 
   params.to_insert = get_random_vector(params.count, params.seed);
 
-  if (params.cmap_type == cmap_type_t::std) {
-    do_experiment<csm_t>(params);
+  if (params.cmap_impl == cmap_impl_type::std) {
+    do_experiment<cmap_type>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  } else if (params.cmap_type == cmap_type_t::boost) {
-    do_experiment<cbm_t>(params);
+  } else if (params.cmap_impl == cmap_impl_type::boost) {
+    do_experiment<cmap_boost_type>(params);
 #endif
   }
   return 0;

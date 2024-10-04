@@ -36,17 +36,18 @@ template <typename RegType, typename MergeOp,
 class Sparse {
  public:
   /** Alias for the fully-templated register compacting map type. */
-  typedef krowkee::container::compacting_map<KeyType, RegType, MapType> col_t;
-  typedef typename col_t::vec_iter_t  vec_iter_t;
-  typedef typename col_t::vec_citer_t vec_citer_t;
-  typedef typename col_t::pair_t      pair_t;
-  typedef typename col_t::map_t       map_t;
-  /** Alias for the fully-templated Sparse type. */
-  typedef Sparse<RegType, MergeOp, MapType, KeyType> sparse_t;
+  using register_type = RegType;
+  using registers_type =
+      krowkee::container::compacting_map<KeyType, register_type, MapType>;
+  using vec_iter_type  = typename registers_type::vec_iter_type;
+  using vec_citer_type = typename registers_type::vec_citer_type;
+  using pair_type      = typename registers_type::pair_type;
+  using map_type       = typename registers_type::map_type;
+  using self_type      = Sparse<register_type, MergeOp, MapType, KeyType>;
 
  protected:
-  col_t       _registers;
-  std::size_t _range_size;
+  registers_type _registers;
+  std::size_t    _range_size;
 
  public:
   /**
@@ -69,7 +70,7 @@ class Sparse {
    *
    * @param rhs The base Sparse container to copy.
    */
-  Sparse(const sparse_t &rhs)
+  Sparse(const self_type &rhs)
       : _range_size(rhs._range_size), _registers(rhs._registers) {}
 
   /**
@@ -80,7 +81,7 @@ class Sparse {
   Sparse() {}
 
   // // move constructor
-  // Sparse(sparse_t &&rhs) : sparse_t() { std::swap(*this, rhs); }
+  // Sparse(self_type &&rhs) : self_type() { std::swap(*this, rhs); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Swaps
@@ -98,7 +99,7 @@ class Sparse {
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
    */
-  friend void swap(sparse_t &lhs, sparse_t &rhs) {
+  friend void swap(self_type &lhs, self_type &rhs) {
     std::swap(lhs._range_size, rhs._range_size);
     swap(lhs._registers, rhs._registers);
   }
@@ -173,7 +174,7 @@ class Sparse {
    * merge sketches of different types.
    * @throw std::logic_error if invoked on uncompacted sketches.
    */
-  inline void merge(const sparse_t &rhs) {
+  inline void merge(const self_type &rhs) {
     _registers.merge(rhs._registers, MergeOp());
   }
 
@@ -188,9 +189,9 @@ class Sparse {
    *
    * @param rhs the other Sparse. Care must be taken to ensure that one does not
    * merge subspace embeddings of different types.
-   * @return sparse_t& `this` Sparse, having been merged with `rhs`.
+   * @return self_type& `this` Sparse, having been merged with `rhs`.
    */
-  sparse_t &operator+=(const sparse_t &rhs) {
+  self_type &operator+=(const self_type &rhs) {
     merge(rhs);
     return *this;
   }
@@ -200,9 +201,9 @@ class Sparse {
    *
    * @param lhs The left-hand container.
    * @param rhs The right-hand container.
-   * @return sparse_t The merge of the two containers.
+   * @return self_type The merge of the two containers.
    */
-  inline friend sparse_t operator+(sparse_t lhs, const sparse_t &rhs) {
+  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -233,9 +234,10 @@ class Sparse {
    *
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
-   * @return constexpr const RegType& A const refernce to `_registers[index]`.
+   * @return constexpr const register_type& A const refernce to
+   * `_registers[index]`.
    */
-  constexpr const RegType &operator[](const std::uint64_t index) const {
+  constexpr const register_type &operator[](const std::uint64_t index) const {
     return _registers.get(index);
   }
 
@@ -244,18 +246,20 @@ class Sparse {
    *
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
-   * @return RegType& A refernce to `_registers[index]`.
+   * @return register_type& A refernce to `_registers[index]`.
    */
-  RegType &operator[](const std::uint64_t index) { return _registers[index]; }
+  register_type &operator[](const std::uint64_t index) {
+    return _registers[index];
+  }
 
   /**
    * @brief Access Sparse at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
-   * @return RegType& A refernce to `_registers.at(index)`.
+   * @return register_type& A refernce to `_registers.at(index)`.
    */
-  RegType &at(const std::uint64_t index) { return _registers.at(index); }
+  register_type &at(const std::uint64_t index) { return _registers.at(index); }
 
   /**
    * @brief Access Sparse at `index`.
@@ -263,9 +267,9 @@ class Sparse {
    * @param index The index of the underlying vector to index. Must be less than
    * `range_size`.
    * @param def The default value to return if the index does not exist.
-   * @return RegType& A refernce to `_registers.at(index)`.
+   * @return register_type& A refernce to `_registers.at(index)`.
    */
-  RegType &at(const std::uint64_t index, const RegType def) {
+  register_type &at(const std::uint64_t index, const register_type def) {
     return _registers.at(index, def);
   }
 
@@ -288,7 +292,7 @@ class Sparse {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << krowkee::hash::type_name<map_t>();
+    ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();
   }
 
@@ -299,7 +303,7 @@ class Sparse {
   constexpr std::size_t size() const { return _registers.size(); }
 
   /** The number of bytes used by each register. */
-  constexpr std::size_t reg_size() const { return sizeof(RegType); }
+  constexpr std::size_t reg_size() const { return sizeof(register_type); }
 
   /** The maximum possible size of the compacting_map. */
   constexpr std::size_t range_size() const { return _range_size; }
@@ -312,17 +316,17 @@ class Sparse {
   /**
    * @brief Get a copy of the raw (sparse) register vector
    *
-   * @return std::vector<RegType> The register vector, with zeros for unset
-   * indices.
+   * @return std::vector<register_type> The register vector, with zeros for
+   * unset indices.
    * @throws std::logic_error if the object is not compact.
    */
-  std::vector<RegType> register_vector() const {
+  std::vector<register_type> register_vector() const {
     if (is_compact() == false) {
       throw std::logic_error("Bad attempt to export uncompacted map!");
     }
-    std::vector<RegType> ret(range_size());
+    std::vector<register_type> ret(range_size());
     std::for_each(std::cbegin(_registers), std::cend(_registers),
-                  [&ret](const std::pair<KeyType, RegType> &elem) {
+                  [&ret](const std::pair<KeyType, register_type> &elem) {
                     ret[elem.first] = elem.second;
                   });
     return ret;
@@ -338,7 +342,7 @@ class Sparse {
    * @return true The sizes agree.
    * @return false The sizes disagree.
    */
-  constexpr bool same_parameters(const sparse_t &rhs) const {
+  constexpr bool same_parameters(const self_type &rhs) const {
     return _range_size == rhs._range_size;
   }
 
@@ -349,7 +353,7 @@ class Sparse {
    * @return true The registers agree.
    * @return false At least one register disagrees.
    */
-  constexpr bool same_registers(const sparse_t &rhs) const {
+  constexpr bool same_registers(const self_type &rhs) const {
     return _registers == rhs._registers;
   }
 
@@ -361,7 +365,7 @@ class Sparse {
    * @return true The registers agree.
    * @return false At least one register disagrees.
    */
-  friend constexpr bool operator==(const sparse_t &lhs, const sparse_t &rhs) {
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
     return lhs.same_parameters(rhs) && lhs.same_registers(rhs);
   }
 
@@ -373,7 +377,7 @@ class Sparse {
    * @return true At least one register disagrees.
    * @return false The registers agree.
    */
-  friend constexpr bool operator!=(const sparse_t &lhs, const sparse_t &rhs) {
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
 
@@ -387,9 +391,9 @@ class Sparse {
    * https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
    *
    * @param rhs The other container.
-   * @return sparse_t& `this`, having been swapped with `rhs`.
+   * @return self_type& `this`, having been swapped with `rhs`.
    */
-  sparse_t &operator=(sparse_t rhs) {
+  self_type &operator=(self_type rhs) {
     std::swap(*this, rhs);
     return *this;
   }
@@ -408,7 +412,7 @@ class Sparse {
    * @return std::ostream& The new stream state.
    * @throw std::logic_error if invoked on uncompacted sketch.
    */
-  friend std::ostream &operator<<(std::ostream &os, const sparse_t &sk) {
+  friend std::ostream &operator<<(std::ostream &os, const self_type &sk) {
     if (sk.is_compact() == false) {
       throw std::logic_error("Bad attempt to write uncompacted map!");
     }
@@ -438,9 +442,9 @@ class Sparse {
    * @return RetType The sum over all register values + `init`.
    */
   template <typename RetType>
-  friend RetType accumulate(const sparse_t &sk, const RetType init) {
+  friend RetType accumulate(const self_type &sk, const RetType init) {
     return std::accumulate(std::cbegin(sk._registers), std::cend(sk._registers),
-                           init, [](const RetType val, const pair_t &itr) {
+                           init, [](const RetType val, const pair_type &itr) {
                              return RetType(val + itr.second);
                            });
   }
@@ -453,7 +457,7 @@ class Sparse {
    * @param func The particular function to apply.
    */
   template <typename Func>
-  friend void for_each(const sparse_t &sk, const Func &func) {
+  friend void for_each(const self_type &sk, const Func &func) {
     std::for_each(std::cbegin(sk._registers), std::cend(sk._registers), func);
   }
 };
