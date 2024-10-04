@@ -228,8 +228,12 @@ if (JUST_INSTALL_KROWKEE)
     return()
 endif ()
 
+option(KROWKEE_BUILD_DOCS "Build documentation with Doxygen and SPHINX" OFF)
+
 if (KROWKEE_MAIN_PROJECT)
-    add_subdirectory(docs)
+    if (KROWKEE_BUILD_DOCS)
+        add_subdirectory(docs)
+    endif ()
     add_subdirectory(test)
     add_subdirectory(performance)
 endif ()
