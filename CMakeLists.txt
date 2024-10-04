@@ -166,9 +166,10 @@ target_include_directories(
 )
 target_compile_features(krowkee INTERFACE cxx_std_17)
 if (KROWKEE_USE_CEREAL)
-    target_link_libraries(
-        krowkee INTERFACE ${KROWKEE_CEREAL_TARGET} cereal::cereal
-    )
+    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET})
+    if (KROWKEE_USE_YGM)
+        target_link_libraries(krowkee INTERFACE ygm::ygm)
+    endif ()
 endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
