@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         gcc-version: [8, 9, 10, 11]
+        use-ygm: ["ON", "OFF"]
 
     steps:
       - uses: actions/checkout@v2
@@ -45,7 +46,7 @@ jobs:
           g++-${{ matrix.gcc-version }} --version
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }}
           make -j
       - name: Make test (mpich)
         run: |
