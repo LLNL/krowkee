@@ -112,6 +112,22 @@ struct init_check {
       }
       CHECK_CONDITION(swap_matches, "copy-and-swap assignment");
     }
+    {
+      sf_ptr_t sf_ptr(_make_ptr(22));
+      ls_t ls(sf_ptr, params.compaction_threshold, params.promotion_threshold);
+
+      bool init_empty = ls.empty();
+
+      CHECK_CONDITION(init_empty == true, "initial empty");
+
+      ls.insert(1);
+      bool not_empty = ls.empty();
+      CHECK_CONDITION(not_empty == false, "post-insert not empty");
+
+      ls.clear();
+      bool clear_empty = ls.empty();
+      CHECK_CONDITION(clear_empty == true, "post-clear empty");
+    }
   }
 };
 
