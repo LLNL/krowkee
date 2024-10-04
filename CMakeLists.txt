@@ -117,14 +117,14 @@ if (KROWKEE_USE_CEREAL)
 
     if (KROWKEE_USE_YGM)
         # Load YGM
-        set(KROWKEE_YGM_VERSION 0.5)
+        set(KROWKEE_YGM_VERSION 0.7)
         find_package(ygm ${KROWKEE_YGM_VERSION} CONFIG QUIET)
         if (NOT ygm_FOUND)
             FetchContent_Declare(
                 ygm
                 GIT_REPOSITORY https://github.com/LLNL/ygm.git
                 # GIT_TAG v${KROWKEE_YGM_VERSION}
-                GIT_TAG develop
+                GIT_TAG v0.7-dev
             )
             FetchContent_GetProperties(ygm)
             if (ygm_POPULATED)
@@ -164,7 +164,7 @@ target_include_directories(
     krowkee INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                       $<INSTALL_INTERFACE:include>
 )
-target_compile_features(krowkee INTERFACE cxx_std_17)
+target_compile_features(krowkee INTERFACE cxx_std_20)
 if (KROWKEE_USE_CEREAL)
     target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET})
     if (KROWKEE_USE_YGM)

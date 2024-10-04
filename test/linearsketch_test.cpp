@@ -9,10 +9,8 @@
 #include <sketch_types.hpp>
 
 #include <krowkee/hash/hash.hpp>
-#include <krowkee/sketch/interface.hpp>
 #include <krowkee/util/cmap_types.hpp>
 #include <krowkee/util/sketch_types.hpp>
-#include <krowkee/util/tests.hpp>
 
 #include <getopt.h>
 #include <stdio.h>

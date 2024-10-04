@@ -47,10 +47,9 @@ class FWHTFunctor {
    * @param args any additional paramters required by the hash functions.
    */
   template <typename... Args>
-  FWHTFunctor<RegType>(const std::uint64_t range_size = 64,
-                       const std::uint64_t seed = krowkee::hash::default_seed,
-                       const std::uint64_t domain_size = 1024,
-                       const Args &&...args)
+  FWHTFunctor(const std::uint64_t range_size  = 64,
+              const std::uint64_t seed        = krowkee::hash::default_seed,
+              const std::uint64_t domain_size = 1024, const Args &&...args)
       : _range_size(range_size), _seed(seed), _domain_size(domain_size) {}
 
   FWHTFunctor() {}
