@@ -17,6 +17,7 @@ function (add_seq_krowkee_test test_name)
 endfunction ()
 
 add_seq_krowkee_test(hash_test)
+add_seq_krowkee_test(countsketch_hash_test)
 add_seq_krowkee_test(test_fwht_utils)
 add_seq_krowkee_test(compacting_map_test)
 add_seq_krowkee_test(linearsketch_test)
