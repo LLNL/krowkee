@@ -35,14 +35,15 @@ using krowkee::stream::Element;
  * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.746.6409&rep=rep1&type=pdf
  *
  * @tparam RegType The type of register over which the functor operates
- * @tparam HashFunc The hash functor type to use to define CountSketch random
+ * @tparam HashType The hash functor type to use to define CountSketch random
  * mappings.
  */
-template <typename RegType, typename HashFunc>
+template <typename RegType, typename HashType>
 class CountSketchFunctor {
-  using self_type = CountSketchFunctor<RegType, HashFunc>;
-  HashFunc _reg_hf;
-  HashFunc _pol_hf;
+  using hash_type = HashType;
+  using self_type = CountSketchFunctor<RegType, hash_type>;
+
+  hash_type _hash;
 
  public:
   /**
@@ -65,8 +66,7 @@ class CountSketchFunctor {
   CountSketchFunctor(const std::uint64_t range_size,
                      const std::uint64_t seed = krowkee::hash::default_seed,
                      const Args &...args)
-      : _reg_hf(range_size, seed, args...),
-        _pol_hf(2, krowkee::hash::wang64(seed), args...) {}
+      : _hash(range_size, seed, args...) {}
 
   CountSketchFunctor() {}
 
@@ -83,7 +83,7 @@ class CountSketchFunctor {
    */
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_reg_hf, _pol_hf);
+    archive(_hash);
   }
 #endif
 
@@ -136,11 +136,9 @@ class CountSketchFunctor {
   constexpr void _apply_to_container(ContainerType &registers,
                                      const ItemArgs &...item_args) const {
     const Element<RegType> stream_element(item_args...);
-    const std::uint64_t    index(_reg_hf(stream_element.item));
-    const RegType polarity((_pol_hf(stream_element.item) == 1) ? RegType(1)
-                                                               : RegType(-1));
-    RegType      &reg = registers[index];
-    reg               = MergeOp()(reg, polarity * stream_element.multiplicity);
+    const auto [index, polarity] = _hash(stream_element.item);
+    RegType &reg                 = registers[index];
+    reg = MergeOp()(reg, polarity * stream_element.multiplicity);
     if (reg == 0) {
       registers.erase(index);
     }
@@ -158,10 +156,10 @@ class CountSketchFunctor {
    *
    * @return constexpr std::size_t The range size.
    */
-  constexpr std::size_t range_size() const { return _reg_hf.size(); }
+  constexpr std::size_t range_size() const { return _hash.size(); }
 
   /** Get the random seed. */
-  constexpr std::uint64_t seed() const { return _reg_hf.seed(); }
+  constexpr std::uint64_t seed() const { return _hash.seed(); }
 
   /**
    * @brief Return a description of the transform type.
@@ -178,7 +176,7 @@ class CountSketchFunctor {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << HashFunc::name() << " hashes and "
+    ss << name() << " using " << HashType::name() << " hashes and "
        << sizeof(RegType) << " byte registers";
     return ss.str();
   }
@@ -188,15 +186,15 @@ class CountSketchFunctor {
  * @brief Check for equality between two CountSketchFunctors.
  *
  * @tparam RegType The register type.
- * @tparam HashFunc The hash functor type.
+ * @tparam HashType The hash functor type.
  * @param lhs The left-hand functor.
  * @param rhs The right-hand functor.
  * @return true The seeds and range sizes agree.
  * @return false The seeds or range sizes disagree.
  */
-template <typename RegType, typename HashFunc>
-constexpr bool operator==(const CountSketchFunctor<RegType, HashFunc> &lhs,
-                          const CountSketchFunctor<RegType, HashFunc> &rhs) {
+template <typename RegType, typename HashType>
+constexpr bool operator==(const CountSketchFunctor<RegType, HashType> &lhs,
+                          const CountSketchFunctor<RegType, HashType> &rhs) {
   return (lhs.seed() == rhs.seed()) && (lhs.range_size() == rhs.range_size());
 }
 
@@ -204,15 +202,15 @@ constexpr bool operator==(const CountSketchFunctor<RegType, HashFunc> &lhs,
  * @brief Check for inequality between two CountSketchFunctors.
  *
  * @tparam RegType The register type.
- * @tparam HashFunc The hash functor type.
+ * @tparam HashType The hash functor type.
  * @param lhs The left-hand functor.
  * @param rhs The right-hand functor.
  * @return true The seeds or range sizes disagree.
  * @return false The seeds and range sizes agree.
  */
-template <typename RegType, typename HashFunc>
-constexpr bool operator!=(const CountSketchFunctor<RegType, HashFunc> &lhs,
-                          const CountSketchFunctor<RegType, HashFunc> &rhs) {
+template <typename RegType, typename HashType>
+constexpr bool operator!=(const CountSketchFunctor<RegType, HashType> &lhs,
+                          const CountSketchFunctor<RegType, HashType> &rhs) {
   return !operator==(lhs, rhs);
 }
 
@@ -222,14 +220,14 @@ constexpr bool operator!=(const CountSketchFunctor<RegType, HashFunc> &lhs,
  * Prints the space-separated range size and seed.
  *
  * @tparam RegType The register type.
- * @tparam HashFunc The hash functor type.
+ * @tparam HashType The hash functor type.
  * @param os The output stream.
  * @param func The functor object.
  * @return std::ostream& The new stream state.
  */
-template <typename RegType, typename HashFunc>
+template <typename RegType, typename HashType>
 std::ostream &operator<<(std::ostream                                &os,
-                         const CountSketchFunctor<RegType, HashFunc> &func) {
+                         const CountSketchFunctor<RegType, HashType> &func) {
   os << func.range_size() << " " << func.seed();
   return os;
 }

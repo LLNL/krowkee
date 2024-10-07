@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <krowkee/hash/hash.hpp>
+#include <krowkee/hash/countsketch.hpp>
 
 #include <krowkee/transform/CountSketch.hpp>
 #include <krowkee/transform/FWHT.hpp>
@@ -41,7 +41,8 @@ template <template <typename, typename> class ContainerType, typename KeyType,
           typename RegType>
 using MultiLocalCountSketch =
     MultiLocal<krowkee::transform::CountSketchFunctor, ContainerType, std::plus,
-               KeyType, RegType, krowkee::hash::MulAddShift>;
+               KeyType, RegType,
+               krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>>;
 
 template <typename KeyType, typename RegType>
 using MultiLocalFWHT =

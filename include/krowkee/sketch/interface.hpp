@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <krowkee/hash/countsketch.hpp>
 #include <krowkee/hash/hash.hpp>
 
 #include <krowkee/transform/CountSketch.hpp>
@@ -41,7 +42,8 @@ template <template <typename, typename> class ContainerType, typename RegType,
           template <typename> class PtrType = std::shared_ptr>
 using CountSketch =
     LocalSketch<krowkee::transform::CountSketchFunctor, ContainerType,
-                std::plus, RegType, PtrType, krowkee::hash::MulAddShift>;
+                std::plus, RegType, PtrType,
+                krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>>;
 
 template <typename RegType, template <typename> class PtrType = std::shared_ptr>
 using FWHT = LocalSketch<krowkee::transform::FWHTFunctor,
