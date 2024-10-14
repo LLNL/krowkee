@@ -9,6 +9,8 @@
 #include <cereal/types/memory.hpp>
 #endif
 
+#include <type_traits>
+
 namespace krowkee {
 namespace sketch {
 
@@ -34,23 +36,27 @@ namespace sketch {
  * @tparam Args Additional template parameters for `SketchFunc`, such as a hash
  * functor.
  */
-template <template <typename, typename...> class SketchFunc,
+template <typename SketchFunc,
           template <typename, typename> class ContainerType,
           template <typename> class MergeOp, typename RegType,
-          template <typename> class PtrType, typename... Args>
+          template <typename> class PtrType>
 class Sketch {
+  static_assert(
+      std::is_same<typename SketchFunc::register_type, RegType>::value,
+      "Transform and container must use same register type!");
+
  public:
   /** Alias for Register type */
   using register_type = RegType;
   /** Alias for fully-templated container type */
   using container_type = ContainerType<register_type, MergeOp<register_type>>;
   /** Alias for fully-templated sketch functor type*/
-  using transform_type = SketchFunc<register_type, Args...>;
+  using transform_type = SketchFunc;
   /** Alias for fully-templated sketch functor pointer type*/
   using transform_ptr_type = PtrType<transform_type>;
   /** Alias for fully-templated self type*/
-  using self_type = Sketch<SketchFunc, ContainerType, MergeOp, register_type,
-                           PtrType, Args...>;
+  using self_type =
+      Sketch<SketchFunc, ContainerType, MergeOp, register_type, PtrType>;
 
  private:
   transform_ptr_type _transform_ptr;

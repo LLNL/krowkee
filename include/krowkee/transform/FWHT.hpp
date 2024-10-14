@@ -25,7 +25,9 @@ using krowkee::stream::Element;
  */
 template <typename RegType>
 class FWHTFunctor {
-  using self_type = FWHTFunctor<RegType>;
+ public:
+  using register_type = RegType;
+  using self_type     = FWHTFunctor<RegType>;
 
  protected:
   std::uint64_t _range_size;

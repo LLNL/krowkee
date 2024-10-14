@@ -18,26 +18,25 @@ namespace stream {
  *
  * Holds the core-local rows of a sketch along with an associated transform.
  */
-template <
-    template <typename, template <typename> class> class DataType,
-    template <template <typename, typename...> class,
-              template <typename, typename> class, template <typename> class,
-              typename, template <typename> class, typename...>
-    class SketchType,
-    template <typename, typename...> class SketchFunc,
-    template <typename, typename> class ContainerType,
-    template <typename> class MergeOp, typename KeyType, typename RegType,
-    template <typename> class PtrType, typename... Args>
+template <template <typename, template <typename> class> class DataType,
+          template <typename, template <typename, typename> class,
+                    template <typename> class, typename,
+                    template <typename> class, typename...>
+          class SketchType,
+          typename SketchFunc,
+          template <typename, typename> class ContainerType,
+          template <typename> class MergeOp, typename KeyType, typename RegType,
+          template <typename> class PtrType>
 class Multi {
  public:
   using register_type      = RegType;
-  using transform_type     = SketchFunc<register_type, Args...>;
+  using transform_type     = SketchFunc;
   using transform_ptr_type = PtrType<transform_type>;
-  using sketch_type        = SketchType<SketchFunc, ContainerType, MergeOp,
-                                 register_type, PtrType, Args...>;
-  using data_type          = DataType<sketch_type, PtrType>;
+  using sketch_type =
+      SketchType<SketchFunc, ContainerType, MergeOp, register_type, PtrType>;
+  using data_type = DataType<sketch_type, PtrType>;
   using self_type = Multi<DataType, SketchType, SketchFunc, ContainerType,
-                          MergeOp, KeyType, register_type, PtrType, Args...>;
+                          MergeOp, KeyType, register_type, PtrType>;
 
   using map_type  = std::map<KeyType, data_type>;
   using pair_type = std::pair<KeyType, data_type>;

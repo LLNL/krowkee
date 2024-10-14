@@ -40,10 +40,12 @@ using krowkee::stream::Element;
  */
 template <typename RegType, typename HashType>
 class CountSketchFunctor {
+ public:
   using register_type = RegType;
   using hash_type     = HashType;
   using self_type     = CountSketchFunctor<register_type, hash_type>;
 
+ private:
   hash_type _hash;
 
  public:
