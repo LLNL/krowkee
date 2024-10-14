@@ -40,8 +40,9 @@ using krowkee::stream::Element;
  */
 template <typename RegType, typename HashType>
 class CountSketchFunctor {
-  using hash_type = HashType;
-  using self_type = CountSketchFunctor<RegType, hash_type>;
+  using register_type = RegType;
+  using hash_type     = HashType;
+  using self_type     = CountSketchFunctor<register_type, hash_type>;
 
   hash_type _hash;
 
@@ -126,7 +127,7 @@ class CountSketchFunctor {
             typename MergeOp, template <typename, typename> class MapType,
             typename KeyType, typename... ItemArgs>
   constexpr void operator()(
-      ContainerType<RegType, MergeOp, MapType, KeyType> &registers,
+      ContainerType<register_type, MergeOp, MapType, KeyType> &registers,
       const ItemArgs &...item_args) const {
     _apply_to_container<MergeOp>(registers, item_args...);
   }
@@ -135,9 +136,9 @@ class CountSketchFunctor {
   template <typename MergeOp, typename ContainerType, typename... ItemArgs>
   constexpr void _apply_to_container(ContainerType &registers,
                                      const ItemArgs &...item_args) const {
-    const Element<RegType> stream_element(item_args...);
+    const Element<register_type> stream_element(item_args...);
     const auto [index, polarity] = _hash(stream_element.item);
-    RegType &reg                 = registers[index];
+    register_type &reg           = registers[index];
     reg = MergeOp()(reg, polarity * stream_element.multiplicity);
     if (reg == 0) {
       registers.erase(index);
@@ -177,7 +178,7 @@ class CountSketchFunctor {
   static inline std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << HashType::name() << " hashes and "
-       << sizeof(RegType) << " byte registers";
+       << sizeof(register_type) << " byte registers";
     return ss.str();
   }
 };
