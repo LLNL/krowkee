@@ -183,56 +183,45 @@ class CountSketchFunctor {
        << sizeof(register_type) << " byte registers";
     return ss.str();
   }
+
+  /**
+   * @brief Check for equality between two CountSketchFunctors.
+   *
+   * @param lhs The left-hand functor.
+   * @param rhs The right-hand functor.
+   * @return true The seeds and range sizes agree.
+   * @return false The seeds or range sizes disagree.
+   */
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
+    return (lhs.seed() == rhs.seed()) && (lhs.range_size() == rhs.range_size());
+  }
+
+  /**
+   * @brief Check for inequality between two CountSketchFunctors.
+   *
+   * @param lhs The left-hand functor.
+   * @param rhs The right-hand functor.
+   * @return true The seeds or range sizes disagree.
+   * @return false The seeds and range sizes agree.
+   */
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  /**
+   * @brief Serialize a transform to human-readable output stream.
+   *
+   * Prints the space-separated range size and seed.
+   *
+   * @param os The output stream.
+   * @param func The functor object.
+   * @return std::ostream& The new stream state.
+   */
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.range_size() << " " << func.seed();
+    return os;
+  }
 };
 
-/**
- * @brief Check for equality between two CountSketchFunctors.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param lhs The left-hand functor.
- * @param rhs The right-hand functor.
- * @return true The seeds and range sizes agree.
- * @return false The seeds or range sizes disagree.
- */
-template <typename RegType, typename HashType>
-constexpr bool operator==(const CountSketchFunctor<RegType, HashType> &lhs,
-                          const CountSketchFunctor<RegType, HashType> &rhs) {
-  return (lhs.seed() == rhs.seed()) && (lhs.range_size() == rhs.range_size());
-}
-
-/**
- * @brief Check for inequality between two CountSketchFunctors.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param lhs The left-hand functor.
- * @param rhs The right-hand functor.
- * @return true The seeds or range sizes disagree.
- * @return false The seeds and range sizes agree.
- */
-template <typename RegType, typename HashType>
-constexpr bool operator!=(const CountSketchFunctor<RegType, HashType> &lhs,
-                          const CountSketchFunctor<RegType, HashType> &rhs) {
-  return !operator==(lhs, rhs);
-}
-
-/**
- * @brief Serialize a transform to human-readable output stream.
- *
- * Prints the space-separated range size and seed.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param os The output stream.
- * @param func The functor object.
- * @return std::ostream& The new stream state.
- */
-template <typename RegType, typename HashType>
-std::ostream &operator<<(std::ostream                                &os,
-                         const CountSketchFunctor<RegType, HashType> &func) {
-  os << func.range_size() << " " << func.seed();
-  return os;
-}
 }  // namespace transform
 }  // namespace krowkee

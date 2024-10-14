@@ -116,24 +116,20 @@ class FWHTFunctor {
     ss << name() << " using " << sizeof(RegType) << " byte registers";
     return ss.str();
   }
+
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
+    return lhs.seed() == rhs.seed() && lhs.range_size() == rhs.range_size();
+  }
+
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.range_size() << " " << func.domain_size() << " " << func.seed();
+    return os;
+  }
 };
 
-template <typename RegType>
-constexpr bool operator==(const FWHTFunctor<RegType> &lhs,
-                          const FWHTFunctor<RegType> &rhs) {
-  return lhs.seed() == rhs.seed() && lhs.range_size() == rhs.range_size();
-}
-
-template <typename RegType>
-constexpr bool operator!=(const FWHTFunctor<RegType> &lhs,
-                          const FWHTFunctor<RegType> &rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template <typename RegType>
-std::ostream &operator<<(std::ostream &os, const FWHTFunctor<RegType> &func) {
-  os << func.range_size() << " " << func.domain_size() << " " << func.seed();
-  return os;
-}
 }  // namespace transform
 }  // namespace krowkee
