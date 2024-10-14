@@ -58,19 +58,9 @@ struct init_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type _make_ptr = make_ptr_type();
-    for (std::uint64_t i(10); i < 100000; i *= 10) {
-      transform_ptr_type transform_ptr(_make_ptr(i));
-      sketch_type        sketch(transform_ptr, params.compaction_threshold,
-                                params.promotion_threshold);
-      if (params.verbose == true) {
-        std::cout << "input s = " << i << " produces " << sketch.size() << "/"
-                  << sketch.range_size() << " registers of size "
-                  << sketch.reg_size() << " bytes each " << std::endl;
-      }
-    }
     {
-      transform_ptr_type transform_ptr_1(_make_ptr(32));
-      transform_ptr_type transform_ptr_2(_make_ptr(32));
+      transform_ptr_type transform_ptr_1(_make_ptr(0));
+      transform_ptr_type transform_ptr_2(_make_ptr(0));
       sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
                                   params.promotion_threshold);
       sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
@@ -88,7 +78,7 @@ struct init_check {
                       "constructor/insert consistency");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(32));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
       for (int i(0); i < 1000; sketch.insert(i++)) {
@@ -102,7 +92,7 @@ struct init_check {
       CHECK_CONDITION(copy_matches == true, "copy constructor");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(32));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
       for (int i(0); i < 1000; sketch.insert(i++)) {
@@ -116,7 +106,7 @@ struct init_check {
       CHECK_CONDITION(swap_matches, "copy-and-swap assignment");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(22));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
 
@@ -330,7 +320,7 @@ struct ingest_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr{};
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
     rel_mag_test(transform_ptr, params);
     lemma_check(transform_ptr, params);
   }
@@ -343,7 +333,7 @@ struct ingest_check {
 };
 
 template <typename SketchType>
-void check_throws_bad_plus_equasketch(SketchType &lhs, const SketchType &rhs) {
+void check_throws_bad_plus_equals(SketchType &lhs, const SketchType &rhs) {
   lhs += rhs;
 }
 
@@ -370,27 +360,18 @@ struct bad_merge_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr = make_ptr_type();
-    transform_ptr_type transform_ptr_1(_make_ptr(16));
-    transform_ptr_type transform_ptr_2(_make_ptr(32));
-    transform_ptr_type transform_ptr_3(_make_ptr(32, 22));
+    transform_ptr_type transform_ptr_1(_make_ptr(32));
+    transform_ptr_type transform_ptr_2(_make_ptr(22));
     sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
                                 params.promotion_threshold);
     sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
                                 params.promotion_threshold);
-    sketch_type        sketch_3(transform_ptr_3, params.compaction_threshold,
-                                params.promotion_threshold);
     CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equasketch<SketchType>,
-        "bad merge (+=) with different functor domains", sketch_1, sketch_2);
-    CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equasketch<SketchType>,
-        "bad merge (+=) with different functor seeds", sketch_2, sketch_3);
+        check_throws_bad_plus_equals<SketchType>,
+        "bad merge (+=) with different functor seeds", sketch_1, sketch_2);
     CHECK_THROWS<std::invalid_argument>(
         check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor domains", sketch_1, sketch_2);
-    CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor seeds", sketch_2, sketch_3);
+        "bad merge (+) with different functor seeds", sketch_1, sketch_2);
   }
 };
 
@@ -478,7 +459,7 @@ struct serialize_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr{};
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
 
     CHECK_ALL_ARCHIVES(*transform_ptr, "sketch functor");
 
@@ -512,7 +493,7 @@ struct promotion_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr = make_ptr_type();
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
     sketch_type        s1(transform_ptr, params.compaction_threshold,
                           params.promotion_threshold);
     sketch_type        s2(transform_ptr, params.compaction_threshold,
@@ -752,39 +733,110 @@ void parse_args(int argc, char **argv, Parameters &params) {
   }
 }
 
-void choose_tests(const Parameters &params) {
+template <std::uint64_t RangeSize>
+void choose_tests_sized(const Parameters &params) {
   if (params.sketch_impl == sketch_impl_type::cst) {
-    perform_tests<Dense32CountSketch, make_ptr_functor>(params);
+    perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
   } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
     if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
+      perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+          params);
 #if __has_include(<boost/container/flat_map.hpp>)
     } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
+      perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+          params);
 #endif
     }
   } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
     if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
+      perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+          params);
 #if __has_include(<boost/container/flat_map.hpp>)
     } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
+      perform_tests<FlatMapPromotable32CountSketch<RangeSize>,
+                    make_ptr_functor>(params);
 #endif
     }
   } else if (params.sketch_impl == sketch_impl_type::fwht) {
-    perform_tests<Dense32FWHT, make_ptr_functor>(params);
+    perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
   }
 }
 
-void do_all_tests(const Parameters &params) {
-  perform_tests<Dense32CountSketch, make_ptr_functor>(params);
-  perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
-  perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
+void choose_tests(const Parameters &params) {
+  switch (params.range_size) {
+    case 4:
+      choose_tests_sized<4>(params);
+      break;
+    case 8:
+      choose_tests_sized<8>(params);
+      break;
+    case 16:
+      choose_tests_sized<16>(params);
+      break;
+    case 32:
+      choose_tests_sized<32>(params);
+      break;
+    case 64:
+      choose_tests_sized<64>(params);
+      break;
+    case 128:
+      choose_tests_sized<128>(params);
+      break;
+    case 256:
+      choose_tests_sized<256>(params);
+      break;
+    case 512:
+      choose_tests_sized<512>(params);
+      break;
+    default:
+      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
+  }
+}
+
+template <std::uint64_t RangeSize>
+void do_all_tests_sized(const Parameters &params) {
+  perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
+  perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(params);
+  perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+      params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
-  perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
+  perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+      params);
+  perform_tests<FlatMapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+      params);
 #endif
-  // perform_tests<Dense32FWHT, make_ptr_functor>(params);
+  // perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
+}
+
+void do_all_tests(const Parameters &params) {
+  switch (params.range_size) {
+    case 4:
+      do_all_tests_sized<4>(params);
+      break;
+    case 8:
+      do_all_tests_sized<8>(params);
+      break;
+    case 16:
+      do_all_tests_sized<16>(params);
+      break;
+    case 32:
+      do_all_tests_sized<32>(params);
+      break;
+    case 64:
+      do_all_tests_sized<64>(params);
+      break;
+    case 128:
+      do_all_tests_sized<128>(params);
+      break;
+    case 256:
+      do_all_tests_sized<256>(params);
+      break;
+    case 512:
+      do_all_tests_sized<512>(params);
+      break;
+    default:
+      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
+  }
 }
 
 int main(int argc, char **argv) {

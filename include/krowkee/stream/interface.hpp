@@ -31,23 +31,23 @@ namespace stream {
 
 template <typename SketchFunc,
           template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, typename KeyType, typename RegType,
-          typename... Args>
+          template <typename> class MergeOp, typename KeyType, typename RegType>
 using MultiLocal =
     Multi<CountingSummary, krowkee::sketch::Sketch, SketchFunc, ContainerType,
-          MergeOp, KeyType, RegType, std::shared_ptr, Args...>;
+          MergeOp, KeyType, RegType, std::shared_ptr>;
 
 template <template <typename, typename> class ContainerType, typename KeyType,
-          typename RegType>
+          typename RegType, std::size_t RangeSize>
 using MultiLocalCountSketch = MultiLocal<
     krowkee::transform::CountSketchFunctor<
-        RegType, krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>>,
+        RegType, krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>,
+        RangeSize>,
     ContainerType, std::plus, KeyType, RegType>;
 
-template <typename KeyType, typename RegType>
+template <typename KeyType, typename RegType, std::size_t RangeSize>
 using MultiLocalFWHT =
-    MultiLocal<krowkee::transform::FWHTFunctor<RegType>, krowkee::sketch::Dense,
-               std::plus, KeyType, RegType>;
+    MultiLocal<krowkee::transform::FWHTFunctor<RegType, RangeSize>,
+               krowkee::sketch::Dense, std::plus, KeyType, RegType>;
 
 }  // namespace stream
 }  // namespace krowkee

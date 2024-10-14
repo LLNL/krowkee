@@ -37,13 +37,14 @@ using krowkee::stream::Element;
  * @tparam RegType The type of register over which the functor operates
  * @tparam HashType The hash functor type to use to define CountSketch random
  * mappings.
+ * @tparam RangeSize The power-of-two embedding dimension.
  */
-template <typename RegType, typename HashType>
+template <typename RegType, typename HashType, std::size_t RangeSize>
 class CountSketchFunctor {
  public:
   using register_type = RegType;
   using hash_type     = HashType;
-  using self_type     = CountSketchFunctor<register_type, hash_type>;
+  using self_type     = CountSketchFunctor<register_type, hash_type, RangeSize>;
 
  private:
   hash_type _hash;
@@ -61,15 +62,13 @@ class CountSketchFunctor {
    * @note This behavior may change in the future.
    *
    * @tparam Args type(s) of additional hash parameters
-   * @param range_size The desired embedding dimension.
    * @param seed The random seed.
-   * @param args and additional parameters required by the hash functions.
+   * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(const std::uint64_t range_size,
-                     const std::uint64_t seed = krowkee::hash::default_seed,
+  CountSketchFunctor(const std::uint64_t seed = krowkee::hash::default_seed,
                      const Args &...args)
-      : _hash(range_size, seed, args...) {}
+      : _hash(RangeSize, seed, args...) {}
 
   CountSketchFunctor() {}
 
@@ -179,8 +178,8 @@ class CountSketchFunctor {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << HashType::name() << " hashes and "
-       << sizeof(register_type) << " byte registers";
+    ss << name() << " using " << HashType::name() << " hashes and " << RangeSize
+       << " " << sizeof(register_type) << "-byte registers";
     return ss.str();
   }
 
