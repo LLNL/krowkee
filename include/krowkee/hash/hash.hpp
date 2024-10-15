@@ -22,54 +22,57 @@ namespace hash {
  *
  * Right now only supports hashing to a power of 2 range.
  *
- * @tparam Range The desired range for the hash function. Gets rounded up to the
- * nearest power of 2.
+ * @tparam RangeSize The desired range for the hash function. Gets rounded up to
+ * the nearest power of 2.
  */
 struct Base {
   /**
-   * @param range the desired range for the hash function. Currently we round up
-   * to the nearest power of 2 for `_range'.
+   * @param range_size the desired range for the hash function. Currently we
+   * round up to the nearest power of 2 for `_range'.
    * @param seed the random seed controlling any randomness. Might be ignored.
    */
-  Base(const std::uint64_t range, const std::uint64_t seed = default_seed)
-      : _range(64 - ceil_log2_64(range)), _seed(seed) {}
+  Base(const std::uint64_t range_size, const std::uint64_t seed = default_seed)
+      : _log2_kernel_range_size(64 - ceil_log2_64(range_size)), _seed(seed) {}
 
   Base() {}
 
   /**
-   * Truncate a hashed 64-bit value to the desired range specified by `_range`.
+   * Truncate a hashed 64-bit value to the desired range specified by
+   * `_log2_kernel_range_size`.
    *
    * @param val the hashed value to be truncated.
    */
   constexpr std::uint64_t truncate(const std::uint64_t val) const {
-    return val >> _range;
+    return val >> _log2_kernel_range_size;
   }
 
-  constexpr std::uint64_t get_range() const { return _range; }
-  constexpr std::size_t   size() const { return _1u64 << (64 - _range); }
-  constexpr std::size_t   seed() const { return _seed; }
-  inline std::string      state() const {
+  constexpr std::uint64_t get_range() const { return _log2_kernel_range_size; }
+  constexpr std::size_t   size() const {
+    return _1u64 << (64 - _log2_kernel_range_size);
+  }
+  constexpr std::size_t seed() const { return _seed; }
+  inline std::string    state() const {
     std::stringstream ss;
     ss << "size: " << size() << ", seed: " << seed();
     return ss.str();
   }
 
   void swap(Base &rhs) {
-    std::swap(_range, rhs._range);
+    std::swap(_log2_kernel_range_size, rhs._log2_kernel_range_size);
     std::swap(_seed, rhs._seed);
   }
 
 #if __has_include(<cereal/types/base_class.hpp>)
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_range, _seed);
+    archive(_log2_kernel_range_size, _seed);
   }
 #endif
 
   friend void swap(Base &lhs, Base &rhs) { lhs.swap(rhs); }
 
  protected:
-  std::uint64_t              _range;
+  std::uint64_t              _log2_kernel_range_size;
   std::uint64_t              _seed;
   const static std::uint64_t _1u64 = 1;
 };
@@ -106,7 +109,8 @@ struct WangHash : public Base {
   }
 
   friend constexpr bool operator==(const WangHash &lhs, const WangHash &rhs) {
-    return lhs._range == rhs._range && lhs._seed == rhs._seed;
+    return lhs._log2_kernel_range_size == rhs._log2_kernel_range_size &&
+           lhs._seed == rhs._seed;
   }
 
   friend constexpr bool operator!=(const WangHash &lhs, const WangHash &rhs) {
@@ -168,7 +172,7 @@ struct MulShift : public Base {
   MulShift() : Base() {}
 
   /**
-   * Compute `_multiplicand * x mod _range`.
+   * Compute `_multiplicand * x mod _log2_kernel_range_size`.
    *
    * @tparam OBJ the object to be hashed. Presently must fit into a 64-bit
    *     register.
@@ -197,8 +201,8 @@ struct MulShift : public Base {
   }
 
   friend constexpr bool operator==(const MulShift &lhs, const MulShift &rhs) {
-    return lhs._range == rhs._range && lhs._seed == rhs._seed &&
-           lhs._multiplicand == rhs._multiplicand;
+    return lhs._log2_kernel_range_size == rhs._log2_kernel_range_size &&
+           lhs._seed == rhs._seed && lhs._multiplicand == rhs._multiplicand;
   }
 
   friend constexpr bool operator!=(const MulShift &lhs, const MulShift &rhs) {
@@ -253,7 +257,7 @@ struct MulAddShift : public Base {
   MulAddShift() : Base() {}
 
   /**
-   * Compute `_multiplicand * x + _summand mod _range`.
+   * Compute `_multiplicand * x + _summand mod _log2_kernel_range_size`.
    *
    * @tparam OBJ the object to be hashed. Presently must fit into a 64-bit
    *     register.
@@ -285,8 +289,8 @@ struct MulAddShift : public Base {
 
   friend constexpr bool operator==(const MulAddShift &lhs,
                                    const MulAddShift &rhs) {
-    return lhs._range == rhs._range && lhs._seed == rhs._seed &&
-           lhs._multiplicand == rhs._multiplicand &&
+    return lhs._log2_kernel_range_size == rhs._log2_kernel_range_size &&
+           lhs._seed == rhs._seed && lhs._multiplicand == rhs._multiplicand &&
            lhs._summand == rhs._summand;
   }
 
