@@ -27,12 +27,10 @@ struct CountSketchHashBase {
   using self_type = CountSketchHashBase;
 
   /**
-   * @param range the desired range for the hash function.
    * @param seed the random seed controlling any randomness.
    */
   template <typename... Args>
-  CountSketchHashBase(const std::uint64_t range,
-                      const std::uint64_t seed = default_seed,
+  CountSketchHashBase(const std::uint64_t seed = default_seed,
                       const Args &...args) {}
 
   CountSketchHashBase() {}
@@ -61,12 +59,15 @@ struct CountSketchHashBase {
  * A fast implementation of CountSketch hash operators. Returns a pair
  * of hash values into the register space and {+1, -1}, respectively, each drawn
  * from a separate (ideally) 2-universal hash functor.
+ *
+ * @tparam RangeSize The power-of-two embedding dimension.
+ * @tparam HashType The hash functor, ideally a 2-universal hash family.
  */
-template <typename HashType = MulAddShift>
+template <std::size_t RangeSize, typename HashType = MulAddShift>
 struct CountSketchHash : public CountSketchHashBase {
   using hash_type = HashType;
   using base_type = CountSketchHashBase;
-  using self_type = CountSketchHash<hash_type>;
+  using self_type = CountSketchHash<RangeSize, hash_type>;
 
  protected:
   hash_type _register_hash;
@@ -74,14 +75,12 @@ struct CountSketchHash : public CountSketchHashBase {
 
  public:
   /**
-   * @param range the desired range for the hash function.
    * @param seed the random seed controlling any randomness.
    */
   template <typename... Args>
-  CountSketchHash(const std::uint64_t range,
-                  const std::uint64_t seed = default_seed, const Args &...args)
-      : base_type(range, seed, args...),
-        _register_hash(range, seed, args...),
+  CountSketchHash(const std::uint64_t seed = default_seed, const Args &...args)
+      : base_type(seed, args...),
+        _register_hash(RangeSize, seed, args...),
         _polarity_hash(2, wang64(seed), args...) {}
 
   CountSketchHash() : base_type() {}

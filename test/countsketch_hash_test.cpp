@@ -21,8 +21,10 @@
 #include <iostream>
 
 using wang_hash_type = krowkee::hash::WangHash;
+
+template <std::size_t RangeSize>
 using countsketch_hash_type =
-    krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>;
+    krowkee::hash::CountSketchHash<RangeSize, krowkee::hash::MulAddShift>;
 
 using Clock   = std::chrono::system_clock;
 using ns_type = std::chrono::nanoseconds;
@@ -37,20 +39,26 @@ struct Parameters {
   bool          verbose;
 };
 
-void cs_init(std::uint64_t i) { countsketch_hash_type hash{i}; }
+template <typename HashType>
+void cs_init(std::uint64_t i) {
+  HashType hash{i};
+}
 
+template <std::size_t RangeSize>
 struct init_check {
   const char *name() const { return "hash initialization check"; }
 
   void operator()() const {
     for (std::uint64_t i(0); i < 63; ++i) {
-      CHECK_DOES_NOT_THROW<std::exception>(cs_init, "good value initialization",
-                                           i);
+      CHECK_DOES_NOT_THROW<std::exception>(
+          cs_init<countsketch_hash_type<RangeSize>>,
+          "good value initialization", i);
     }
     CHECK_CONDITION(true, "good value initialization");
   }
 };
 
+template <std::size_t RangeSize>
 struct empirical_histograms {
   const char *name() const { return "empirical histograms"; }
 
@@ -63,7 +71,7 @@ struct empirical_histograms {
     std::vector<std::int32_t>  polarity_hist(2);
     // HashType hash{m, std::forward<ARGS>(args)...};
     auto     start = Clock::now();
-    HashType hash{params.range, params.seed, args...};
+    HashType hash{params.seed, args...};
     for (std::uint64_t i(0); i < params.count; ++i) {
       auto [register_hash, polarity_hash] = hash(i);
       ++register_hist[register_hash];
@@ -76,7 +84,7 @@ struct empirical_histograms {
           target(std_dev_range * mean);
       if (params.verbose == true) {
         std::cout << "Empirical histogram of " << params.count
-                  << " elements hashed to 2^" << hash.size() << " bins using "
+                  << " elements hashed to " << hash.size() << " bins using "
                   << HashType::name() << " with state:" << std::endl;
         std::cout
             << "[" << hash.state() << "], ("
@@ -130,27 +138,29 @@ struct empirical_histograms {
   }
 
   void operator()(const Parameters &params) const {
-    empirical_histogram<countsketch_hash_type>(params, 0.01);
+    empirical_histogram<countsketch_hash_type<RangeSize>>(params, 0.01);
   }
 };
 
 #if __has_include(<cereal/cereal.hpp>)
+template <std::size_t RangeSize>
 struct serialize_check {
   const char *name() { return "serialize check"; }
 
   template <typename HashType, typename... ARGS>
   void serialize(const Parameters &params, ARGS &&...args) const {
-    HashType hash{params.range, params.seed, args...};
+    HashType hash{params.seed, args...};
     CHECK_ALL_ARCHIVES(hash, HashType::name());
   }
 
   void operator()(const Parameters params) const {
-    serialize<countsketch_hash_type>(params);
+    serialize<countsketch_hash_type<RangeSize>>(params);
   }
 };
 #endif
 
-void do_experiment(const Parameters params) {
+template <std::size_t RangeSize>
+void do_experiment_sized(const Parameters &params) {
   print_line();
   print_line();
   std::cout << " Experimenting with " << params.count
@@ -159,12 +169,43 @@ void do_experiment(const Parameters params) {
   print_line();
   print_line();
   std::cout << std::endl;
-  do_test<init_check>();
-  do_test<empirical_histograms>(params);
+  do_test<init_check<RangeSize>>();
+  do_test<empirical_histograms<RangeSize>>(params);
 #if __has_include(<cereal/cereal.hpp>)
-  do_test<serialize_check>(params);
+  do_test<serialize_check<RangeSize>>(params);
 #endif
   std::cout << std::endl;
+}
+
+void do_experiment(const Parameters &params) {
+  switch (params.range) {
+    case 4:
+      do_experiment_sized<4>(params);
+      break;
+    case 8:
+      do_experiment_sized<8>(params);
+      break;
+    case 16:
+      do_experiment_sized<16>(params);
+      break;
+    case 32:
+      do_experiment_sized<32>(params);
+      break;
+    case 64:
+      do_experiment_sized<64>(params);
+      break;
+    case 128:
+      do_experiment_sized<128>(params);
+      break;
+    case 256:
+      do_experiment_sized<256>(params);
+      break;
+    case 512:
+      do_experiment_sized<512>(params);
+      break;
+    default:
+      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
+  }
 }
 
 void print_help(char *exe_name) {

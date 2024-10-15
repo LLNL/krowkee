@@ -38,11 +38,10 @@ using MultiLocal =
 
 template <template <typename, typename> class ContainerType, typename KeyType,
           typename RegType, std::size_t RangeSize>
-using MultiLocalCountSketch = MultiLocal<
-    krowkee::transform::CountSketchFunctor<
-        RegType, krowkee::hash::CountSketchHash<krowkee::hash::MulAddShift>,
-        RangeSize>,
-    ContainerType, std::plus, KeyType, RegType>;
+using MultiLocalCountSketch =
+    MultiLocal<krowkee::transform::CountSketchFunctor<
+                   RegType, krowkee::hash::CountSketchHash, RangeSize>,
+               ContainerType, std::plus, KeyType, RegType>;
 
 template <typename KeyType, typename RegType, std::size_t RangeSize>
 using MultiLocalFWHT =

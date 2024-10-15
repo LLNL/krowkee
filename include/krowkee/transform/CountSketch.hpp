@@ -39,12 +39,13 @@ using krowkee::stream::Element;
  * mappings.
  * @tparam RangeSize The power-of-two embedding dimension.
  */
-template <typename RegType, typename HashType, std::size_t RangeSize>
+template <typename RegType, template <std::size_t> class HashType,
+          std::size_t RangeSize>
 class CountSketchFunctor {
  public:
   using register_type = RegType;
-  using hash_type     = HashType;
-  using self_type     = CountSketchFunctor<register_type, hash_type, RangeSize>;
+  using hash_type     = HashType<RangeSize>;
+  using self_type     = CountSketchFunctor<register_type, HashType, RangeSize>;
 
  private:
   hash_type _hash;
@@ -68,7 +69,7 @@ class CountSketchFunctor {
   template <typename... Args>
   CountSketchFunctor(const std::uint64_t seed = krowkee::hash::default_seed,
                      const Args &...args)
-      : _hash(RangeSize, seed, args...) {}
+      : _hash(seed, args...) {}
 
   CountSketchFunctor() {}
 
@@ -178,8 +179,8 @@ class CountSketchFunctor {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << HashType::name() << " hashes and " << RangeSize
-       << " " << sizeof(register_type) << "-byte registers";
+    ss << name() << " using " << hash_type::name() << " hashes and "
+       << RangeSize << " " << sizeof(register_type) << "-byte registers";
     return ss.str();
   }
 
@@ -192,7 +193,7 @@ class CountSketchFunctor {
    * @return false The seeds or range sizes disagree.
    */
   friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
-    return (lhs.seed() == rhs.seed()) && (lhs.range_size() == rhs.range_size());
+    return lhs._hash == rhs._hash;
   }
 
   /**
