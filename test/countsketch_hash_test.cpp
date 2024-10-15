@@ -20,8 +20,6 @@
 #include <cstring>
 #include <iostream>
 
-using wang_hash_type = krowkee::hash::WangHash;
-
 template <std::size_t RangeSize>
 using countsketch_hash_type =
     krowkee::hash::CountSketchHash<RangeSize, krowkee::hash::MulAddShift>;

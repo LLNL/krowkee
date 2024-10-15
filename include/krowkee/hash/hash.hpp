@@ -22,17 +22,17 @@ namespace hash {
  *
  * Right now only supports hashing to a power of 2 range.
  *
- * @tparam RangeSize The desired range for the hash function. Gets rounded up to
- * the nearest power of 2.
+ * @tparam RangeSize The desired range for the hash function. Must be a power
+ * of 2.
  */
+template <std::size_t RangeSize>
 struct Base {
+  using self_type = Base<RangeSize>;
+
   /**
-   * @param range_size the desired range for the hash function. Currently we
-   * round up to the nearest power of 2 for `_range'.
    * @param seed the random seed controlling any randomness. Might be ignored.
    */
-  Base(const std::uint64_t range_size, const std::uint64_t seed = default_seed)
-      : _log2_kernel_range_size(64 - ceil_log2_64(range_size)), _seed(seed) {}
+  Base(const std::uint64_t seed) : _seed(seed) {}
 
   Base() {}
 
@@ -46,10 +46,11 @@ struct Base {
     return val >> _log2_kernel_range_size;
   }
 
-  constexpr std::uint64_t get_range() const { return _log2_kernel_range_size; }
-  constexpr std::size_t   size() const {
+  static constexpr std::uint64_t get_range() { return _log2_kernel_range_size; }
+  static constexpr std::size_t   size() {
     return _1u64 << (64 - _log2_kernel_range_size);
   }
+
   constexpr std::size_t seed() const { return _seed; }
   inline std::string    state() const {
     std::stringstream ss;
@@ -57,44 +58,54 @@ struct Base {
     return ss.str();
   }
 
-  void swap(Base &rhs) {
-    std::swap(_log2_kernel_range_size, rhs._log2_kernel_range_size);
-    std::swap(_seed, rhs._seed);
-  }
+  void swap(self_type &rhs) { std::swap(_seed, rhs._seed); }
 
 #if __has_include(<cereal/types/base_class.hpp>)
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_log2_kernel_range_size, _seed);
+    archive(_seed);
   }
 #endif
 
-  friend void swap(Base &lhs, Base &rhs) { lhs.swap(rhs); }
+  friend void swap(self_type &lhs, self_type &rhs) { lhs.swap(rhs); }
+
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.state();
+    return os;
+  }
 
  protected:
-  std::uint64_t              _log2_kernel_range_size;
-  std::uint64_t              _seed;
-  const static std::uint64_t _1u64 = 1;
+  static constexpr std::uint64_t _log2_kernel_range_size =
+      64 - log2_64<RangeSize>::value;
+  static constexpr std::uint64_t _1u64 = 1;
+  std::uint64_t                  _seed;
 };
 
 /**
  * Thomas Wang hash functor
  *
  * https://naml.us/blog/tag/thomas-wang
+ *
+ * @tparam RangeSize The desired range for the hash function. Must be a power
+ * of 2.
  */
-struct WangHash : public Base {
+template <std::size_t RangeSize>
+struct WangHash : public Base<RangeSize> {
+  using self_type = WangHash<RangeSize>;
+  using base_type = Base<RangeSize>;
+
   /**
    * @tparam ARGS types of additional (ignored) hash functor arguments.
    * @param range the power of 2 range for the hash function.
    */
   template <typename... ARGS>
-  WangHash(std::uint64_t range, ARGS &...) : Base(range) {}
+  WangHash(ARGS &...) : base_type() {}
 
-  WangHash() : Base() {}
+  WangHash() : base_type() {}
 
   template <typename OBJ>
   constexpr std::uint64_t operator()(const OBJ &x) const {
-    return truncate(wang64(std::uint64_t(x)));
+    return this->truncate(wang64(std::uint64_t(x)));
   }
 
   /**
@@ -104,7 +115,7 @@ struct WangHash : public Base {
 
   inline std::string state() const {
     std::stringstream ss;
-    ss << "size: " << size();
+    ss << "size: " << this->size();
     return ss.str();
   }
 
@@ -143,8 +154,15 @@ struct WangHash : public Base {
  * multiply-shift hash
  *
  * https://en.wikipedia.org/wiki/Universal_hashing
+ *
+ * @tparam RangeSize The desired range for the hash function. Must be a power
+ * of 2.
  */
-struct MulShift : public Base {
+template <std::size_t RangeSize>
+struct MulShift : public Base<RangeSize> {
+  using self_type = MulShift<RangeSize>;
+  using base_type = Base<RangeSize>;
+
   /**
    * Initialize `_multiplicand` given the specified random `seed`.
    *
@@ -152,14 +170,12 @@ struct MulShift : public Base {
    *
    * @tparam ARGS types of additional (ignored) hash functor arguments.
    *
-   * @param range the range for the hash function.
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulShift(const std::uint64_t range, const std::uint64_t seed = default_seed,
-           const ARGS &...)
-      : Base(range, seed) {
-    std::mt19937_64                              rnd_gen(wang64(_seed));
+  MulShift(const std::uint64_t seed = default_seed, const ARGS &...)
+      : base_type(seed) {
+    std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist(
         1, std::numeric_limits<std::uint64_t>::max());
     std::uint64_t multiplicand;
@@ -169,7 +185,7 @@ struct MulShift : public Base {
     _multiplicand = multiplicand;
   }
 
-  MulShift() : Base() {}
+  MulShift() : base_type() {}
 
   /**
    * Compute `_multiplicand * x mod _log2_kernel_range_size`.
@@ -181,7 +197,7 @@ struct MulShift : public Base {
    */
   template <typename OBJ>
   constexpr std::uint64_t operator()(const OBJ &x) const {
-    return truncate(_multiplicand * x);
+    return this->truncate(_multiplicand * x);
   }
 
   /**
@@ -191,7 +207,7 @@ struct MulShift : public Base {
 
   inline std::string state() const {
     std::stringstream ss;
-    ss << Base::state() << ", multiplicand: " << _multiplicand;
+    ss << base_type::state() << ", multiplicand: " << _multiplicand;
     return ss.str();
   }
 
@@ -212,7 +228,7 @@ struct MulShift : public Base {
 #if __has_include(<cereal/types/base_class.hpp>)
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(cereal::base_class<Base>(this), _multiplicand);
+    archive(cereal::base_class<base_type>(this), _multiplicand);
   }
 #endif
 
@@ -224,8 +240,14 @@ struct MulShift : public Base {
  * multiply-add-shift hash
  *
  * https://en.wikipedia.org/wiki/Universal_hashing
+ *
+ * @tparam RangeSize The desired range for the hash function. Must be a power
+ * of 2.
  */
-struct MulAddShift : public Base {
+template <std::size_t RangeSize>
+struct MulAddShift : public Base<RangeSize> {
+  using self_type = MulShift<RangeSize>;
+  using base_type = Base<RangeSize>;
   /**
    * Initialize `_multiplicand` and `_summand` given the specified random
    * `seed`.
@@ -235,17 +257,15 @@ struct MulAddShift : public Base {
    *
    * @tparam ARGS types of additional (ignored) hash functor arguments.
    *
-   * @param range the power of 2 range for the hash function.
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulAddShift(const std::uint64_t range,
-              const std::uint64_t seed = default_seed, const ARGS &...)
-      : Base(range, seed) {
-    std::mt19937_64                              rnd_gen(wang64(_seed));
+  MulAddShift(const std::uint64_t seed = default_seed, const ARGS &...)
+      : base_type(seed) {
+    std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist_multiplicand(
         0, std::numeric_limits<std::uint64_t>::max());
-    std::uniform_int_distribution<std::uint64_t> udist_summand(0, size());
+    std::uniform_int_distribution<std::uint64_t> udist_summand(0, this->size());
     std::uint64_t                                multiplicand;
     do {
       multiplicand = udist_multiplicand(rnd_gen);
@@ -254,7 +274,7 @@ struct MulAddShift : public Base {
     _summand      = udist_summand(rnd_gen);
   }
 
-  MulAddShift() : Base() {}
+  MulAddShift() : base_type() {}
 
   /**
    * Compute `_multiplicand * x + _summand mod _log2_kernel_range_size`.
@@ -266,7 +286,7 @@ struct MulAddShift : public Base {
    */
   template <typename OBJ>
   constexpr std::uint64_t operator()(const OBJ &x) const {
-    return truncate(_multiplicand * x + _summand);
+    return this->truncate(_multiplicand * x + _summand);
   }
 
   /**
@@ -276,7 +296,7 @@ struct MulAddShift : public Base {
 
   inline std::string state() const {
     std::stringstream ss;
-    ss << Base::state() << ", multiplicand: " << _multiplicand
+    ss << base_type::state() << ", multiplicand: " << _multiplicand
        << ",  summand: " << _summand;
     return ss.str();
   }
@@ -302,7 +322,7 @@ struct MulAddShift : public Base {
 #if __has_include(<cereal/types/base_class.hpp>)
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(cereal::base_class<Base>(this), _multiplicand, _summand);
+    archive(cereal::base_class<base_type>(this), _multiplicand, _summand);
   }
 #endif
 
@@ -311,9 +331,5 @@ struct MulAddShift : public Base {
   std::uint64_t _summand;
 };
 
-std::ostream &operator<<(std::ostream &os, const Base &func) {
-  os << func.state();
-  return os;
-}
 }  // namespace hash
 }  // namespace krowkee

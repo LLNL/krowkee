@@ -63,15 +63,17 @@ struct CountSketchHashBase {
  * @tparam RangeSize The power-of-two embedding dimension.
  * @tparam HashType The hash functor, ideally a 2-universal hash family.
  */
-template <std::size_t RangeSize, typename HashType = MulAddShift>
+template <std::size_t RangeSize,
+          template <std::size_t> class HashType = MulAddShift>
 struct CountSketchHash : public CountSketchHashBase {
-  using hash_type = HashType;
-  using base_type = CountSketchHashBase;
-  using self_type = CountSketchHash<RangeSize, hash_type>;
+  using register_hash_type = HashType<RangeSize>;
+  using polarity_hash_type = HashType<2>;
+  using base_type          = CountSketchHashBase;
+  using self_type          = CountSketchHash<RangeSize, HashType>;
 
  protected:
-  hash_type _register_hash;
-  hash_type _polarity_hash;
+  register_hash_type _register_hash;
+  polarity_hash_type _polarity_hash;
 
  public:
   /**
@@ -80,8 +82,8 @@ struct CountSketchHash : public CountSketchHashBase {
   template <typename... Args>
   CountSketchHash(const std::uint64_t seed = default_seed, const Args &...args)
       : base_type(seed, args...),
-        _register_hash(RangeSize, seed, args...),
-        _polarity_hash(2, wang64(seed), args...) {}
+        _register_hash(seed, args...),
+        _polarity_hash(wang64(seed), args...) {}
 
   CountSketchHash() : base_type() {}
 

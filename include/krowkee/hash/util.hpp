@@ -108,6 +108,16 @@ constexpr std::uint64_t ceil_log2_64(const UIntType val) {
   return (is_pow2(val)) ? v : v + 1;
 }
 
+template <std::size_t RangeSize>
+struct log2_64 {
+  static constexpr std::size_t value = 63 - __builtin_clzll(RangeSize);
+};
+
+template <std::size_t RangeSize>
+struct is_power_of_2 {
+  static constexpr bool value = RangeSize & (RangeSize - 1) == 0;
+};
+
 /**
  * Print name of type
  *
