@@ -29,6 +29,9 @@ template <std::size_t RangeSize>
 struct Base {
   using self_type = Base<RangeSize>;
 
+  static_assert(is_power_of_2<RangeSize>::value,
+                "RangeSize must be a power of 2!");
+
   /**
    * @param seed the random seed controlling any randomness. Might be ignored.
    */

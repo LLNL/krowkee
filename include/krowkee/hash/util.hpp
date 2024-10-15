@@ -115,7 +115,8 @@ struct log2_64 {
 
 template <std::size_t RangeSize>
 struct is_power_of_2 {
-  static constexpr bool value = RangeSize & (RangeSize - 1) == 0;
+  static constexpr bool value =
+      (RangeSize > 0) && !(RangeSize & (RangeSize - 1)) == 1;
 };
 
 /**
