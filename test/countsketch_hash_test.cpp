@@ -63,13 +63,11 @@ struct empirical_histograms {
   template <typename HashType, typename... ARGS>
   void empirical_histogram(const Parameters &params, const double std_dev_range,
                            ARGS &&...args) const {
-    std::uint64_t m(
-        std::max(krowkee::hash::ceil_pow2_64(params.range), std::uint64_t(2)));
-    std::vector<std::uint64_t> register_hist(m);
+    auto                       start = Clock::now();
+    HashType                   hash{params.seed, args...};
+    std::size_t                range_size(hash.size());
+    std::vector<std::uint64_t> register_hist(range_size);
     std::vector<std::int32_t>  polarity_hist(2);
-    // HashType hash{m, std::forward<ARGS>(args)...};
-    auto     start = Clock::now();
-    HashType hash{params.seed, args...};
     for (std::uint64_t i(0); i < params.count; ++i) {
       auto [register_hash, polarity_hash] = hash(i);
       ++register_hist[register_hash];
@@ -82,14 +80,14 @@ struct empirical_histograms {
           target(std_dev_range * mean);
       if (params.verbose == true) {
         std::cout << "Empirical histogram of " << params.count
-                  << " elements hashed to " << hash.size() << " bins using "
+                  << " elements hashed to " << range_size << " bins using "
                   << HashType::name() << " with state:" << std::endl;
         std::cout
             << "[" << hash.state() << "], ("
             << std::chrono::duration_cast<ns_type>(Clock::now() - start).count()
             << " ns):";
 
-        for (int i(0); i < m; ++i) {
+        for (int i(0); i < range_size; ++i) {
           if (i % 20 == 0) {
             std::cout << "\n\t";
           }

@@ -40,59 +40,6 @@ struct Parameters {
   bool          verbose;
 };
 
-void is_pow2_throw() { krowkee::hash::is_pow2(-5); }
-
-struct pow2_check {
-  const char *name() const { return "pow2 check"; }
-
-  template <typename T>
-  void check_ceil2(bool &ceil_log2_success, const T val, const T target,
-                   const Parameters &params) const {
-    int pow(krowkee::hash::ceil_log2_64(val));
-    if (pow != target) {
-      ceil_log2_success = false;
-    }
-    if (params.verbose == true) {
-      std::cout << "value " << val << " has ceil log2 " << pow << std::endl;
-    }
-  }
-
-  void operator()(const Parameters &params) const {
-    std::uint64_t one(1);
-    bool          pow2_correct_success = true;
-    for (std::uint64_t i(0); i < 64; ++i) {
-      if (!krowkee::hash::is_pow2(one << i)) {
-        std::cout << "Incorrectly assigned " << (1 << i)
-                  << " as a non-power of 2" << std::endl;
-        pow2_correct_success = false;
-      }
-    }
-    CHECK_CONDITION(pow2_correct_success, "correct pow2 assignment");
-
-    bool                       pow2_incorrect_success = true;
-    std::vector<std::uint64_t> nonpows{3, 13, 71978281, 2821, 29028143};
-    for (const std::uint64_t nonpow : nonpows) {
-      if (krowkee::hash::is_pow2(nonpow)) {
-        std::cout << "Incorrectly assigned " << nonpow << " as a power of 2"
-                  << std::endl;
-        pow2_incorrect_success = false;
-      }
-    }
-    CHECK_CONDITION(pow2_incorrect_success, "incorrect pow2 assignemnt");
-
-    CHECK_THROWS<std::invalid_argument>(is_pow2_throw, "bad pow2");
-
-    bool             ceil_log2_success = true;
-    std::vector<int> targets{1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
-    for (int i(0); i <= (1 << 4); ++i) {
-      check_ceil2(ceil_log2_success, i, targets[i], params);
-    }
-    check_ceil2(ceil_log2_success, std::numeric_limits<std::uint64_t>::max(),
-                std::uint64_t(64), params);
-    CHECK_CONDITION(ceil_log2_success, "ceil log2");
-  }
-};
-
 template <std::size_t RangeSize>
 void wh_init(std::uint64_t i) {
   wang_hash_type<RangeSize> hash{i};
@@ -118,12 +65,10 @@ struct empirical_histograms {
   template <typename HashType, typename... ARGS>
   void empirical_histogram(const Parameters params, const double std_dev_range,
                            ARGS &&...args) const {
-    std::uint64_t m(
-        std::max(krowkee::hash::ceil_pow2_64(params.range), std::uint64_t(2)));
-    std::vector<std::uint64_t> hist(m);
-    // HashType hash{m, std::forward<ARGS>(args)...};
-    auto     start = Clock::now();
-    HashType hash{params.seed, args...};
+    auto                       start = Clock::now();
+    HashType                   hash{params.seed, args...};
+    std::size_t                range_size(hash.size());
+    std::vector<std::uint64_t> hist(range_size);
     for (std::uint64_t i(0); i < params.count; ++i) {
       ++hist[hash(i)];
     }
@@ -133,14 +78,14 @@ struct empirical_histograms {
         target(std_dev_range * mean);
     if (params.verbose == true) {
       std::cout << "Empirical histogram of " << params.count
-                << " elements hashed to 2^" << m << " bins using "
+                << " elements hashed to " << range_size << " bins using "
                 << HashType::name() << " with state:" << std::endl;
       std::cout
           << "[" << hash.state() << "], ("
           << std::chrono::duration_cast<ns_type>(Clock::now() - start).count()
           << " ns):";
 
-      for (int i(0); i < m; ++i) {
+      for (int i(0); i < range_size; ++i) {
         if (i % 20 == 0) {
           std::cout << "\n\t";
         }
@@ -192,7 +137,6 @@ void do_experiment_sized(const Parameters params) {
   print_line();
   print_line();
   std::cout << std::endl;
-  do_test<pow2_check>(params);
   do_test<init_check<RangeSize>>();
   do_test<empirical_histograms<RangeSize>>(params);
 #if __has_include(<cereal/cereal.hpp>)
