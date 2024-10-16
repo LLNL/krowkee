@@ -7,7 +7,7 @@
 
 #include <krowkee/hash/countsketch.hpp>
 
-#include <krowkee/util/tests.hpp>
+#include <krowkee/util/runtime.hpp>
 
 #if __has_include(<cereal/cereal.hpp>)
 #include <check_archive.hpp>

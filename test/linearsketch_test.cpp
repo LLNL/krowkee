@@ -10,6 +10,7 @@
 
 #include <krowkee/hash/hash.hpp>
 #include <krowkee/util/cmap_types.hpp>
+#include <krowkee/util/runtime.hpp>
 #include <krowkee/util/sketch_types.hpp>
 
 #include <getopt.h>

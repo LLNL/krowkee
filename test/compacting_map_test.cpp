@@ -8,7 +8,7 @@
 #include <krowkee/hash/util.hpp>
 
 #include <krowkee/util/cmap_types.hpp>
-#include <krowkee/util/tests.hpp>
+#include <krowkee/util/runtime.hpp>
 
 #if __has_include(<boost/container/flat_map.hpp>)
 #include <boost/container/flat_map.hpp>
