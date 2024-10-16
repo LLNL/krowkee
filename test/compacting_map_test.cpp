@@ -32,6 +32,11 @@
 #include <random>
 #include <vector>
 
+using krowkee::chirp;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::print_line;
+
 using cmap_impl_type = krowkee::util::cmap_impl_type;
 
 using cmap_type = krowkee::container::compacting_map<int, int>;

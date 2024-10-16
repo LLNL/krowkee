@@ -18,6 +18,12 @@
 
 #include <cstring>
 
+using krowkee::chirp;
+using krowkee::dispatch_with_sketch_sizes;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::print_line;
+
 using sketch_impl_type = krowkee::util::sketch_impl_type;
 using cmap_impl_type   = krowkee::util::cmap_impl_type;
 

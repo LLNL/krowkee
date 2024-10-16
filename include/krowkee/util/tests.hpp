@@ -14,6 +14,8 @@
 #include <iostream>
 #include <memory>
 
+namespace krowkee {
+
 using Clock   = std::chrono::system_clock;
 using ns_type = std::chrono::nanoseconds;
 
@@ -135,3 +137,5 @@ class online_statistics {
   std::uint64_t _count;
   double        _oldM, _newM, _oldS, _newS;
 };
+
+}  // namespace krowkee

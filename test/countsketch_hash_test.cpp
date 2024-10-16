@@ -20,6 +20,13 @@
 #include <cstring>
 #include <iostream>
 
+using krowkee::chirp;
+using krowkee::dispatch_with_sketch_sizes;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::online_statistics;
+using krowkee::print_line;
+
 template <std::size_t RangeSize>
 using countsketch_hash_type =
     krowkee::hash::CountSketchHash<RangeSize, krowkee::hash::MulAddShift>;
