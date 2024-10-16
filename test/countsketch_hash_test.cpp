@@ -156,53 +156,24 @@ struct serialize_check {
 #endif
 
 template <std::size_t RangeSize>
-void do_experiment_sized(const Parameters &params) {
-  print_line();
-  print_line();
-  std::cout << " Experimenting with " << params.count
-            << " insertions into a range of " << params.range
-            << " using random seed " << params.seed << std::endl;
-  print_line();
-  print_line();
-  std::cout << std::endl;
-  do_test<init_check<RangeSize>>();
-  do_test<empirical_histograms<RangeSize>>(params);
+struct do_experiment {
+  void operator()(const Parameters &params) {
+    print_line();
+    print_line();
+    std::cout << " Experimenting with " << params.count
+              << " insertions into a range of " << params.range
+              << " using random seed " << params.seed << std::endl;
+    print_line();
+    print_line();
+    std::cout << std::endl;
+    do_test<init_check<RangeSize>>();
+    do_test<empirical_histograms<RangeSize>>(params);
 #if __has_include(<cereal/cereal.hpp>)
-  do_test<serialize_check<RangeSize>>(params);
+    do_test<serialize_check<RangeSize>>(params);
 #endif
-  std::cout << std::endl;
-}
-
-void do_experiment(const Parameters &params) {
-  switch (params.range) {
-    case 4:
-      do_experiment_sized<4>(params);
-      break;
-    case 8:
-      do_experiment_sized<8>(params);
-      break;
-    case 16:
-      do_experiment_sized<16>(params);
-      break;
-    case 32:
-      do_experiment_sized<32>(params);
-      break;
-    case 64:
-      do_experiment_sized<64>(params);
-      break;
-    case 128:
-      do_experiment_sized<128>(params);
-      break;
-    case 256:
-      do_experiment_sized<256>(params);
-      break;
-    case 512:
-      do_experiment_sized<512>(params);
-      break;
-    default:
-      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
+    std::cout << std::endl;
   }
-}
+};
 
 void print_help(char *exe_name) {
   std::cout << "\nusage:  " << exe_name << "\n"
@@ -288,7 +259,7 @@ int main(int argc, char **argv) {
 
   parse_args(argc, argv, params);
 
-  do_experiment(params);
+  dispatch_with_sketch_sizes<do_experiment, void>(params.range, params);
 
   return 0;
 }

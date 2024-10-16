@@ -295,114 +295,57 @@ void perform_tests(const Parameters &params) {
 }
 
 template <std::size_t RangeSize>
-void choose_local_tests_sized(const Parameters &params) {
-  if (params.sketch_impl == sketch_impl_type::cst) {
+struct choose_local_tests {
+  void operator()(const Parameters &params) {
+    if (params.sketch_impl == sketch_impl_type::cst) {
+      perform_tests<MultiLocalDense32CountSketch<RangeSize>,
+                    make_shared_functor>(params);
+    } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
+      if (params.cmap_impl == cmap_impl_type::std) {
+        perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
+                      make_shared_functor>(params);
+#if __has_include(<boost/container/flat_map.hpp>)
+      } else if (params.cmap_impl == cmap_impl_type::boost) {
+        perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
+                      make_shared_functor>(params);
+#endif
+      }
+    } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
+      if (params.cmap_impl == cmap_impl_type::std) {
+        perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
+                      make_shared_functor>(params);
+#if __has_include(<boost/container/flat_map.hpp>)
+      } else if (params.cmap_impl == cmap_impl_type::boost) {
+        perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
+                      make_shared_functor>(params);
+#endif
+      }
+    } else if (params.sketch_impl == sketch_impl_type::fwht) {
+      perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(
+          params);
+    }
+  }
+};
+
+template <std::size_t RangeSize>
+struct do_all_local_tests {
+  void operator()(const Parameters &params) {
     perform_tests<MultiLocalDense32CountSketch<RangeSize>, make_shared_functor>(
         params);
-  } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
-    if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
-                    make_shared_functor>(params);
+    perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
+                  make_shared_functor>(params);
+    perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
+                  make_shared_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
-                    make_shared_functor>(params);
+    perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
+                  make_shared_functor>(params);
+    perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
+                  make_shared_functor>(params);
 #endif
-    }
-  } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
-    if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
-                    make_shared_functor>(params);
-#if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
-                    make_shared_functor>(params);
-#endif
-    }
-  } else if (params.sketch_impl == sketch_impl_type::fwht) {
     perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(
         params);
   }
-}
-
-void choose_local_tests(const Parameters &params) {
-  switch (params.range_size) {
-    case 4:
-      choose_local_tests_sized<4>(params);
-      break;
-    case 8:
-      choose_local_tests_sized<8>(params);
-      break;
-    case 16:
-      choose_local_tests_sized<16>(params);
-      break;
-    case 32:
-      choose_local_tests_sized<32>(params);
-      break;
-    case 64:
-      choose_local_tests_sized<64>(params);
-      break;
-    case 128:
-      choose_local_tests_sized<128>(params);
-      break;
-    case 256:
-      choose_local_tests_sized<256>(params);
-      break;
-    case 512:
-      choose_local_tests_sized<512>(params);
-      break;
-    default:
-      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
-  }
-}
-
-template <std::size_t RangeSize>
-void do_all_local_tests_sized(const Parameters &params) {
-  perform_tests<MultiLocalDense32CountSketch<RangeSize>, make_shared_functor>(
-      params);
-  perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
-                make_shared_functor>(params);
-  perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
-                make_shared_functor>(params);
-#if __has_include(<boost/container/flat_map.hpp>)
-  perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
-                make_shared_functor>(params);
-  perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
-                make_shared_functor>(params);
-#endif
-  perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(params);
-}
-
-void do_all_local_tests(const Parameters &params) {
-  switch (params.range_size) {
-    case 4:
-      do_all_local_tests_sized<4>(params);
-      break;
-    case 8:
-      do_all_local_tests_sized<8>(params);
-      break;
-    case 16:
-      do_all_local_tests_sized<16>(params);
-      break;
-    case 32:
-      do_all_local_tests_sized<32>(params);
-      break;
-    case 64:
-      do_all_local_tests_sized<64>(params);
-      break;
-    case 128:
-      do_all_local_tests_sized<128>(params);
-      break;
-    case 256:
-      do_all_local_tests_sized<256>(params);
-      break;
-    case 512:
-      do_all_local_tests_sized<512>(params);
-      break;
-    default:
-      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
-  }
-}
+};
 
 int main(int argc, char **argv) {
   std::uint64_t    count(10000);
@@ -427,9 +370,11 @@ int main(int argc, char **argv) {
   parse_args(argc, argv, params);
 
   if (do_all == true) {
-    do_all_local_tests(params);
+    dispatch_with_sketch_sizes<do_all_local_tests, void>(params.range_size,
+                                                         params);
   } else {
-    choose_local_tests(params);
+    dispatch_with_sketch_sizes<choose_local_tests, void>(params.range_size,
+                                                         params);
   }
   return 0;
 }
