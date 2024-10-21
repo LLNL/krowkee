@@ -298,13 +298,13 @@ struct ingest_check {
       std::cout << "projected vectors:" << std::endl;
     }
     double success_rate(0.0);
-    int    triasketch(0);
+    int    trials(0);
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.observation_count; ++j) {
         if (i == j) {
           break;
         }
-        ++triasketch;
+        ++trials;
         double ob_dist = _l2_distance_sq(observations[i], observations[j]);
         double sk_dist = _l2_distance_sq(projections[i], projections[j]);
         if (in_bounds(ob_dist, sk_dist, epsilon)) {
@@ -318,10 +318,10 @@ struct ingest_check {
         }
       }
     }
-    success_rate /= triasketch;
+    success_rate /= trials;
     bool lemma_guarantee_success = success_rate > 0.5;
     CHECK_CONDITION(lemma_guarantee_success == true, "lemma guarantee (",
-                    triasketch, " triasketch, ", success_rate,
+                    trials, " trials, ", success_rate,
                     " success rate, epsilon=", epsilon, ")");
   }
 
