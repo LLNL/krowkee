@@ -8,7 +8,7 @@
 #include <krowkee/hash/util.hpp>
 
 #include <krowkee/util/cmap_types.hpp>
-#include <krowkee/util/tests.hpp>
+#include <krowkee/util/runtime.hpp>
 
 #if __has_include(<boost/container/flat_map.hpp>)
 #include <boost/container/flat_map.hpp>
@@ -31,6 +31,11 @@
 #include <iostream>
 #include <random>
 #include <vector>
+
+using krowkee::chirp;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::print_line;
 
 using cmap_impl_type = krowkee::util::cmap_impl_type;
 

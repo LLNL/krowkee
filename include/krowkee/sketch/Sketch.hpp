@@ -9,6 +9,8 @@
 #include <cereal/types/memory.hpp>
 #endif
 
+#include <type_traits>
+
 namespace krowkee {
 namespace sketch {
 
@@ -27,30 +29,27 @@ namespace sketch {
  * whose first two template parameters are set by `RegType` and
  * `MergeOp<RegType>`, respectively.
  * @tparam MergeOp A bivariate merge operator on arrays of `RegType`s.
- * @tparam RegType The type of to hold in individual registers.
  * @tparam PtrType The type of shared pointer used to wrap the sketch functor.
  * Should be `std::shared_ptr`in shared memory and `ygm::ygm_ptr` in distributed
  * memory.
  * @tparam Args Additional template parameters for `SketchFunc`, such as a hash
  * functor.
  */
-template <template <typename, typename...> class SketchFunc,
+template <typename SketchFunc,
           template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, typename RegType,
-          template <typename> class PtrType, typename... Args>
+          template <typename> class MergeOp, template <typename> class PtrType>
 class Sketch {
  public:
-  /** Alias for Register type */
-  using register_type = RegType;
-  /** Alias for fully-templated container type */
-  using container_type = ContainerType<register_type, MergeOp<register_type>>;
   /** Alias for fully-templated sketch functor type*/
-  using transform_type = SketchFunc<register_type, Args...>;
+  using transform_type = SketchFunc;
   /** Alias for fully-templated sketch functor pointer type*/
   using transform_ptr_type = PtrType<transform_type>;
+  /** Alias for Register type */
+  using register_type = typename transform_type::register_type;
+  /** Alias for fully-templated container type */
+  using container_type = ContainerType<register_type, MergeOp<register_type>>;
   /** Alias for fully-templated self type*/
-  using self_type = Sketch<SketchFunc, ContainerType, MergeOp, register_type,
-                           PtrType, Args...>;
+  using self_type = Sketch<transform_type, ContainerType, MergeOp, PtrType>;
 
  private:
   transform_ptr_type _transform_ptr;

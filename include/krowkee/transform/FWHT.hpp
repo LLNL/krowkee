@@ -23,12 +23,14 @@ using krowkee::stream::Element;
 /**
  * Fast Walsh-Hadamard Transform Functor Class
  */
-template <typename RegType>
+template <typename RegType, std::size_t RangeSize>
 class FWHTFunctor {
-  using self_type = FWHTFunctor<RegType>;
+ public:
+  using register_type = RegType;
+  using self_type     = FWHTFunctor<RegType, RangeSize>;
 
  protected:
-  std::uint64_t _range_size;
+  std::uint64_t _range_size = RangeSize;
   std::uint64_t _seed;
   std::uint64_t _domain_size;
 
@@ -38,18 +40,15 @@ class FWHTFunctor {
    *
    * @note[BWP] Do we actually need to pass n?
    *
-   * @tparam ContainerType The type of the underlying sketch data structure.
    * @tparam Args type(s) of additional hash parameters.
    *
-   * @param s the desired embedding dimension.
    * @param seed the random seed.
    * @param args any additional paramters required by the hash functions.
    */
   template <typename... Args>
-  FWHTFunctor(const std::uint64_t range_size  = 64,
-              const std::uint64_t seed        = krowkee::hash::default_seed,
+  FWHTFunctor(const std::uint64_t seed        = krowkee::hash::default_seed,
               const std::uint64_t domain_size = 1024, const Args &&...args)
-      : _range_size(range_size), _seed(seed), _domain_size(domain_size) {}
+      : _seed(seed), _domain_size(domain_size) {}
 
   FWHTFunctor() {}
 
@@ -111,27 +110,24 @@ class FWHTFunctor {
 
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << sizeof(RegType) << " byte registers";
+    ss << name() << " using " << RangeSize << " " << sizeof(RegType)
+       << "-byte registers";
     return ss.str();
+  }
+
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
+    return lhs.seed() == rhs.seed() && lhs.range_size() == rhs.range_size();
+  }
+
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.range_size() << " " << func.domain_size() << " " << func.seed();
+    return os;
   }
 };
 
-template <typename RegType>
-constexpr bool operator==(const FWHTFunctor<RegType> &lhs,
-                          const FWHTFunctor<RegType> &rhs) {
-  return lhs.seed() == rhs.seed() && lhs.range_size() == rhs.range_size();
-}
-
-template <typename RegType>
-constexpr bool operator!=(const FWHTFunctor<RegType> &lhs,
-                          const FWHTFunctor<RegType> &rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template <typename RegType>
-std::ostream &operator<<(std::ostream &os, const FWHTFunctor<RegType> &func) {
-  os << func.range_size() << " " << func.domain_size() << " " << func.seed();
-  return os;
-}
 }  // namespace transform
 }  // namespace krowkee

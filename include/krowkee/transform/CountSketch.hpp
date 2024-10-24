@@ -37,12 +37,17 @@ using krowkee::stream::Element;
  * @tparam RegType The type of register over which the functor operates
  * @tparam HashType The hash functor type to use to define CountSketch random
  * mappings.
+ * @tparam RangeSize The power-of-two embedding dimension.
  */
-template <typename RegType, typename HashType>
+template <typename RegType, template <std::size_t> class HashType,
+          std::size_t RangeSize>
 class CountSketchFunctor {
-  using hash_type = HashType;
-  using self_type = CountSketchFunctor<RegType, hash_type>;
+ public:
+  using register_type = RegType;
+  using hash_type     = HashType<RangeSize>;
+  using self_type     = CountSketchFunctor<register_type, HashType, RangeSize>;
 
+ private:
   hash_type _hash;
 
  public:
@@ -58,15 +63,13 @@ class CountSketchFunctor {
    * @note This behavior may change in the future.
    *
    * @tparam Args type(s) of additional hash parameters
-   * @param range_size The desired embedding dimension.
    * @param seed The random seed.
-   * @param args and additional parameters required by the hash functions.
+   * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(const std::uint64_t range_size,
-                     const std::uint64_t seed = krowkee::hash::default_seed,
+  CountSketchFunctor(const std::uint64_t seed = krowkee::hash::default_seed,
                      const Args &...args)
-      : _hash(range_size, seed, args...) {}
+      : _hash(seed, args...) {}
 
   CountSketchFunctor() {}
 
@@ -126,7 +129,7 @@ class CountSketchFunctor {
             typename MergeOp, template <typename, typename> class MapType,
             typename KeyType, typename... ItemArgs>
   constexpr void operator()(
-      ContainerType<RegType, MergeOp, MapType, KeyType> &registers,
+      ContainerType<register_type, MergeOp, MapType, KeyType> &registers,
       const ItemArgs &...item_args) const {
     _apply_to_container<MergeOp>(registers, item_args...);
   }
@@ -135,9 +138,9 @@ class CountSketchFunctor {
   template <typename MergeOp, typename ContainerType, typename... ItemArgs>
   constexpr void _apply_to_container(ContainerType &registers,
                                      const ItemArgs &...item_args) const {
-    const Element<RegType> stream_element(item_args...);
+    const Element<register_type> stream_element(item_args...);
     const auto [index, polarity] = _hash(stream_element.item);
-    RegType &reg                 = registers[index];
+    register_type &reg           = registers[index];
     reg = MergeOp()(reg, polarity * stream_element.multiplicity);
     if (reg == 0) {
       registers.erase(index);
@@ -176,60 +179,49 @@ class CountSketchFunctor {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << HashType::name() << " hashes and "
-       << sizeof(RegType) << " byte registers";
+    ss << name() << " using " << hash_type::name() << " hashes and "
+       << RangeSize << " " << sizeof(register_type) << "-byte registers";
     return ss.str();
+  }
+
+  /**
+   * @brief Check for equality between two CountSketchFunctors.
+   *
+   * @param lhs The left-hand functor.
+   * @param rhs The right-hand functor.
+   * @return true The seeds and range sizes agree.
+   * @return false The seeds or range sizes disagree.
+   */
+  friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
+    return lhs._hash == rhs._hash;
+  }
+
+  /**
+   * @brief Check for inequality between two CountSketchFunctors.
+   *
+   * @param lhs The left-hand functor.
+   * @param rhs The right-hand functor.
+   * @return true The seeds or range sizes disagree.
+   * @return false The seeds and range sizes agree.
+   */
+  friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  /**
+   * @brief Serialize a transform to human-readable output stream.
+   *
+   * Prints the space-separated range size and seed.
+   *
+   * @param os The output stream.
+   * @param func The functor object.
+   * @return std::ostream& The new stream state.
+   */
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.range_size() << " " << func.seed();
+    return os;
   }
 };
 
-/**
- * @brief Check for equality between two CountSketchFunctors.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param lhs The left-hand functor.
- * @param rhs The right-hand functor.
- * @return true The seeds and range sizes agree.
- * @return false The seeds or range sizes disagree.
- */
-template <typename RegType, typename HashType>
-constexpr bool operator==(const CountSketchFunctor<RegType, HashType> &lhs,
-                          const CountSketchFunctor<RegType, HashType> &rhs) {
-  return (lhs.seed() == rhs.seed()) && (lhs.range_size() == rhs.range_size());
-}
-
-/**
- * @brief Check for inequality between two CountSketchFunctors.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param lhs The left-hand functor.
- * @param rhs The right-hand functor.
- * @return true The seeds or range sizes disagree.
- * @return false The seeds and range sizes agree.
- */
-template <typename RegType, typename HashType>
-constexpr bool operator!=(const CountSketchFunctor<RegType, HashType> &lhs,
-                          const CountSketchFunctor<RegType, HashType> &rhs) {
-  return !operator==(lhs, rhs);
-}
-
-/**
- * @brief Serialize a transform to human-readable output stream.
- *
- * Prints the space-separated range size and seed.
- *
- * @tparam RegType The register type.
- * @tparam HashType The hash functor type.
- * @param os The output stream.
- * @param func The functor object.
- * @return std::ostream& The new stream state.
- */
-template <typename RegType, typename HashType>
-std::ostream &operator<<(std::ostream                                &os,
-                         const CountSketchFunctor<RegType, HashType> &func) {
-  os << func.range_size() << " " << func.seed();
-  return os;
-}
 }  // namespace transform
 }  // namespace krowkee

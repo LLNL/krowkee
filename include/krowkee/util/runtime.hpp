@@ -14,6 +14,8 @@
 #include <iostream>
 #include <memory>
 
+namespace krowkee {
+
 using Clock   = std::chrono::system_clock;
 using ns_type = std::chrono::nanoseconds;
 
@@ -23,6 +25,40 @@ inline void print_line() {
 }
 
 inline void chirp() { std::cout << "gets here" << std::endl; }
+
+template <template <std::size_t> class Func, typename ReturnType,
+          typename... Args>
+ReturnType dispatch_with_sketch_sizes(const std::size_t &range_size,
+                                      Args &...args) {
+  switch (range_size) {
+    case 4:
+      return Func<4>{}(args...);
+      break;
+    case 8:
+      return Func<8>{}(args...);
+      break;
+    case 16:
+      return Func<16>{}(args...);
+      break;
+    case 32:
+      return Func<32>{}(args...);
+      break;
+    case 64:
+      return Func<64>{}(args...);
+      break;
+    case 128:
+      return Func<128>{}(args...);
+      break;
+    case 256:
+      return Func<256>{}(args...);
+      break;
+    case 512:
+      return Func<512>{}(args...);
+      break;
+    default:
+      throw std::logic_error("Only accepts power-of-2 range size from 4-512");
+  }
+}
 
 template <typename FuncType, typename... Args>
 void do_test(Args &&...args) {
@@ -101,3 +137,5 @@ class online_statistics {
   std::uint64_t _count;
   double        _oldM, _newM, _oldS, _newS;
 };
+
+}  // namespace krowkee

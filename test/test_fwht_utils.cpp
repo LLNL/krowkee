@@ -5,7 +5,7 @@
 
 #include <krowkee/transform/fwht/utils.hpp>
 
-#include <krowkee/util/tests.hpp>
+#include <krowkee/util/runtime.hpp>
 
 #include <getopt.h>
 #include <stdio.h>
@@ -13,6 +13,11 @@
 
 #include <algorithm>
 #include <iostream>
+
+using krowkee::chirp;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::print_line;
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {

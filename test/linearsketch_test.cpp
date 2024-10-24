@@ -10,6 +10,7 @@
 
 #include <krowkee/hash/hash.hpp>
 #include <krowkee/util/cmap_types.hpp>
+#include <krowkee/util/runtime.hpp>
 #include <krowkee/util/sketch_types.hpp>
 
 #include <getopt.h>
@@ -20,6 +21,12 @@
 #include <cstring>
 #include <iostream>
 #include <random>
+
+using krowkee::chirp;
+using krowkee::dispatch_with_sketch_sizes;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::print_line;
 
 using sketch_impl_type = krowkee::util::sketch_impl_type;
 using cmap_impl_type   = krowkee::util::cmap_impl_type;
@@ -58,19 +65,9 @@ struct init_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type _make_ptr = make_ptr_type();
-    for (std::uint64_t i(10); i < 100000; i *= 10) {
-      transform_ptr_type transform_ptr(_make_ptr(i));
-      sketch_type        sketch(transform_ptr, params.compaction_threshold,
-                                params.promotion_threshold);
-      if (params.verbose == true) {
-        std::cout << "input s = " << i << " produces " << sketch.size() << "/"
-                  << sketch.range_size() << " registers of size "
-                  << sketch.reg_size() << " bytes each " << std::endl;
-      }
-    }
     {
-      transform_ptr_type transform_ptr_1(_make_ptr(32));
-      transform_ptr_type transform_ptr_2(_make_ptr(32));
+      transform_ptr_type transform_ptr_1(_make_ptr(0));
+      transform_ptr_type transform_ptr_2(_make_ptr(0));
       sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
                                   params.promotion_threshold);
       sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
@@ -88,7 +85,7 @@ struct init_check {
                       "constructor/insert consistency");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(32));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
       for (int i(0); i < 1000; sketch.insert(i++)) {
@@ -102,7 +99,7 @@ struct init_check {
       CHECK_CONDITION(copy_matches == true, "copy constructor");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(32));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
       for (int i(0); i < 1000; sketch.insert(i++)) {
@@ -116,7 +113,7 @@ struct init_check {
       CHECK_CONDITION(swap_matches, "copy-and-swap assignment");
     }
     {
-      transform_ptr_type transform_ptr(_make_ptr(22));
+      transform_ptr_type transform_ptr(_make_ptr(0));
       sketch_type        sketch(transform_ptr, params.compaction_threshold,
                                 params.promotion_threshold);
 
@@ -301,13 +298,13 @@ struct ingest_check {
       std::cout << "projected vectors:" << std::endl;
     }
     double success_rate(0.0);
-    int    triasketch(0);
+    int    trials(0);
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.observation_count; ++j) {
         if (i == j) {
           break;
         }
-        ++triasketch;
+        ++trials;
         double ob_dist = _l2_distance_sq(observations[i], observations[j]);
         double sk_dist = _l2_distance_sq(projections[i], projections[j]);
         if (in_bounds(ob_dist, sk_dist, epsilon)) {
@@ -321,16 +318,16 @@ struct ingest_check {
         }
       }
     }
-    success_rate /= triasketch;
+    success_rate /= trials;
     bool lemma_guarantee_success = success_rate > 0.5;
     CHECK_CONDITION(lemma_guarantee_success == true, "lemma guarantee (",
-                    triasketch, " triasketch, ", success_rate,
+                    trials, " trials, ", success_rate,
                     " success rate, epsilon=", epsilon, ")");
   }
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr{};
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
     rel_mag_test(transform_ptr, params);
     lemma_check(transform_ptr, params);
   }
@@ -343,7 +340,7 @@ struct ingest_check {
 };
 
 template <typename SketchType>
-void check_throws_bad_plus_equasketch(SketchType &lhs, const SketchType &rhs) {
+void check_throws_bad_plus_equals(SketchType &lhs, const SketchType &rhs) {
   lhs += rhs;
 }
 
@@ -370,27 +367,18 @@ struct bad_merge_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr = make_ptr_type();
-    transform_ptr_type transform_ptr_1(_make_ptr(16));
-    transform_ptr_type transform_ptr_2(_make_ptr(32));
-    transform_ptr_type transform_ptr_3(_make_ptr(32, 22));
+    transform_ptr_type transform_ptr_1(_make_ptr(32));
+    transform_ptr_type transform_ptr_2(_make_ptr(22));
     sketch_type        sketch_1(transform_ptr_1, params.compaction_threshold,
                                 params.promotion_threshold);
     sketch_type        sketch_2(transform_ptr_2, params.compaction_threshold,
                                 params.promotion_threshold);
-    sketch_type        sketch_3(transform_ptr_3, params.compaction_threshold,
-                                params.promotion_threshold);
     CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equasketch<SketchType>,
-        "bad merge (+=) with different functor domains", sketch_1, sketch_2);
-    CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus_equasketch<SketchType>,
-        "bad merge (+=) with different functor seeds", sketch_2, sketch_3);
+        check_throws_bad_plus_equals<SketchType>,
+        "bad merge (+=) with different functor seeds", sketch_1, sketch_2);
     CHECK_THROWS<std::invalid_argument>(
         check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor domains", sketch_1, sketch_2);
-    CHECK_THROWS<std::invalid_argument>(
-        check_throws_bad_plus<SketchType>,
-        "bad merge (+) with different functor seeds", sketch_2, sketch_3);
+        "bad merge (+) with different functor seeds", sketch_1, sketch_2);
   }
 };
 
@@ -478,7 +466,7 @@ struct serialize_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr{};
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
 
     CHECK_ALL_ARCHIVES(*transform_ptr, "sketch functor");
 
@@ -512,7 +500,7 @@ struct promotion_check {
 
   void operator()(const Parameters &params) const {
     make_ptr_type      _make_ptr = make_ptr_type();
-    transform_ptr_type transform_ptr(_make_ptr(params.range_size, params.seed));
+    transform_ptr_type transform_ptr(_make_ptr(params.seed));
     sketch_type        s1(transform_ptr, params.compaction_threshold,
                           params.promotion_threshold);
     sketch_type        s2(transform_ptr, params.compaction_threshold,
@@ -752,40 +740,53 @@ void parse_args(int argc, char **argv, Parameters &params) {
   }
 }
 
-void choose_tests(const Parameters &params) {
-  if (params.sketch_impl == sketch_impl_type::cst) {
-    perform_tests<Dense32CountSketch, make_ptr_functor>(params);
-  } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
-    if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
+template <std::uint64_t RangeSize>
+struct choose_tests {
+  void operator()(const Parameters &params) {
+    if (params.sketch_impl == sketch_impl_type::cst) {
+      perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
+    } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
+      if (params.cmap_impl == cmap_impl_type::std) {
+        perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+            params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
+      } else if (params.cmap_impl == cmap_impl_type::boost) {
+        perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+            params);
 #endif
-    }
-  } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
-    if (params.cmap_impl == cmap_impl_type::std) {
-      perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
+      }
+    } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
+      if (params.cmap_impl == cmap_impl_type::std) {
+        perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+            params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    } else if (params.cmap_impl == cmap_impl_type::boost) {
-      perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
+      } else if (params.cmap_impl == cmap_impl_type::boost) {
+        perform_tests<FlatMapPromotable32CountSketch<RangeSize>,
+                      make_ptr_functor>(params);
 #endif
+      }
+    } else if (params.sketch_impl == sketch_impl_type::fwht) {
+      perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
     }
-  } else if (params.sketch_impl == sketch_impl_type::fwht) {
-    perform_tests<Dense32FWHT, make_ptr_functor>(params);
   }
-}
+};
 
-void do_all_tests(const Parameters &params) {
-  perform_tests<Dense32CountSketch, make_ptr_functor>(params);
-  perform_tests<MapSparse32CountSketch, make_ptr_functor>(params);
-  perform_tests<MapPromotable32CountSketch, make_ptr_functor>(params);
+template <std::uint64_t RangeSize>
+struct do_all_tests {
+  void operator()(const Parameters &params) {
+    perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
+    perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(params);
+    perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+        params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  perform_tests<FlatMapSparse32CountSketch, make_ptr_functor>(params);
-  perform_tests<FlatMapPromotable32CountSketch, make_ptr_functor>(params);
+    perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
+        params);
+    perform_tests<FlatMapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
+        params);
 #endif
-  // perform_tests<Dense32FWHT, make_ptr_functor>(params);
-}
+    // perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
+  }
+};
 
 int main(int argc, char **argv) {
   uint64_t         count(10000);
@@ -814,9 +815,9 @@ int main(int argc, char **argv) {
   parse_args(argc, argv, params);
 
   if (do_all == true) {
-    do_all_tests(params);
+    dispatch_with_sketch_sizes<do_all_tests, void>(params.range_size, params);
   } else {
-    choose_tests(params);
+    dispatch_with_sketch_sizes<choose_tests, void>(params.range_size, params);
   }
   return 0;
 }

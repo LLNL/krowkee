@@ -7,7 +7,7 @@
 
 #include <krowkee/hash/hash.hpp>
 
-#include <krowkee/util/tests.hpp>
+#include <krowkee/util/runtime.hpp>
 
 #if __has_include(<cereal/cereal.hpp>)
 #include <check_archive.hpp>
@@ -20,9 +20,19 @@
 #include <cstring>
 #include <iostream>
 
-using wang_hash_type     = krowkee::hash::WangHash;
-using mul_shift_type     = krowkee::hash::MulShift;
-using mul_add_shift_type = krowkee::hash::MulAddShift;
+using krowkee::chirp;
+using krowkee::dispatch_with_sketch_sizes;
+using krowkee::do_test;
+using krowkee::make_shared_functor;
+using krowkee::online_statistics;
+using krowkee::print_line;
+
+template <std::size_t RangeSize>
+using wang_hash_type = krowkee::hash::WangHash<RangeSize>;
+template <std::size_t RangeSize>
+using mul_shift_type = krowkee::hash::MulShift<RangeSize>;
+template <std::size_t RangeSize>
+using mul_add_shift_type = krowkee::hash::MulAddShift<RangeSize>;
 
 using Clock   = std::chrono::system_clock;
 using ns_type = std::chrono::nanoseconds;
@@ -37,85 +47,35 @@ struct Parameters {
   bool          verbose;
 };
 
-void is_pow2_throw() { krowkee::hash::is_pow2(-5); }
+template <std::size_t RangeSize>
+void wh_init(std::uint64_t i) {
+  wang_hash_type<RangeSize> hash{i};
+}
 
-struct pow2_check {
-  const char *name() const { return "pow2 check"; }
-
-  template <typename T>
-  void check_ceil2(bool &ceil_log2_success, const T val, const T target,
-                   const Parameters &params) const {
-    int pow(krowkee::hash::ceil_log2_64(val));
-    if (pow != target) {
-      ceil_log2_success = false;
-    }
-    if (params.verbose == true) {
-      std::cout << "value " << val << " has ceil log2 " << pow << std::endl;
-    }
-  }
-
-  void operator()(const Parameters &params) const {
-    std::uint64_t one(1);
-    bool          pow2_correct_success = true;
-    for (std::uint64_t i(0); i < 64; ++i) {
-      if (!krowkee::hash::is_pow2(one << i)) {
-        std::cout << "Incorrectly assigned " << (1 << i)
-                  << " as a non-power of 2" << std::endl;
-        pow2_correct_success = false;
-      }
-    }
-    CHECK_CONDITION(pow2_correct_success, "correct pow2 assignment");
-
-    bool                       pow2_incorrect_success = true;
-    std::vector<std::uint64_t> nonpows{3, 13, 71978281, 2821, 29028143};
-    for (const std::uint64_t nonpow : nonpows) {
-      if (krowkee::hash::is_pow2(nonpow)) {
-        std::cout << "Incorrectly assigned " << nonpow << " as a power of 2"
-                  << std::endl;
-        pow2_incorrect_success = false;
-      }
-    }
-    CHECK_CONDITION(pow2_incorrect_success, "incorrect pow2 assignemnt");
-
-    CHECK_THROWS<std::invalid_argument>(is_pow2_throw, "bad pow2");
-
-    bool             ceil_log2_success = true;
-    std::vector<int> targets{1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
-    for (int i(0); i <= (1 << 4); ++i) {
-      check_ceil2(ceil_log2_success, i, targets[i], params);
-    }
-    check_ceil2(ceil_log2_success, std::numeric_limits<std::uint64_t>::max(),
-                std::uint64_t(64), params);
-    CHECK_CONDITION(ceil_log2_success, "ceil log2");
-  }
-};
-
-void wh_init(std::uint64_t i) { wang_hash_type hash{i}; }
-
+template <std::size_t RangeSize>
 struct init_check {
   const char *name() const { return "hash initialization check"; }
 
   void operator()() const {
     for (std::uint64_t i(0); i < 63; ++i) {
-      CHECK_DOES_NOT_THROW<std::exception>(wh_init, "good value initialization",
-                                           i);
+      CHECK_DOES_NOT_THROW<std::exception>(wh_init<RangeSize>,
+                                           "good value initialization", i);
     }
     CHECK_CONDITION(true, "good value initialization");
   }
 };
 
+template <std::size_t RangeSize>
 struct empirical_histograms {
   const char *name() const { return "empirical histograms"; }
 
   template <typename HashType, typename... ARGS>
   void empirical_histogram(const Parameters params, const double std_dev_range,
                            ARGS &&...args) const {
-    std::uint64_t m(
-        std::max(krowkee::hash::ceil_pow2_64(params.range), std::uint64_t(2)));
-    std::vector<std::uint64_t> hist(m);
-    // HashType hash{m, std::forward<ARGS>(args)...};
-    auto     start = Clock::now();
-    HashType hash{params.range, params.seed, args...};
+    auto                       start = Clock::now();
+    HashType                   hash{params.seed, args...};
+    std::size_t                range_size(hash.size());
+    std::vector<std::uint64_t> hist(range_size);
     for (std::uint64_t i(0); i < params.count; ++i) {
       ++hist[hash(i)];
     }
@@ -125,14 +85,14 @@ struct empirical_histograms {
         target(std_dev_range * mean);
     if (params.verbose == true) {
       std::cout << "Empirical histogram of " << params.count
-                << " elements hashed to 2^" << m << " bins using "
+                << " elements hashed to " << range_size << " bins using "
                 << HashType::name() << " with state:" << std::endl;
       std::cout
           << "[" << hash.state() << "], ("
           << std::chrono::duration_cast<ns_type>(Clock::now() - start).count()
           << " ns):";
 
-      for (int i(0); i < m; ++i) {
+      for (int i(0); i < range_size; ++i) {
         if (i % 20 == 0) {
           std::cout << "\n\t";
         }
@@ -149,47 +109,50 @@ struct empirical_histograms {
   }
 
   void operator()(const Parameters &params) const {
-    empirical_histogram<wang_hash_type>(params, 0.05);
-    empirical_histogram<mul_shift_type>(params, 0.01);
-    empirical_histogram<mul_add_shift_type>(params, 0.01);
+    empirical_histogram<wang_hash_type<RangeSize>>(params, 0.05);
+    empirical_histogram<mul_shift_type<RangeSize>>(params, 0.01);
+    empirical_histogram<mul_add_shift_type<RangeSize>>(params, 0.01);
   }
 };
 
 #if __has_include(<cereal/cereal.hpp>)
+template <std::size_t RangeSize>
 struct serialize_check {
   const char *name() { return "serialize check"; }
 
   template <typename HashType, typename... ARGS>
   void serialize(const Parameters &params, ARGS &&...args) const {
-    HashType hash{params.range, params.seed, args...};
+    HashType hash{params.seed, args...};
     CHECK_ALL_ARCHIVES(hash, HashType::name());
   }
 
   void operator()(const Parameters params) const {
-    serialize<wang_hash_type>(params);
-    serialize<mul_shift_type>(params);
-    serialize<mul_add_shift_type>(params);
+    serialize<wang_hash_type<RangeSize>>(params);
+    serialize<mul_shift_type<RangeSize>>(params);
+    serialize<mul_add_shift_type<RangeSize>>(params);
   }
 };
 #endif
 
-void do_experiment(const Parameters params) {
-  print_line();
-  print_line();
-  std::cout << " Experimenting with " << params.count
-            << " insertions into a range of " << params.range
-            << " using random seed " << params.seed << std::endl;
-  print_line();
-  print_line();
-  std::cout << std::endl;
-  do_test<pow2_check>(params);
-  do_test<init_check>();
-  do_test<empirical_histograms>(params);
+template <std::size_t RangeSize>
+struct do_experiment {
+  void operator()(const Parameters params) {
+    print_line();
+    print_line();
+    std::cout << " Experimenting with " << params.count
+              << " insertions into a range of " << params.range
+              << " using random seed " << params.seed << std::endl;
+    print_line();
+    print_line();
+    std::cout << std::endl;
+    do_test<init_check<RangeSize>>();
+    do_test<empirical_histograms<RangeSize>>(params);
 #if __has_include(<cereal/cereal.hpp>)
-  do_test<serialize_check>(params);
+    do_test<serialize_check<RangeSize>>(params);
 #endif
-  std::cout << std::endl;
-}
+    std::cout << std::endl;
+  }
+};
 
 void print_help(char *exe_name) {
   std::cout << "\nusage:  " << exe_name << "\n"
@@ -275,7 +238,7 @@ int main(int argc, char **argv) {
 
   parse_args(argc, argv, params);
 
-  do_experiment(params);
+  dispatch_with_sketch_sizes<do_experiment, void>(params.range, params);
 
   return 0;
 }

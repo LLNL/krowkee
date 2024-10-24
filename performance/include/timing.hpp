@@ -43,7 +43,7 @@ double time_sketch_init(const Parameters &params) {
   using transform_ptr_type = std::shared_ptr<transform_type>;
 
   transform_ptr_type transform_ptr =
-      std::make_shared<transform_type>(params.range_size, params.seed);
+      std::make_shared<transform_type>(params.seed);
 
   Stopwatch   stopwatch;
   sketch_type sketch(transform_ptr, params);
@@ -152,7 +152,7 @@ void profile_sketch_histogram(
   using transform_ptr_typeype = std::shared_ptr<transform_type>;
 
   transform_ptr_typeype transform_ptr(
-      std::make_shared<transform_type>(params.range_size, params.seed));
+      std::make_shared<transform_type>(params.seed));
   sketch_type sketch(transform_ptr, params);
   double      sketch_time = time_insert(samples, sketch);
   profiles.push_back({sketch_type::full_name(), sketch_time});
