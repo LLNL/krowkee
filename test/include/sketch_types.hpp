@@ -48,7 +48,7 @@ template <typename T>
 using ptr_type = std::shared_ptr<T>;
 
 template <typename T>
-using make_ptr_functor = make_shared_functor<T>;
+using make_ptr_functor = krowkee::make_shared_functor<T>;
 #endif
 
 template <std::size_t RangeSize>
