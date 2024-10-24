@@ -55,9 +55,9 @@ struct Base {
   }
 
   constexpr std::size_t seed() const { return _seed; }
-  inline std::string    state() const {
+  constexpr std::string state() const {
     std::stringstream ss;
-    ss << "size: " << size() << ", seed: " << seed();
+    ss << "seed: " << seed();
     return ss.str();
   }
 
@@ -114,13 +114,18 @@ struct WangHash : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "WangHash"; }
+  static constexpr std::string name() { return "WangHash"; }
 
-  inline std::string state() const {
+  /**
+   * Print full functor name.
+   */
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << "size: " << this->size();
+    ss << name() << " with range " << self_type::size();
     return ss.str();
   }
+
+  constexpr std::string state() const { return full_name(); }
 
   friend constexpr bool operator==(const WangHash &lhs, const WangHash &rhs) {
     return lhs._log2_kernel_range_size == rhs._log2_kernel_range_size &&
@@ -205,11 +210,18 @@ struct MulShift : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "MulShift"; }
+  static constexpr std::string name() { return "MulShift"; }
 
-  inline std::string state() const {
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << base_type::state() << ", multiplicand: " << _multiplicand;
+    ss << name() << " with range " << self_type::size();
+    return ss.str();
+  }
+
+  constexpr std::string state() const {
+    std::stringstream ss;
+    ss << full_name() << ", " << base_type::state()
+       << ", multiplicand: " << _multiplicand;
     return ss.str();
   }
 
@@ -293,12 +305,21 @@ struct MulAddShift : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "MulAddShift"; }
+  static constexpr std::string name() { return "MulAddShift"; }
 
-  inline std::string state() const {
+  /**
+   * Print full functor name.
+   */
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << base_type::state() << ", multiplicand: " << _multiplicand
-       << ",  summand: " << _summand;
+    ss << name() << " with range " << self_type::size();
+    return ss.str();
+  }
+
+  constexpr std::string state() const {
+    std::stringstream ss;
+    ss << full_name() << ", " << base_type::state()
+       << ", multiplicand: " << _multiplicand << ",  summand: " << _summand;
     return ss.str();
   }
 

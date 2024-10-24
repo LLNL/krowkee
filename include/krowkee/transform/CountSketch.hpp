@@ -176,8 +176,8 @@ class CountSketchFunctor {
    */
   static inline std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << hash_type::name() << " hashes and "
-       << RangeSize << " " << sizeof(register_type) << "-byte registers";
+    ss << name() << " using " << hash_type::full_name() << " and "
+       << sizeof(register_type) << "-byte registers";
     return ss.str();
   }
 
