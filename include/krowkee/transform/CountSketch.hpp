@@ -159,7 +159,7 @@ class CountSketchFunctor {
    *
    * @return constexpr std::size_t The range size.
    */
-  constexpr std::size_t range_size() const { return _hash.size(); }
+  static constexpr std::size_t range_size() { return hash_type::size(); }
 
   /** Get the random seed. */
   constexpr std::uint64_t seed() const { return _hash.seed(); }

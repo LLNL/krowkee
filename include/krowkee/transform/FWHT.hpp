@@ -100,7 +100,7 @@ class FWHTFunctor {
   // Getters
   //////////////////////////////////////////////////////////////////////////////
 
-  constexpr std::size_t range_size() const { return _range_size; }
+  static constexpr std::size_t range_size() { return RangeSize; }
 
   constexpr std::uint64_t seed() const { return _seed; }
 

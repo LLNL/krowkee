@@ -284,8 +284,8 @@ class Sketch {
    *
    * @return constexpr std::size_t The size of the sketch functor range.
    */
-  constexpr std::size_t range_size() const {
-    return _transform_ptr->range_size();
+  static constexpr std::size_t range_size() {
+    return transform_type::range_size();
   }
 
   /**
