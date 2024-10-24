@@ -7,8 +7,6 @@
 
 #include <krowkee/stream/Element.hpp>
 
-#include <krowkee/hash/util.hpp>
-
 #include <sstream>
 #include <vector>
 
@@ -67,8 +65,7 @@ class CountSketchFunctor {
    * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(const std::uint64_t seed = krowkee::hash::default_seed,
-                     const Args &...args)
+  CountSketchFunctor(const std::uint64_t seed, const Args &...args)
       : _hash(seed, args...) {}
 
   CountSketchFunctor() {}

@@ -44,7 +44,7 @@ struct CountSketchHash {
    * @param seed the random seed controlling any randomness.
    */
   template <typename... Args>
-  CountSketchHash(const std::uint64_t seed = default_seed, const Args &...args)
+  CountSketchHash(const std::uint64_t seed, const Args &...args)
       : _register_hash(seed, args...), _polarity_hash(wang64(seed), args...) {}
 
   CountSketchHash() {}

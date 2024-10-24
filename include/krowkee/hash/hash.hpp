@@ -176,8 +176,7 @@ struct MulShift : public Base<RangeSize> {
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulShift(const std::uint64_t seed = default_seed, const ARGS &...)
-      : base_type(seed) {
+  MulShift(const std::uint64_t seed, const ARGS &...) : base_type(seed) {
     std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist(
         1, std::numeric_limits<std::uint64_t>::max());
@@ -263,8 +262,7 @@ struct MulAddShift : public Base<RangeSize> {
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulAddShift(const std::uint64_t seed = default_seed, const ARGS &...)
-      : base_type(seed) {
+  MulAddShift(const std::uint64_t seed, const ARGS &...) : base_type(seed) {
     std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist_multiplicand(
         0, std::numeric_limits<std::uint64_t>::max());
