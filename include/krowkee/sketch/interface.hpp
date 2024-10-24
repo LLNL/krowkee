@@ -33,10 +33,10 @@ namespace sketch {
 
 template <typename SketchFunc,
           template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, typename RegType,
-          template <typename> class PtrType, typename... Args>
+          template <typename> class MergeOp, template <typename> class PtrType,
+          typename... Args>
 using LocalSketch =
-    Sketch<SketchFunc, ContainerType, MergeOp, RegType, PtrType, Args...>;
+    Sketch<SketchFunc, ContainerType, MergeOp, PtrType, Args...>;
 
 template <template <typename, typename> class ContainerType, typename RegType,
           std::size_t RangeSize,
@@ -44,12 +44,12 @@ template <template <typename, typename> class ContainerType, typename RegType,
 using CountSketch =
     LocalSketch<krowkee::transform::CountSketchFunctor<
                     RegType, krowkee::hash::CountSketchHash, RangeSize>,
-                ContainerType, std::plus, RegType, PtrType>;
+                ContainerType, std::plus, PtrType>;
 
 template <typename RegType, std::size_t RangeSize,
           template <typename> class PtrType = std::shared_ptr>
 using FWHT = LocalSketch<krowkee::transform::FWHTFunctor<RegType, RangeSize>,
-                         krowkee::sketch::Dense, std::plus, RegType, PtrType>;
+                         krowkee::sketch::Dense, std::plus, PtrType>;
 
 }  // namespace sketch
 }  // namespace krowkee
