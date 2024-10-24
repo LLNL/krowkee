@@ -17,41 +17,6 @@
 
 namespace krowkee {
 namespace hash {
-/**
- * CountSketch hash functor base class
- *
- * Right now only supports hashing to a power of 2 range and returns a pair of
- * register address and polarity hashes given an unsigned int input.
- */
-struct CountSketchHashBase {
-  using self_type = CountSketchHashBase;
-
-  /**
-   * @param seed the random seed controlling any randomness.
-   */
-  template <typename... Args>
-  CountSketchHashBase(const std::uint64_t seed = default_seed,
-                      const Args &...args) {}
-
-  CountSketchHashBase() {}
-
-  virtual constexpr std::size_t size() const = 0;
-  virtual constexpr std::size_t seed() const = 0;
-  inline std::string            state() const {
-    std::stringstream ss;
-    ss << "size: " << size() << ", seed: " << seed();
-    return ss.str();
-  }
-
-  void swap(self_type &rhs) {}
-
-#if __has_include(<cereal/types/base_class.hpp>)
-  template <class Archive>
-  void serialize(Archive &archive) {}
-#endif
-
-  friend void swap(self_type &lhs, self_type &rhs) { lhs.swap(rhs); }
-};
 
 /**
  * 2-universal CountSketch hash functor base class
@@ -65,10 +30,9 @@ struct CountSketchHashBase {
  */
 template <std::size_t RangeSize,
           template <std::size_t> class HashType = MulAddShift>
-struct CountSketchHash : public CountSketchHashBase {
+struct CountSketchHash {
   using register_hash_type = HashType<RangeSize>;
   using polarity_hash_type = HashType<2>;
-  using base_type          = CountSketchHashBase;
   using self_type          = CountSketchHash<RangeSize, HashType>;
 
  protected:
@@ -81,11 +45,9 @@ struct CountSketchHash : public CountSketchHashBase {
    */
   template <typename... Args>
   CountSketchHash(const std::uint64_t seed = default_seed, const Args &...args)
-      : base_type(seed, args...),
-        _register_hash(seed, args...),
-        _polarity_hash(wang64(seed), args...) {}
+      : _register_hash(seed, args...), _polarity_hash(wang64(seed), args...) {}
 
-  CountSketchHash() : base_type() {}
+  CountSketchHash() {}
 
   /**
    * Compute the register and polarity hash of an input.
@@ -106,11 +68,13 @@ struct CountSketchHash : public CountSketchHashBase {
    */
   static inline std::string name() { return "CountSketchHash"; }
 
-  virtual constexpr std::size_t size() const override {
-    return _register_hash.size();
-  }
-  virtual constexpr std::size_t seed() const override {
-    return _register_hash.seed();
+  static constexpr std::size_t size() { return register_hash_type::size(); }
+  constexpr std::size_t        seed() const { return _register_hash.seed(); }
+
+  inline std::string state() const {
+    std::stringstream ss;
+    ss << "size: " << size() << ", seed: " << seed();
+    return ss.str();
   }
 
 #if __has_include(<cereal/types/base_class.hpp>)
@@ -134,12 +98,12 @@ struct CountSketchHash : public CountSketchHashBase {
   friend constexpr bool operator!=(const self_type &lhs, const self_type &rhs) {
     return !operator==(lhs, rhs);
   }
-};
 
-std::ostream &operator<<(std::ostream &os, const CountSketchHashBase &func) {
-  os << func.state();
-  return os;
-}
+  friend std::ostream &operator<<(std::ostream &os, const self_type &func) {
+    os << func.state();
+    return os;
+  }
+};
 
 }  // namespace hash
 }  // namespace krowkee
