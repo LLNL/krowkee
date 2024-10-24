@@ -121,17 +121,17 @@ class online_statistics {
                   [&](const T val) { push(val); });
   }
 
-  inline int count() const { return _count; }
+  constexpr int count() const { return _count; }
 
-  inline double mean() const { return (_count > 0) ? _newM : 0.0; }
+  constexpr double mean() const { return (_count > 0) ? _newM : 0.0; }
 
-  inline double variance() const {
+  constexpr double variance() const {
     return ((_count > 1) ? _newS / (_count - 1) : 0.0);
   }
 
-  inline double M2() const { return ((_count > 1) ? _newS : 0.0); }
+  constexpr double M2() const { return ((_count > 1) ? _newS : 0.0); }
 
-  inline double std_dev() const { return std::sqrt(variance()); }
+  constexpr double std_dev() const { return std::sqrt(variance()); }
 
  private:
   std::uint64_t _count;

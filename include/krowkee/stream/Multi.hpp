@@ -71,13 +71,13 @@ class Multi {
         _compaction_threshold(rhs._compaction_threshold),
         _promotion_threshold(rhs._promotion_threshold) {}
 
-  static inline std::string name() {
+  static constexpr std::string name() {
     std::stringstream ss;
     ss << "Multi " << sketch_type::name();
     return ss.str();
   }
 
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << "Multi " << sketch_type::full_name();
     return ss.str();
@@ -102,7 +102,7 @@ class Multi {
    *     negative. Default is `1`.
    */
   template <typename... ItemArgs>
-  inline void insert(const KeyType &key, const ItemArgs &...args) {
+  constexpr void insert(const KeyType &key, const ItemArgs &...args) {
     auto itr(_sketch_map.find(key));
     if (itr != std::end(_sketch_map)) {
       itr->second.update(args...);

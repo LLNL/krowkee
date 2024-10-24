@@ -128,7 +128,7 @@ class Sparse {
    * @return true The update buffer is empty.
    * @return false The update buffer is not empty.
    */
-  inline bool is_compact() const { return _registers.is_compact(); }
+  constexpr bool is_compact() const { return _registers.is_compact(); }
 
   /** Flush the update buffer. */
   void compactify() { _registers.compactify(); }
@@ -156,7 +156,7 @@ class Sparse {
    *
    * @param index The map index to erase.
    */
-  inline void erase(const std::uint64_t index) { _registers.erase(index); }
+  constexpr void erase(const std::uint64_t index) { _registers.erase(index); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Merge operators
@@ -173,7 +173,7 @@ class Sparse {
    * merge sketches of different types.
    * @throw std::logic_error if invoked on uncompacted sketches.
    */
-  inline void merge(const self_type &rhs) {
+  constexpr void merge(const self_type &rhs) {
     _registers.merge(rhs._registers, MergeOp());
   }
 
@@ -202,7 +202,7 @@ class Sparse {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two containers.
    */
-  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
+  constexpr friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -281,7 +281,7 @@ class Sparse {
    *
    * @return std::string "Sparse"
    */
-  static inline std::string name() { return "Sparse"; }
+  static constexpr std::string name() { return "Sparse"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container
@@ -289,7 +289,7 @@ class Sparse {
    * @return std::string "Sparse" plus the full name of the fully-templated
    * compacting_map type.
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();

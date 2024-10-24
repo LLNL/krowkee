@@ -46,13 +46,13 @@ struct Summary {
     archive(sk);
   }
 
-  static inline std::string name() {
+  static constexpr std::string name() {
     std::stringstream ss;
     ss << "Summary using " << sketch_type::name();
     return ss.str();
   }
 
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << "Summary using " << sketch_type::full_name();
     return ss.str();
@@ -78,8 +78,8 @@ struct Summary {
     return *this;
   }
 
-  inline friend self_type operator+(const self_type &lhs,
-                                    const self_type &rhs) {
+  constexpr friend self_type operator+(const self_type &lhs,
+                                       const self_type &rhs) {
     self_type ret(lhs);
     ret += rhs;
     return ret;
@@ -136,13 +136,13 @@ struct CountingSummary {
     archive(sk, count);
   }
 
-  static inline std::string name() {
+  static constexpr std::string name() {
     std::stringstream ss;
     ss << "Counting Summary using " << sketch_type::name();
     return ss.str();
   }
 
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << "Counting Summary using " << sketch_type::full_name();
     return ss.str();
@@ -178,8 +178,8 @@ struct CountingSummary {
     return *this;
   }
 
-  inline friend self_type operator+(const self_type &lhs,
-                                    const self_type &rhs) {
+  constexpr friend self_type operator+(const self_type &lhs,
+                                       const self_type &rhs) {
     self_type ret(lhs);
     ret += rhs;
     return ret;

@@ -153,7 +153,7 @@ struct ingest_check {
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   using make_ptr_type      = MakePtrFunc<transform_type>;
 
-  inline std::string name() const {
+  constexpr std::string name() const {
     std::stringstream ss;
     ss << transform_type::name() << " ingest";
     return ss.str();
@@ -359,7 +359,7 @@ struct bad_merge_check {
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   using make_ptr_type      = MakePtrFunc<transform_type>;
 
-  inline std::string name() const {
+  constexpr std::string name() const {
     std::stringstream ss;
     ss << transform_type::name() << " bad merges";
     return ss.str();
@@ -392,7 +392,7 @@ struct good_merge_check {
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   using make_ptr_type      = MakePtrFunc<transform_type>;
 
-  inline std::string name() const {
+  constexpr std::string name() const {
     std::stringstream ss;
     ss << transform_type::name() << " good merges";
     return ss.str();
@@ -458,7 +458,7 @@ struct serialize_check {
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   using make_ptr_type      = MakePtrFunc<transform_type>;
 
-  inline std::string name() const {
+  constexpr std::string name() const {
     std::stringstream ss;
     ss << transform_type::name() << " serialize";
     return ss.str();
@@ -492,7 +492,7 @@ struct promotion_check {
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   using make_ptr_type      = MakePtrFunc<transform_type>;
 
-  inline std::string name() const {
+  constexpr std::string name() const {
     std::stringstream ss;
     ss << transform_type::name() << " promotion check";
     return ss.str();

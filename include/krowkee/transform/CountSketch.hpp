@@ -166,7 +166,7 @@ class CountSketchFunctor {
    *
    * @return std::string "CountSketch"
    */
-  static inline std::string name() { return "CountSketch"; }
+  static constexpr std::string name() { return "CountSketch"; }
 
   /**
    * @brief Return a description of the fully-qualified transform type.
@@ -174,7 +174,7 @@ class CountSketchFunctor {
    * @return std::string Transform description, e.g. "CountSketch using
    * MulAddShift hashes and 4 byte registers"
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << hash_type::full_name() << " and "
        << sizeof(register_type) << "-byte registers";

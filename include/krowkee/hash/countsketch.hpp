@@ -66,9 +66,9 @@ struct CountSketchHash {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "CountSketchHash"; }
+  static constexpr std::string name() { return "CountSketchHash"; }
 
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << self_type::name() << " with register hash ["
        << register_hash_type::full_name() << "] and polarity hash ["
@@ -79,7 +79,7 @@ struct CountSketchHash {
   static constexpr std::size_t size() { return register_hash_type::size(); }
   constexpr std::size_t        seed() const { return _register_hash.seed(); }
 
-  inline std::string state() const {
+  constexpr std::string state() const {
     std::stringstream ss;
     ss << "size: " << size() << ", seed: " << seed();
     return ss.str();

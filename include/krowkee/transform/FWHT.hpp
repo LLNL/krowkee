@@ -106,9 +106,9 @@ class FWHTFunctor {
 
   constexpr std::uint64_t domain_size() const { return _domain_size; }
 
-  static inline std::string name() { return "FWHT"; }
+  static constexpr std::string name() { return "FWHT"; }
 
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << RangeSize << " " << sizeof(RegType)
        << "-byte registers";

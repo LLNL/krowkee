@@ -202,7 +202,7 @@ class Promotable {
    *
    * @return std::string "Promotable"
    */
-  static inline std::string name() { return "Promotable"; }
+  static constexpr std::string name() { return "Promotable"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container
@@ -210,7 +210,7 @@ class Promotable {
    * @return std::string "Promotable" plus the full name of the fully-templated
    * compacting_map type.
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();
@@ -368,7 +368,7 @@ class Promotable {
    *
    * @param index The index to erase.
    */
-  inline void erase(const std::uint64_t index) {
+  constexpr void erase(const std::uint64_t index) {
     if (_mode == promotable_mode_type::sparse) {
       _sparse_ptr->erase(index);
     } else {
@@ -500,8 +500,8 @@ class Promotable {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two containers.
    */
-  inline friend self_type operator+(const self_type &lhs,
-                                    const self_type &rhs) {
+  constexpr friend self_type operator+(const self_type &lhs,
+                                       const self_type &rhs) {
     if (rhs._mode == promotable_mode_type::dense) {
       self_type ret(rhs);
       ret += lhs;

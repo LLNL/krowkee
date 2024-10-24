@@ -131,7 +131,7 @@ class Dense {
   // Erase
   //////////////////////////////////////////////////////////////////////////////
 
-  inline void erase(const std::uint64_t index) {}
+  constexpr void erase(const std::uint64_t index) {}
 
   //////////////////////////////////////////////////////////////////////////////
   // Merge operators
@@ -144,7 +144,7 @@ class Dense {
    * merge sketches of different types.
    * @throws std::invalid_argument if the register sizes do not match.
    */
-  inline void merge(const self_type &rhs) {
+  constexpr void merge(const self_type &rhs) {
     if (size() != rhs.size()) {
       std::stringstream ss;
       ss << "error: attempting to merge embedding 1 of dimension " << size()
@@ -176,7 +176,7 @@ class Dense {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two container objects.
    */
-  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
+  constexpr friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -242,14 +242,14 @@ class Dense {
    *
    * @return std::string "Dense"
    */
-  static inline std::string name() { return "Dense"; }
+  static constexpr std::string name() { return "Dense"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container.
    *
    * @return std::string "Dense"
    */
-  static inline std::string full_name() { return name(); }
+  static constexpr std::string full_name() { return name(); }
 
   /** Dense is also not Sparse. */
   constexpr bool is_sparse() const { return false; }
