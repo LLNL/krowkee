@@ -228,11 +228,12 @@ struct ingest_check {
     }
   }
 
-  std::vector<std::vector<int>> fill_observation_vector(
+  std::vector<std::vector<register_type>> fill_observation_vector(
       const std::vector<std::vector<std::uint64_t>> &inserts,
       const Parameters                              &params) const {
-    std::vector<std::vector<int>> observations(
-        params.observation_count, std::vector<int>(params.domain_size));
+    std::vector<std::vector<register_type>> observations(
+        params.observation_count,
+        std::vector<register_type>(params.domain_size));
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.count; ++j) {
         observations[i][inserts[i][j]]++;
@@ -258,10 +259,10 @@ struct ingest_check {
     return sketches;
   }
 
-  std::vector<std::vector<int>> fill_projection_vector(
+  std::vector<std::vector<register_type>> fill_projection_vector(
       const std::vector<sketch_type> &sketches,
       const Parameters               &params) const {
-    std::vector<std::vector<int>> projections;
+    std::vector<std::vector<register_type>> projections;
     for (int i(0); i < params.observation_count; ++i) {
       projections.push_back(sketches[i].scaled_registers());
     }
@@ -276,13 +277,13 @@ struct ingest_check {
     std::vector<std::vector<std::uint64_t>> inserts =
         get_uniform_inserts(params);
 
-    std::vector<std::vector<int>> observations =
+    std::vector<std::vector<register_type>> observations =
         fill_observation_vector(inserts, params);
 
     std::vector<sketch_type> sketches =
         fill_sketch_vector(transform_ptr, inserts, params);
 
-    std::vector<std::vector<int>> projections =
+    std::vector<std::vector<register_type>> projections =
         fill_projection_vector(sketches, params);
 
     double expected_epsilon =
