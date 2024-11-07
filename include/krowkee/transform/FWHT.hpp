@@ -104,6 +104,10 @@ class FWHTFunctor {
 
   static constexpr std::size_t size() { return self_type::range_size(); }
 
+  static constexpr double scaling_factor() {
+    return std::sqrt((double)range_size());
+  }
+
   constexpr std::uint64_t seed() const { return _seed; }
 
   constexpr std::uint64_t domain_size() const { return _domain_size; }

@@ -306,6 +306,20 @@ class Sketch {
     return _con.register_vector();
   }
 
+  /**
+   * @brief Get a copy of the scaled vector of registers in the container.
+   *
+   * @return std::vector<register_type> The scaled register vector.
+   */
+  std::vector<register_type> scaled_registers() const {
+    std::vector<register_type> registers(register_vector());
+    const double scaling_factor = transform_type::scaling_factor();
+    for (int i(0); i < registers.size(); ++i) {
+      registers[i] /= scaling_factor;
+    }
+    return registers;
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Equality operators
   //////////////////////////////////////////////////////////////////////////////

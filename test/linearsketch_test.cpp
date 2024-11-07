@@ -263,7 +263,7 @@ struct ingest_check {
       const Parameters               &params) const {
     std::vector<std::vector<int>> projections;
     for (int i(0); i < params.observation_count; ++i) {
-      projections.push_back(sketches[i].register_vector());
+      projections.push_back(sketches[i].scaled_registers());
     }
     return projections;
   }
@@ -285,20 +285,22 @@ struct ingest_check {
     std::vector<std::vector<int>> projections =
         fill_projection_vector(sketches, params);
 
-    double epsilon =
-        std::sqrt(8 * std::log(params.observation_count) / params.range_size);
-    // compute inner products
+    double expected_epsilon =
+        std::sqrt(16 * std::log(params.observation_count) /
+                  (params.range_size * params.range_size));
+    // compute distances
     if (params.verbose) {
       print_mat("inserts", inserts, params.observation_count, params.count);
       print_mat("observations", observations, params.observation_count,
                 params.domain_size);
       print_mat(sketches, params.observation_count);
       print_mat("projections", projections, params.observation_count,
-                params.range_size);
+                params.range_size * params.replication_count);
       std::cout << std::endl;
       std::cout << "projected vectors:" << std::endl;
     }
     double success_rate(0.0);
+    double empirical_epsilon;
     int    trials(0);
     for (int i(0); i < params.observation_count; ++i) {
       for (int j(0); j < params.observation_count; ++j) {
@@ -306,24 +308,29 @@ struct ingest_check {
           break;
         }
         ++trials;
-        double ob_dist = _l2_distance_sq(observations[i], observations[j]);
-        double sk_dist = _l2_distance_sq(projections[i], projections[j]);
-        if (in_bounds(ob_dist, sk_dist, epsilon)) {
+        double ob_dist    = _l2_distance_sq(observations[i], observations[j]);
+        double sk_dist    = _l2_distance_sq(projections[i], projections[j]);
+        double this_error = mul_error(ob_dist, sk_dist);
+        empirical_epsilon += this_error;
+        if (in_bounds(ob_dist, sk_dist, expected_epsilon)) {
           success_rate += 1.0;
         }
         if (params.verbose) {
           std::cout << "\t(" << i << "," << j << ") ob " << ob_dist << ", sk "
-                    << sk_dist
-                    << " (in bounds: " << in_bounds(ob_dist, sk_dist, epsilon)
-                    << ")" << std::endl;
+                    << sk_dist << " (multiplicative error: 1 +/- " << this_error
+                    << ") (in bounds: "
+                    << in_bounds(ob_dist, sk_dist, expected_epsilon) << ")"
+                    << std::endl;
         }
       }
     }
     success_rate /= trials;
+    empirical_epsilon /= trials;
     bool lemma_guarantee_success = success_rate > 0.5;
     CHECK_CONDITION(lemma_guarantee_success == true, "lemma guarantee (",
                     trials, " trials, ", success_rate,
-                    " success rate, epsilon=", epsilon, ")");
+                    " success rate, expected epsilon=", expected_epsilon,
+                    ", mean empirical epsilon=", empirical_epsilon, ")");
   }
 
   void operator()(const Parameters &params) const {
@@ -337,6 +344,10 @@ struct ingest_check {
                  const double epsilon) const {
     return (sk_dist < (1 + epsilon) * ob_dist) &&
            (sk_dist > (1 - epsilon) * ob_dist);
+  }
+
+  double mul_error(const double ob_dist, const double sk_dist) const {
+    return std::abs(1 - sk_dist / ob_dist);
   }
 };
 
@@ -795,14 +806,14 @@ struct do_all_tests {
     perform_tests<FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
 #endif
-    // perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
+    perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
   }
 };
 
 int main(int argc, char **argv) {
   uint64_t         count(10000);
   std::uint64_t    range_size(32);
-  std::uint64_t    replication_count(1);
+  std::uint64_t    replication_count(4);
   std::uint64_t    domain_size(4096);
   std::uint64_t    observation_count(16);
   std::uint64_t    seed(krowkee::hash::default_seed);

@@ -50,7 +50,7 @@ class CountSketchFunctor {
       CountSketchFunctor<register_type, HashType, RangeSize, ReplicationCount>;
 
  private:
-  hash_type _hash;
+  std::vector<hash_type> _hashes;
 
  public:
   /**
@@ -69,8 +69,13 @@ class CountSketchFunctor {
    * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(const std::uint64_t seed, const Args &...args)
-      : _hash(seed, args...) {}
+  CountSketchFunctor(std::uint64_t seed, const Args &...args) {
+    _hashes.reserve(ReplicationCount);
+    for (int i(0); i < ReplicationCount; ++i) {
+      _hashes.emplace_back(seed, args...);
+      seed = krowkee::hash::wang64(seed);
+    }
+  }
 
   CountSketchFunctor() {}
 
@@ -87,7 +92,7 @@ class CountSketchFunctor {
    */
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_hash);
+    archive(_hashes);
   }
 #endif
 
@@ -140,11 +145,14 @@ class CountSketchFunctor {
   constexpr void _apply_to_container(ContainerType &registers,
                                      const ItemArgs &...item_args) const {
     const Element<register_type> stream_element(item_args...);
-    const auto [index, polarity] = _hash(stream_element.item);
-    register_type &reg           = registers[index];
-    reg = MergeOp()(reg, polarity * stream_element.multiplicity);
-    if (reg == 0) {
-      registers.erase(index);
+    for (int i(0); i < ReplicationCount; ++i) {
+      auto [index, polarity] = _hashes[i](stream_element.item);
+      index += i * range_size();
+      register_type &reg = registers[index];
+      reg = MergeOp()(reg, polarity * stream_element.multiplicity);
+      if (reg == 0) {
+        registers.erase(index);
+      }
     }
   }
 
@@ -164,6 +172,22 @@ class CountSketchFunctor {
   static constexpr std::size_t range_size() { return hash_type::size(); }
 
   /**
+   * @brief Get the number of replicated CountSketch transforms.
+   *
+   * @return constexpr std::size_t The replication count.
+   */
+  static constexpr std::size_t replication_count() { return ReplicationCount; }
+
+  /**
+   * @brief Get the scaling factor to be used for projections.
+   *
+   * @return constexpr std::size_t The replication count.
+   */
+  static constexpr double scaling_factor() {
+    return std::sqrt((double)replication_count());
+  }
+
+  /**
    * @brief Get the total number of addressable registers across all hash
    * functions.
    *
@@ -171,10 +195,12 @@ class CountSketchFunctor {
    *
    * @return constexpr std::size_t The range size.
    */
-  static constexpr std::size_t size() { return range_size(); }
+  static constexpr std::size_t size() {
+    return range_size() * replication_count();
+  }
 
   /** Get the random seed. */
-  constexpr std::uint64_t seed() const { return _hash.seed(); }
+  constexpr std::uint64_t seed() const { return _hashes[0].seed(); }
 
   /**
    * @brief Return a description of the transform type.
@@ -206,7 +232,12 @@ class CountSketchFunctor {
    * @return false The seeds or range sizes disagree.
    */
   friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
-    return lhs._hash == rhs._hash;
+    for (int i(0); i < ReplicationCount; ++i) {
+      if (lhs._hashes[i] != rhs._hashes[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
