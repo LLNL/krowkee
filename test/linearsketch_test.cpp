@@ -197,7 +197,8 @@ struct ingest_check {
     }
     sketch.compactify();
     int    sum(accumulate(sketch, 0.0));
-    double rel_mag((double)sum / params.count);
+    double rel_mag((double)sum / (params.count * params.range_size *
+                                  params.replication_count));
     if (params.verbose == true) {
       std::cout << "\t" << sketch << std::endl;
       std::cout << "\tregister sum (should be near zero): " << sum
@@ -787,7 +788,8 @@ struct choose_tests {
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::fwht) {
-      perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
+      perform_tests<Dense32FWHT<RangeSize, ReplicationCount>, make_ptr_functor>(
+          params);
     }
   }
 };
@@ -807,7 +809,8 @@ struct do_all_tests {
     perform_tests<FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
 #endif
-    perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
+    perform_tests<Dense32FWHT<RangeSize, ReplicationCount>, make_ptr_functor>(
+        params);
   }
 };
 

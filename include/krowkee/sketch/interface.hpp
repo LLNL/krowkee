@@ -46,10 +46,11 @@ using CountSketch = LocalSketch<
         RegType, krowkee::hash::CountSketchHash, RangeSize, ReplicationCount>,
     ContainerType, std::plus, PtrType>;
 
-template <typename RegType, std::size_t RangeSize,
+template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,
           template <typename> class PtrType = std::shared_ptr>
-using FWHT = LocalSketch<krowkee::transform::FWHTFunctor<RegType, RangeSize>,
-                         krowkee::sketch::Dense, std::plus, PtrType>;
+using FWHT = LocalSketch<
+    krowkee::transform::FWHTFunctor<RegType, RangeSize, ReplicationCount>,
+    krowkee::sketch::Dense, std::plus, PtrType>;
 
 }  // namespace sketch
 }  // namespace krowkee

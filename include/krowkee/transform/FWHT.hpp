@@ -23,11 +23,11 @@ using krowkee::stream::Element;
 /**
  * Fast Walsh-Hadamard Transform Functor Class
  */
-template <typename RegType, std::size_t RangeSize>
+template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount>
 class FWHTFunctor {
  public:
   using register_type = RegType;
-  using self_type     = FWHTFunctor<RegType, RangeSize>;
+  using self_type     = FWHTFunctor<RegType, RangeSize, ReplicationCount>;
 
  protected:
   std::uint64_t _range_size = RangeSize;
@@ -86,14 +86,19 @@ class FWHTFunctor {
     const std::uint64_t    col_index    = stream_element.item;
     const std::uint64_t    row_index    = stream_element.identifier;
     const RegType          multiplicity = stream_element.multiplicity;
-    std::vector<RegType>   sketch_vec =
-        krowkee::transform::fwht::get_sketch_vector(multiplicity, row_index,
-                                                    col_index, _domain_size,
-                                                    _range_size, _seed);
-
-    std::transform(std::begin(registers), std::end(registers),
-                   std::begin(sketch_vec), std::begin(registers),
-                   std::plus<RegType>());
+    std::uint64_t          seed(_seed);
+    for (int i(0); i < ReplicationCount; ++i) {
+      std::vector<RegType> sketch_vec =
+          krowkee::transform::fwht::get_sketch_vector(multiplicity, row_index,
+                                                      col_index, _domain_size,
+                                                      _range_size, seed);
+      std::size_t offset = i * range_size();
+      auto        begin  = std::begin(registers) + offset;
+      auto        end    = begin + range_size();
+      std::transform(begin, end, std::begin(sketch_vec), begin,
+                     std::plus<RegType>());
+      seed = krowkee::hash::wang64(seed);
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -102,9 +107,13 @@ class FWHTFunctor {
 
   static constexpr std::size_t range_size() { return RangeSize; }
 
-  static constexpr std::size_t size() { return self_type::range_size(); }
+  static constexpr std::size_t replication_count() { return ReplicationCount; }
 
-  static constexpr RegType scaling_factor = std::sqrt((RegType)range_size());
+  static constexpr std::size_t size() {
+    return self_type::range_size() * self_type::replication_count();
+  }
+
+  static constexpr RegType scaling_factor = std::sqrt((RegType)size());
 
   constexpr std::uint64_t seed() const { return _seed; }
 

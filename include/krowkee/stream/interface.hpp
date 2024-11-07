@@ -42,10 +42,11 @@ using MultiLocalCountSketch = MultiLocal<
         RegType, krowkee::hash::CountSketchHash, RangeSize, ReplicationCount>,
     ContainerType, std::plus, KeyType>;
 
-template <typename KeyType, typename RegType, std::size_t RangeSize>
-using MultiLocalFWHT =
-    MultiLocal<krowkee::transform::FWHTFunctor<RegType, RangeSize>,
-               krowkee::sketch::Dense, std::plus, KeyType>;
+template <typename KeyType, typename RegType, std::size_t RangeSize,
+          std::size_t ReplicationCount>
+using MultiLocalFWHT = MultiLocal<
+    krowkee::transform::FWHTFunctor<RegType, RangeSize, ReplicationCount>,
+    krowkee::sketch::Dense, std::plus, KeyType>;
 
 }  // namespace stream
 }  // namespace krowkee

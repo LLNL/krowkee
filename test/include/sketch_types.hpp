@@ -83,5 +83,6 @@ using FlatMapPromotable32CountSketch =
                                  ptr_type>;
 #endif
 
-template <std::size_t RangeSize>
-using Dense32FWHT = krowkee::sketch::FWHT<register_type, RangeSize, ptr_type>;
+template <std::size_t RangeSize, std::size_t ReplicationCount>
+using Dense32FWHT =
+    krowkee::sketch::FWHT<register_type, RangeSize, ReplicationCount, ptr_type>;

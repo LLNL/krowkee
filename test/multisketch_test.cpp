@@ -58,9 +58,10 @@ using MultiLocalFlatMapPromotable32CountSketch =
                                            RangeSize, ReplicationCount>;
 #endif
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MultiLocalDense32FWHT =
-    krowkee::stream::MultiLocalFWHT<std::uint64_t, std::int32_t, RangeSize>;
+    krowkee::stream::MultiLocalFWHT<std::uint64_t, std::int32_t, RangeSize,
+                                    ReplicationCount>;
 
 /**
  * Struct bundling the experiment parameters.
@@ -342,8 +343,8 @@ struct choose_local_tests {
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::fwht) {
-      perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(
-          params);
+      perform_tests<MultiLocalDense32FWHT<RangeSize, ReplicationCount>,
+                    make_shared_functor>(params);
     }
   }
 };
@@ -366,8 +367,8 @@ struct do_all_local_tests {
         MultiLocalFlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
         make_shared_functor>(params);
 #endif
-    perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(
-        params);
+    perform_tests<MultiLocalDense32FWHT<RangeSize, ReplicationCount>,
+                  make_shared_functor>(params);
   }
 };
 
