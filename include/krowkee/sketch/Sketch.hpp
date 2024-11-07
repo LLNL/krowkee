@@ -313,9 +313,8 @@ class Sketch {
    */
   std::vector<register_type> scaled_registers() const {
     std::vector<register_type> registers(register_vector());
-    const double scaling_factor = transform_type::scaling_factor();
     for (int i(0); i < registers.size(); ++i) {
-      registers[i] /= scaling_factor;
+      registers[i] /= transform_type::scaling_factor;
     }
     return registers;
   }

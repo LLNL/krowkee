@@ -183,9 +183,8 @@ class CountSketchFunctor {
    *
    * @return constexpr std::size_t The replication count.
    */
-  static constexpr double scaling_factor() {
-    return std::sqrt((double)replication_count());
-  }
+  static constexpr RegType scaling_factor =
+      std::sqrt((RegType)replication_count());
 
   /**
    * @brief Get the total number of addressable registers across all hash
