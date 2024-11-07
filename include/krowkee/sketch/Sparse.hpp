@@ -53,8 +53,8 @@ class Sparse {
    * @brief Construct a new Sparse container object
    *
    * @tparam Args Other args (ignored)
-   * @param size The number of registers, equal to the total number of registers
-   * of the sketch functor.
+   * @param size The number of registers, equal to the range size of the
+   * sketch functor times the number of replications.
    * @param compaction_threshold The size at which the compacting_map buffer
    * triggers compaction.
    * @param args Ignored by Dense.
@@ -322,7 +322,7 @@ class Sparse {
     if (is_compact() == false) {
       throw std::logic_error("Bad attempt to export uncompacted map!");
     }
-    std::vector<register_type> ret(max_size());
+    std::vector<register_type> ret(_size);
     std::for_each(std::cbegin(_registers), std::cend(_registers),
                   [&ret](const std::pair<KeyType, register_type> &elem) {
                     ret[elem.first] = elem.second;

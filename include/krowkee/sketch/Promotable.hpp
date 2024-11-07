@@ -535,7 +535,7 @@ class Promotable {
       throw std::logic_error("Attempt to promote uncompacted container!");
     }
 
-    _dense_ptr = std::make_unique<dense_type>(_sparse_ptr->max_size());
+    _dense_ptr = std::make_unique<dense_type>(_size);
     merge_from_sparse(*this);
     _sparse_ptr.reset(nullptr);
     _mode = promotable_mode_type::dense;

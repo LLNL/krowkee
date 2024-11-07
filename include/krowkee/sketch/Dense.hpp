@@ -46,8 +46,8 @@ class Dense {
    * @brief Construct a new Dense container object
    *
    * @tparam Args Other args (ignored)
-   * @param size The number of registers, equal to the range size of the
-   * sketch functor.
+   * @param size The number of registers, equal to the range size of the sketch
+   * functor times its replication count.
    * @param args Ignored by Dense.
    */
   template <typename... Args>
@@ -255,6 +255,9 @@ class Dense {
 
   /** The size of the registers vector. */
   constexpr std::size_t size() const { return _registers.size(); }
+
+  /** The size of the registers vector. */
+  constexpr std::size_t max_size() const { return _registers.size(); }
 
   /** The number of bytes used by each register. */
   constexpr std::size_t reg_size() const { return sizeof(register_type); }
