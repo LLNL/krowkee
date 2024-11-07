@@ -98,94 +98,95 @@ struct MapGraphSketch {
 // histogram sketch types
 
 const static std::size_t RANGE_SIZE(32);
+const static std::size_t REPLICATION_COUNT(1);
 
 template <typename ValueType>
-using dense32_cs_hist =
-    HistSketch<krowkee::sketch::CountSketch<krowkee::sketch::Dense,
-                                            std::int32_t, RANGE_SIZE>,
-               ValueType>;
+using dense32_cs_hist = HistSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_hist =
-    HistSketch<krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32,
-                                            std::int32_t, RANGE_SIZE>,
-               ValueType>;
+using map_sparse32_cs_hist = HistSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
-using map_promotable32_cs_hist =
-    HistSketch<krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32,
-                                            std::int32_t, RANGE_SIZE>,
-               ValueType>;
+using map_promotable32_cs_hist = HistSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
-using flatmap_sparse32_cs_hist =
-    HistSketch<krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32,
-                                            std::int32_t, RANGE_SIZE>,
-               ValueType>;
+using flatmap_sparse32_cs_hist = HistSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_hist = HistSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
-                                 std::int32_t, RANGE_SIZE>,
+                                 std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 #endif
 
 // vector graph sketch types
 
 template <typename ValueType>
-using dense32_cs_vector_graph =
-    VectorGraphSketch<krowkee::sketch::CountSketch<krowkee::sketch::Dense,
-                                                   std::int32_t, RANGE_SIZE>,
-                      ValueType>;
+using dense32_cs_vector_graph = VectorGraphSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_vector_graph =
-    VectorGraphSketch<krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32,
-                                                   std::int32_t, RANGE_SIZE>,
-                      ValueType>;
+using map_sparse32_cs_vector_graph = VectorGraphSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
 using map_promotable32_cs_vector_graph = VectorGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32, std::int32_t,
-                                 RANGE_SIZE>,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
 using flatmap_sparse32_cs_vector_graph = VectorGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                                 RANGE_SIZE>,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_vector_graph = VectorGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
-                                 std::int32_t, RANGE_SIZE>,
+                                 std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 #endif
 
 // map graph sketch types
 
 template <typename ValueType>
-using dense32_cs_map_graph =
-    MapGraphSketch<krowkee::sketch::CountSketch<krowkee::sketch::Dense,
-                                                std::int32_t, RANGE_SIZE>,
-                   ValueType>;
+using dense32_cs_map_graph = MapGraphSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_map_graph =
-    MapGraphSketch<krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32,
-                                                std::int32_t, RANGE_SIZE>,
-                   ValueType>;
+using map_sparse32_cs_map_graph = MapGraphSketch<
+    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
+    ValueType>;
 template <typename ValueType>
 using map_promotable32_cs_map_graph = MapGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32, std::int32_t,
-                                 RANGE_SIZE>,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 #if __has_include(<boost/container/flat_map.hpp>)
 template <typename ValueType>
 using flatmap_sparse32_cs_map_graph = MapGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                                 RANGE_SIZE>,
+                                 RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 
 template <typename ValueType>
 using flatmap_promotable32_cs_map_graph = MapGraphSketch<
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
-                                 std::int32_t, RANGE_SIZE>,
+                                 std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
     ValueType>;
 #endif

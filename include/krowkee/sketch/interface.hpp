@@ -39,12 +39,12 @@ using LocalSketch =
     Sketch<SketchFunc, ContainerType, MergeOp, PtrType, Args...>;
 
 template <template <typename, typename> class ContainerType, typename RegType,
-          std::size_t RangeSize,
+          std::size_t RangeSize, std::size_t ReplicationCount,
           template <typename> class PtrType = std::shared_ptr>
-using CountSketch =
-    LocalSketch<krowkee::transform::CountSketchFunctor<
-                    RegType, krowkee::hash::CountSketchHash, RangeSize>,
-                ContainerType, std::plus, PtrType>;
+using CountSketch = LocalSketch<
+    krowkee::transform::CountSketchFunctor<
+        RegType, krowkee::hash::CountSketchHash, RangeSize, ReplicationCount>,
+    ContainerType, std::plus, PtrType>;
 
 template <typename RegType, std::size_t RangeSize,
           template <typename> class PtrType = std::shared_ptr>

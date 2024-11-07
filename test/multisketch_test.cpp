@@ -27,31 +27,35 @@ using krowkee::print_line;
 using sketch_impl_type = krowkee::util::sketch_impl_type;
 using cmap_impl_type   = krowkee::util::cmap_impl_type;
 
-template <std::size_t RangeSize>
-using MultiLocalDense32CountSketch = krowkee::stream::MultiLocalCountSketch<
-    krowkee::sketch::Dense, std::uint64_t, std::int32_t, RangeSize>;
+template <std::size_t RangeSize, std::size_t ReplicationCount>
+using MultiLocalDense32CountSketch =
+    krowkee::stream::MultiLocalCountSketch<krowkee::sketch::Dense,
+                                           std::uint64_t, std::int32_t,
+                                           RangeSize, ReplicationCount>;
 
-template <std::size_t RangeSize>
-using MultiLocalMapSparse32CountSketch = krowkee::stream::MultiLocalCountSketch<
-    krowkee::sketch::MapSparse32, std::uint64_t, std::int32_t, RangeSize>;
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
+using MultiLocalMapSparse32CountSketch =
+    krowkee::stream::MultiLocalCountSketch<krowkee::sketch::MapSparse32,
+                                           std::uint64_t, std::int32_t,
+                                           RangeSize, ReplicationCount>;
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MultiLocalMapPromotable32CountSketch =
     krowkee::stream::MultiLocalCountSketch<krowkee::sketch::MapPromotable32,
                                            std::uint64_t, std::int32_t,
-                                           RangeSize>;
+                                           RangeSize, ReplicationCount>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MultiLocalFlatMapSparse32CountSketch =
     krowkee::stream::MultiLocalCountSketch<krowkee::sketch::FlatMapSparse32,
                                            std::uint64_t, std::int32_t,
-                                           RangeSize>;
+                                           RangeSize, ReplicationCount>;
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MultiLocalFlatMapPromotable32CountSketch =
     krowkee::stream::MultiLocalCountSketch<krowkee::sketch::FlatMapPromotable32,
                                            std::uint64_t, std::int32_t,
-                                           RangeSize>;
+                                           RangeSize, ReplicationCount>;
 #endif
 
 template <std::size_t RangeSize>
@@ -64,6 +68,7 @@ using MultiLocalDense32FWHT =
 struct Parameters {
   std::uint64_t    count;
   std::uint64_t    range_size;
+  std::size_t      replication_count;
   std::size_t      compaction_threshold;
   std::size_t      promotion_threshold;
   std::uint64_t    seed;
@@ -182,6 +187,8 @@ void print_help(char *exe_name) {
             << "\t-c, --count <int>              - number of insertions\n"
             << "\t-s, --seed <int>               - random seed\n"
             << "\t-r, --range <int>              - range of sketch transform\n"
+            << "\t-R, --replication <int>        - number of tiled sketch "
+               "transforms\n"
             << "\t-o, --compaction-thresh <int>  - compaction threshold\n"
             << "\t-p, --promotion-thresh <int>   - promotion threshold\n"
             << "\t-t, --sketch-type <str>        - sketch type "
@@ -206,6 +213,7 @@ void parse_args(int argc, char **argv, Parameters &params) {
     static struct option long_options[] = {
         {"count", required_argument, NULL, 'c'},
         {"range", required_argument, NULL, 'r'},
+        {"replication", required_argument, NULL, 'R'},
         {"compaction-thresh", required_argument, NULL, 'o'},
         {"promotion-thresh", required_argument, NULL, 'p'},
         {"sketch-type", required_argument, NULL, 't'},
@@ -216,7 +224,7 @@ void parse_args(int argc, char **argv, Parameters &params) {
         {NULL, 0, NULL, 0}};
 
     int curind = optind;
-    c          = getopt_long(argc, argv, "-:c:r:o:p:t:m:s:vh", long_options,
+    c          = getopt_long(argc, argv, "-:c:r:R:o:p:t:m:s:vh", long_options,
                              &option_index);
     if (c == -1) {
       break;
@@ -242,6 +250,9 @@ void parse_args(int argc, char **argv, Parameters &params) {
         break;
       case 'r':
         params.range_size = std::atoll(optarg);
+        break;
+      case 'R':
+        params.replication_count = std::atoll(optarg);
         break;
       case 'o':
         params.compaction_threshold = std::atoll(optarg);
@@ -300,29 +311,33 @@ void perform_tests(const Parameters &params) {
   do_test<multi_ingest_check<multi_type, MakePtrFunc>>(params);
 }
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct choose_local_tests {
   void operator()(const Parameters &params) {
     if (params.sketch_impl == sketch_impl_type::cst) {
-      perform_tests<MultiLocalDense32CountSketch<RangeSize>,
+      perform_tests<MultiLocalDense32CountSketch<RangeSize, ReplicationCount>,
                     make_shared_functor>(params);
     } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
-                      make_shared_functor>(params);
+        perform_tests<
+            MultiLocalMapSparse32CountSketch<RangeSize, ReplicationCount>,
+            make_shared_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
-                      make_shared_functor>(params);
+        perform_tests<
+            MultiLocalFlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+            make_shared_functor>(params);
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
-                      make_shared_functor>(params);
+        perform_tests<
+            MultiLocalMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+            make_shared_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
+        perform_tests<MultiLocalFlatMapPromotable32CountSketch<
+                          RangeSize, ReplicationCount>,
                       make_shared_functor>(params);
 #endif
       }
@@ -333,20 +348,23 @@ struct choose_local_tests {
   }
 };
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct do_all_local_tests {
   void operator()(const Parameters &params) {
-    perform_tests<MultiLocalDense32CountSketch<RangeSize>, make_shared_functor>(
-        params);
-    perform_tests<MultiLocalMapSparse32CountSketch<RangeSize>,
+    perform_tests<MultiLocalDense32CountSketch<RangeSize, ReplicationCount>,
                   make_shared_functor>(params);
-    perform_tests<MultiLocalMapPromotable32CountSketch<RangeSize>,
+    perform_tests<MultiLocalMapSparse32CountSketch<RangeSize, ReplicationCount>,
                   make_shared_functor>(params);
+    perform_tests<
+        MultiLocalMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+        make_shared_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    perform_tests<MultiLocalFlatMapSparse32CountSketch<RangeSize>,
-                  make_shared_functor>(params);
-    perform_tests<MultiLocalFlatMapPromotable32CountSketch<RangeSize>,
-                  make_shared_functor>(params);
+    perform_tests<
+        MultiLocalFlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+        make_shared_functor>(params);
+    perform_tests<
+        MultiLocalFlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+        make_shared_functor>(params);
 #endif
     perform_tests<MultiLocalDense32FWHT<RangeSize>, make_shared_functor>(
         params);
@@ -356,6 +374,7 @@ struct do_all_local_tests {
 int main(int argc, char **argv) {
   std::uint64_t    count(10000);
   std::uint64_t    range_size(16);
+  std::size_t      replication_count(1);
   std::uint64_t    seed(krowkee::hash::default_seed);
   std::size_t      compaction_threshold(10);
   std::size_t      promotion_threshold(8);
@@ -366,6 +385,7 @@ int main(int argc, char **argv) {
 
   Parameters params{count,
                     range_size,
+                    replication_count,
                     compaction_threshold,
                     promotion_threshold,
                     seed,
@@ -376,11 +396,11 @@ int main(int argc, char **argv) {
   parse_args(argc, argv, params);
 
   if (do_all == true) {
-    dispatch_with_sketch_sizes<do_all_local_tests, void>(params.range_size,
-                                                         params);
+    dispatch_with_sketch_sizes<do_all_local_tests, void>(
+        params.range_size, params.replication_count, params);
   } else {
-    dispatch_with_sketch_sizes<choose_local_tests, void>(params.range_size,
-                                                         params);
+    dispatch_with_sketch_sizes<choose_local_tests, void>(
+        params.range_size, params.replication_count, params);
   }
   return 0;
 }

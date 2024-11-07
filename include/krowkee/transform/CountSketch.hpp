@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <krowkee/hash/hash.hpp>
 #include <krowkee/stream/Element.hpp>
 
 #include <sstream>
@@ -36,14 +37,17 @@ using krowkee::stream::Element;
  * @tparam HashType The hash functor type to use to define CountSketch random
  * mappings.
  * @tparam RangeSize The power-of-two embedding dimension.
+ * @tparam ReplicationCount The number of replicated CountSketch transforms to
+ * use.
  */
 template <typename RegType, template <std::size_t> class HashType,
-          std::size_t RangeSize>
+          std::size_t RangeSize, std::size_t ReplicationCount>
 class CountSketchFunctor {
  public:
   using register_type = RegType;
   using hash_type     = HashType<RangeSize>;
-  using self_type     = CountSketchFunctor<register_type, HashType, RangeSize>;
+  using self_type =
+      CountSketchFunctor<register_type, HashType, RangeSize, ReplicationCount>;
 
  private:
   hash_type _hash;
@@ -187,8 +191,9 @@ class CountSketchFunctor {
    */
   static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << hash_type::full_name() << " and "
-       << sizeof(register_type) << "-byte registers";
+    ss << name() << " using " << ReplicationCount << " replications of "
+       << hash_type::full_name() << " and " << sizeof(register_type)
+       << "-byte registers";
     return ss.str();
   }
 

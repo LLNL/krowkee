@@ -37,6 +37,7 @@ using cmap_impl_type   = krowkee::util::cmap_impl_type;
 struct Parameters {
   std::uint64_t    count;
   std::uint64_t    range_size;
+  std::uint64_t    replication_count;
   std::uint64_t    domain_size;
   std::uint64_t    observation_count;
   std::size_t      compaction_threshold;
@@ -631,6 +632,8 @@ void print_help(char *exe_name) {
   std::cout << "\nusage:  " << exe_name << "\n"
             << "\t-c, --count <int>              - number of insertions\n"
             << "\t-r, --range <int>              - range of sketch transform\n"
+            << "\t-R, --replication <int>        - number of tiled sketch "
+               "transforms\n"
             << "\t-d, --domain <int>             - domain of sketch transform\n"
             << "\t-b, --observation_count <int>  - number of sketches to test\n"
             << "\t-o, --compaction-thresh <int>  - compaction threshold\n"
@@ -658,6 +661,7 @@ void parse_args(int argc, char **argv, Parameters &params) {
     static struct option long_options[] = {
         {"count", required_argument, NULL, 'c'},
         {"range", required_argument, NULL, 'r'},
+        {"replication", required_argument, NULL, 'R'},
         {"domain", required_argument, NULL, 'd'},
         {"observation-count", required_argument, NULL, 'b'},
         {"compaction-thresh", required_argument, NULL, 'o'},
@@ -670,8 +674,8 @@ void parse_args(int argc, char **argv, Parameters &params) {
         {NULL, 0, NULL, 0}};
 
     int curind = optind;
-    c          = getopt_long(argc, argv, "-:c:r:d:b:o:p:t:m:s:vh", long_options,
-                             &option_index);
+    c = getopt_long(argc, argv, "-:c:r:R:d:b:o:p:t:m:s:vh", long_options,
+                    &option_index);
     if (c == -1) {
       break;
     }
@@ -696,6 +700,9 @@ void parse_args(int argc, char **argv, Parameters &params) {
         break;
       case 'r':
         params.range_size = std::atoll(optarg);
+        break;
+      case 'R':
+        params.replication_count = std::atoll(optarg);
         break;
       case 'd':
         params.domain_size = std::atoll(optarg);
@@ -740,29 +747,31 @@ void parse_args(int argc, char **argv, Parameters &params) {
   }
 }
 
-template <std::uint64_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct choose_tests {
   void operator()(const Parameters &params) {
     if (params.sketch_impl == sketch_impl_type::cst) {
-      perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
+      perform_tests<Dense32CountSketch<RangeSize, ReplicationCount>,
+                    make_ptr_functor>(params);
     } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(
-            params);
+        perform_tests<MapSparse32CountSketch<RangeSize, ReplicationCount>,
+                      make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
-            params);
+        perform_tests<FlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+                      make_ptr_functor>(params);
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
-            params);
+        perform_tests<MapPromotable32CountSketch<RangeSize, ReplicationCount>,
+                      make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<FlatMapPromotable32CountSketch<RangeSize>,
-                      make_ptr_functor>(params);
+        perform_tests<
+            FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+            make_ptr_functor>(params);
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::fwht) {
@@ -771,18 +780,20 @@ struct choose_tests {
   }
 };
 
-template <std::uint64_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct do_all_tests {
   void operator()(const Parameters &params) {
-    perform_tests<Dense32CountSketch<RangeSize>, make_ptr_functor>(params);
-    perform_tests<MapSparse32CountSketch<RangeSize>, make_ptr_functor>(params);
-    perform_tests<MapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
-        params);
+    perform_tests<Dense32CountSketch<RangeSize, ReplicationCount>,
+                  make_ptr_functor>(params);
+    perform_tests<MapSparse32CountSketch<RangeSize, ReplicationCount>,
+                  make_ptr_functor>(params);
+    perform_tests<MapPromotable32CountSketch<RangeSize, ReplicationCount>,
+                  make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    perform_tests<FlatMapSparse32CountSketch<RangeSize>, make_ptr_functor>(
-        params);
-    perform_tests<FlatMapPromotable32CountSketch<RangeSize>, make_ptr_functor>(
-        params);
+    perform_tests<FlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+                  make_ptr_functor>(params);
+    perform_tests<FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+                  make_ptr_functor>(params);
 #endif
     // perform_tests<Dense32FWHT<RangeSize>, make_ptr_functor>(params);
   }
@@ -790,7 +801,8 @@ struct do_all_tests {
 
 int main(int argc, char **argv) {
   uint64_t         count(10000);
-  std::uint64_t    range_size(512);
+  std::uint64_t    range_size(32);
+  std::uint64_t    replication_count(1);
   std::uint64_t    domain_size(4096);
   std::uint64_t    observation_count(16);
   std::uint64_t    seed(krowkee::hash::default_seed);
@@ -803,6 +815,7 @@ int main(int argc, char **argv) {
 
   Parameters params{count,
                     range_size,
+                    replication_count,
                     domain_size,
                     observation_count,
                     compaction_threshold,
@@ -815,9 +828,11 @@ int main(int argc, char **argv) {
   parse_args(argc, argv, params);
 
   if (do_all == true) {
-    dispatch_with_sketch_sizes<do_all_tests, void>(params.range_size, params);
+    dispatch_with_sketch_sizes<do_all_tests, void>(
+        params.range_size, params.replication_count, params);
   } else {
-    dispatch_with_sketch_sizes<choose_tests, void>(params.range_size, params);
+    dispatch_with_sketch_sizes<choose_tests, void>(
+        params.range_size, params.replication_count, params);
   }
   return 0;
 }

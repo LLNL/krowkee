@@ -51,31 +51,32 @@ template <typename T>
 using make_ptr_functor = krowkee::make_shared_functor<T>;
 #endif
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using Dense32CountSketch =
     krowkee::sketch::CountSketch<krowkee::sketch::Dense, std::int32_t,
-                                 RangeSize, ptr_type>;
+                                 RangeSize, ReplicationCount, ptr_type>;
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MapSparse32CountSketch =
     krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, std::int32_t,
-                                 RangeSize, ptr_type>;
+                                 RangeSize, ReplicationCount, ptr_type>;
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MapPromotable32CountSketch =
     krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32, std::int32_t,
-                                 RangeSize, ptr_type>;
+                                 RangeSize, ReplicationCount, ptr_type>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using FlatMapSparse32CountSketch =
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                                 RangeSize, ptr_type>;
+                                 RangeSize, ReplicationCount, ptr_type>;
 
-template <std::size_t RangeSize>
+template <std::size_t RangeSize, std::size_t ReplicationCount>
 using FlatMapPromotable32CountSketch =
     krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
-                                 std::int32_t, RangeSize, ptr_type>;
+                                 std::int32_t, RangeSize, ReplicationCount,
+                                 ptr_type>;
 #endif
 
 template <std::size_t RangeSize>

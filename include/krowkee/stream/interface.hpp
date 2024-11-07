@@ -36,11 +36,11 @@ using MultiLocal = Multi<CountingSummary, krowkee::sketch::Sketch, SketchFunc,
                          ContainerType, MergeOp, KeyType, std::shared_ptr>;
 
 template <template <typename, typename> class ContainerType, typename KeyType,
-          typename RegType, std::size_t RangeSize>
-using MultiLocalCountSketch =
-    MultiLocal<krowkee::transform::CountSketchFunctor<
-                   RegType, krowkee::hash::CountSketchHash, RangeSize>,
-               ContainerType, std::plus, KeyType>;
+          typename RegType, std::size_t RangeSize, std::size_t ReplicationCount>
+using MultiLocalCountSketch = MultiLocal<
+    krowkee::transform::CountSketchFunctor<
+        RegType, krowkee::hash::CountSketchHash, RangeSize, ReplicationCount>,
+    ContainerType, std::plus, KeyType>;
 
 template <typename KeyType, typename RegType, std::size_t RangeSize>
 using MultiLocalFWHT =
