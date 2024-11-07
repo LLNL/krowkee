@@ -149,14 +149,25 @@ class CountSketchFunctor {
   // Getters
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * @brief Get the maximum number of range values returnable by the outer hash
-   * function.
+   * @brief Get the maximum number of range values returnable by the register
+   * hash function.
    *
-   * This is equivalent to the maximum number of elements in passed containers.
+   * This is equivalent to the number of registers in each replicated tile in
+   * passed containers.
    *
    * @return constexpr std::size_t The range size.
    */
   static constexpr std::size_t range_size() { return hash_type::size(); }
+
+  /**
+   * @brief Get the total number of addressable registers across all hash
+   * functions.
+   *
+   * This is equivalent to the range size times the number of replicated tiles.
+   *
+   * @return constexpr std::size_t The range size.
+   */
+  static constexpr std::size_t size() { return range_size(); }
 
   /** Get the random seed. */
   constexpr std::uint64_t seed() const { return _hash.seed(); }

@@ -46,13 +46,12 @@ class Dense {
    * @brief Construct a new Dense container object
    *
    * @tparam Args Other args (ignored)
-   * @param range_size The number of registers, equal to the range size of the
+   * @param size The number of registers, equal to the range size of the
    * sketch functor.
    * @param args Ignored by Dense.
    */
   template <typename... Args>
-  Dense(const std::size_t range_size, const Args &...args)
-      : _registers(range_size) {}
+  Dense(const std::size_t size, const Args &...args) : _registers(size) {}
 
   /**
    * @brief Copy constructor.
@@ -214,7 +213,7 @@ class Dense {
    * @brief Const access Dense at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return constexpr const register_type& A const reference to
    * `_registers[index]`.
    */
@@ -226,7 +225,7 @@ class Dense {
    * @brief Access Dense at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return register_type& A reference to `_registers[index]`.
    */
   register_type &operator[](const std::uint64_t index) {
