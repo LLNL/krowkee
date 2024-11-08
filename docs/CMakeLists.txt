@@ -60,7 +60,8 @@ set(KROWKEE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Multi.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Summary.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/stream/interface.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/CountSketch.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/SparseJLT.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/FWHT.hpp
 )
 
 set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/include/)
