@@ -54,33 +54,31 @@ using make_ptr_functor = krowkee::make_shared_functor<T>;
 using register_type = float;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using Dense32CountSketch =
-    krowkee::sketch::CountSketch<krowkee::sketch::Dense, register_type,
-                                 RangeSize, ReplicationCount, ptr_type>;
+using Dense32SparseJLT =
+    krowkee::sketch::SparseJLT<krowkee::sketch::Dense, register_type, RangeSize,
+                               ReplicationCount, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using MapSparse32CountSketch =
-    krowkee::sketch::CountSketch<krowkee::sketch::MapSparse32, register_type,
-                                 RangeSize, ReplicationCount, ptr_type>;
+using MapSparse32SparseJLT =
+    krowkee::sketch::SparseJLT<krowkee::sketch::MapSparse32, register_type,
+                               RangeSize, ReplicationCount, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using MapPromotable32CountSketch =
-    krowkee::sketch::CountSketch<krowkee::sketch::MapPromotable32,
-                                 register_type, RangeSize, ReplicationCount,
-                                 ptr_type>;
+using MapPromotable32SparseJLT =
+    krowkee::sketch::SparseJLT<krowkee::sketch::MapPromotable32, register_type,
+                               RangeSize, ReplicationCount, ptr_type>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using FlatMapSparse32CountSketch =
-    krowkee::sketch::CountSketch<krowkee::sketch::FlatMapSparse32,
-                                 register_type, RangeSize, ReplicationCount,
-                                 ptr_type>;
+using FlatMapSparse32SparseJLT =
+    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapSparse32, register_type,
+                               RangeSize, ReplicationCount, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using FlatMapPromotable32CountSketch =
-    krowkee::sketch::CountSketch<krowkee::sketch::FlatMapPromotable32,
-                                 register_type, RangeSize, ReplicationCount,
-                                 ptr_type>;
+using FlatMapPromotable32SparseJLT =
+    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapPromotable32,
+                               register_type, RangeSize, ReplicationCount,
+                               ptr_type>;
 #endif
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>

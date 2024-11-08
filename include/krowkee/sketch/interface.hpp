@@ -8,8 +8,8 @@
 #include <krowkee/hash/countsketch.hpp>
 #include <krowkee/hash/hash.hpp>
 
-#include <krowkee/transform/CountSketch.hpp>
 #include <krowkee/transform/FWHT.hpp>
+#include <krowkee/transform/SparseJLT.hpp>
 
 #include <krowkee/sketch/Dense.hpp>
 #include <krowkee/sketch/Promotable.hpp>
@@ -41,9 +41,9 @@ using LocalSketch =
 template <template <typename, typename> class ContainerType, typename RegType,
           std::size_t RangeSize, std::size_t ReplicationCount,
           template <typename> class PtrType = std::shared_ptr>
-using CountSketch = LocalSketch<
-    krowkee::transform::CountSketchFunctor<
-        RegType, krowkee::hash::CountSketchHash, RangeSize, ReplicationCount>,
+using SparseJLT = LocalSketch<
+    krowkee::transform::SparseJLT<RegType, krowkee::hash::CountSketchHash,
+                                  RangeSize, ReplicationCount>,
     ContainerType, std::plus, PtrType>;
 
 template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,

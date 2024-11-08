@@ -20,10 +20,11 @@ using krowkee::stream::Element;
 /// https://stackoverflow.com/questions/4421706/what-are-the-basic-rules-and-idioms-for-operator-overloading
 
 /**
- * @brief A functor implementing CountSketch on a collection of registers.
+ * @brief A functor implementing a CountSketch-based sparse JLT on a collection
+ * of registers.
  *
- * Implements CountSketch using a single pair of hash functions (i.e. no
- * Chernoff approximation tricks).
+ * Implements CountSketch using a `ReplicationCount` number of pairs of hash
+ * functions.
  *
  * [0] M. Charikar, K. Chen, M. Farach-Colton. Finding frequent items in data
  * streams. Theoretical Computer Science. 2004.
@@ -42,19 +43,19 @@ using krowkee::stream::Element;
  */
 template <typename RegType, template <std::size_t> class HashType,
           std::size_t RangeSize, std::size_t ReplicationCount>
-class CountSketchFunctor {
+class SparseJLT {
  public:
   using register_type = RegType;
   using hash_type     = HashType<RangeSize>;
   using self_type =
-      CountSketchFunctor<register_type, HashType, RangeSize, ReplicationCount>;
+      SparseJLT<register_type, HashType, RangeSize, ReplicationCount>;
 
  private:
   std::vector<hash_type> _hashes;
 
  public:
   /**
-   * @brief Construct a new Count Sketch Functor object by initializing hash
+   * @brief Construct a new SparseJLT Functor object by initializing hash
    * functors.
    *
    * Depending on the hash functor to be used, the effective embedding dimension
@@ -69,7 +70,7 @@ class CountSketchFunctor {
    * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(std::uint64_t seed, const Args &...args) {
+  SparseJLT(std::uint64_t seed, const Args &...args) {
     _hashes.reserve(ReplicationCount);
     for (int i(0); i < ReplicationCount; ++i) {
       _hashes.emplace_back(seed, args...);
@@ -77,7 +78,7 @@ class CountSketchFunctor {
     }
   }
 
-  CountSketchFunctor() {}
+  SparseJLT() {}
 
   //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
@@ -85,7 +86,7 @@ class CountSketchFunctor {
 
 #if __has_include(<cereal/cereal.hpp>)
   /**
-   * @brief Serialize CountSketchFunctor object to/from `cereal` archive.
+   * @brief Serialize SparseJLT object to/from `cereal` archive.
    *
    * @tparam Archive `cereal` archive type.
    * @param archive The `cereal` archive to which to serialize the transform.
@@ -223,7 +224,7 @@ class CountSketchFunctor {
   }
 
   /**
-   * @brief Check for equality between two CountSketchFunctors.
+   * @brief Check for equality between two SparseJLTs.
    *
    * @param lhs The left-hand functor.
    * @param rhs The right-hand functor.
@@ -240,7 +241,7 @@ class CountSketchFunctor {
   }
 
   /**
-   * @brief Check for inequality between two CountSketchFunctors.
+   * @brief Check for inequality between two SparseJLTs.
    *
    * @param lhs The left-hand functor.
    * @param rhs The right-hand functor.

@@ -140,7 +140,7 @@ struct init_check {
  *     we are getting approximately correct shape preservation in embedded
  *     space.
  *
- * @note[BWP] `krowkee::CountSketchFunctor` templated with `krowkee::WangHash`
+ * @note[BWP] `krowkee::SparseJLTFunctor` templated with `krowkee::WangHash`
  *     produces weird and bad results here. We are unlikely to ever use
  *     `krowkee::WangHash`, but it might be worth figuring out what is wrong.
  *     It probably has something to do with the polarity hash, as it looks like
@@ -764,27 +764,26 @@ template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct choose_tests {
   void operator()(const Parameters &params) {
     if (params.sketch_impl == sketch_impl_type::cst) {
-      perform_tests<Dense32CountSketch<RangeSize, ReplicationCount>,
+      perform_tests<Dense32SparseJLT<RangeSize, ReplicationCount>,
                     make_ptr_functor>(params);
     } else if (params.sketch_impl == sketch_impl_type::sparse_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MapSparse32CountSketch<RangeSize, ReplicationCount>,
+        perform_tests<MapSparse32SparseJLT<RangeSize, ReplicationCount>,
                       make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<FlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+        perform_tests<FlatMapSparse32SparseJLT<RangeSize, ReplicationCount>,
                       make_ptr_functor>(params);
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::promotable_cst) {
       if (params.cmap_impl == cmap_impl_type::std) {
-        perform_tests<MapPromotable32CountSketch<RangeSize, ReplicationCount>,
+        perform_tests<MapPromotable32SparseJLT<RangeSize, ReplicationCount>,
                       make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
       } else if (params.cmap_impl == cmap_impl_type::boost) {
-        perform_tests<
-            FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
-            make_ptr_functor>(params);
+        perform_tests<FlatMapPromotable32SparseJLT<RangeSize, ReplicationCount>,
+                      make_ptr_functor>(params);
 #endif
       }
     } else if (params.sketch_impl == sketch_impl_type::fwht) {
@@ -797,16 +796,16 @@ struct choose_tests {
 template <std::size_t RangeSize, std::size_t ReplicationCount>
 struct do_all_tests {
   void operator()(const Parameters &params) {
-    perform_tests<Dense32CountSketch<RangeSize, ReplicationCount>,
+    perform_tests<Dense32SparseJLT<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
-    perform_tests<MapSparse32CountSketch<RangeSize, ReplicationCount>,
+    perform_tests<MapSparse32SparseJLT<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
-    perform_tests<MapPromotable32CountSketch<RangeSize, ReplicationCount>,
+    perform_tests<MapPromotable32SparseJLT<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-    perform_tests<FlatMapSparse32CountSketch<RangeSize, ReplicationCount>,
+    perform_tests<FlatMapSparse32SparseJLT<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
-    perform_tests<FlatMapPromotable32CountSketch<RangeSize, ReplicationCount>,
+    perform_tests<FlatMapPromotable32SparseJLT<RangeSize, ReplicationCount>,
                   make_ptr_functor>(params);
 #endif
     perform_tests<Dense32FWHT<RangeSize, ReplicationCount>, make_ptr_functor>(
