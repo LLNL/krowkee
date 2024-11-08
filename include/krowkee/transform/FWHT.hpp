@@ -7,7 +7,7 @@
 
 #include <krowkee/transform/fwht/utils.hpp>
 
-#include <krowkee/stream/Element.hpp>
+#include <krowkee/transform/Element.hpp>
 
 #include <sstream>
 #include <vector>

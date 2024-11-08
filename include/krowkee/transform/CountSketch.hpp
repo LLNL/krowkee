@@ -6,7 +6,7 @@
 #pragma once
 
 #include <krowkee/hash/hash.hpp>
-#include <krowkee/stream/Element.hpp>
+#include <krowkee/transform/Element.hpp>
 
 #include <sstream>
 #include <vector>
