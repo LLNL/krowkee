@@ -24,10 +24,10 @@ using krowkee::stream::Element;
  * Fast Walsh-Hadamard Transform Functor Class
  */
 template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount>
-class FWHTFunctor {
+class FWHT {
  public:
   using register_type = RegType;
-  using self_type     = FWHTFunctor<RegType, RangeSize, ReplicationCount>;
+  using self_type     = FWHT<RegType, RangeSize, ReplicationCount>;
 
  protected:
   std::uint64_t _range_size = RangeSize;
@@ -46,11 +46,11 @@ class FWHTFunctor {
    * @param args any additional paramters required by the hash functions.
    */
   template <typename... Args>
-  FWHTFunctor(const std::uint64_t seed, const std::uint64_t domain_size = 1024,
-              const Args &&...args)
+  FWHT(const std::uint64_t seed, const std::uint64_t domain_size = 1024,
+       const Args &&...args)
       : _seed(seed), _domain_size(domain_size) {}
 
-  FWHTFunctor() {}
+  FWHT() {}
 
   //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
