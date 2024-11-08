@@ -9,7 +9,7 @@
 #include <parameters.hpp>
 
 #include <krowkee/hash/hash.hpp>
-#include <krowkee/sketch/interface.hpp>
+#include <krowkee/sketch.hpp>
 
 template <typename SketchType, typename ValueType>
 struct HistSketch {

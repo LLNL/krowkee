@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <krowkee/sketch/interface.hpp>
+#include <krowkee/sketch.hpp>
 #include <krowkee/util/runtime.hpp>
 
 #if __has_include(<ygm/comm.hpp>)
