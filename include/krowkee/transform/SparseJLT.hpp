@@ -5,9 +5,8 @@
 
 #pragma once
 
-#include <krowkee/stream/Element.hpp>
-
-#include <krowkee/hash/util.hpp>
+#include <krowkee/hash/hash.hpp>
+#include <krowkee/transform/Element.hpp>
 
 #include <sstream>
 #include <vector>
@@ -21,10 +20,11 @@ using krowkee::stream::Element;
 /// https://stackoverflow.com/questions/4421706/what-are-the-basic-rules-and-idioms-for-operator-overloading
 
 /**
- * @brief A functor implementing CountSketch on a collection of registers.
+ * @brief A functor implementing a CountSketch-based sparse JLT on a collection
+ * of registers.
  *
- * Implements CountSketch using a single pair of hash functions (i.e. no
- * Chernoff approximation tricks).
+ * Implements CountSketch using a `ReplicationCount` number of pairs of hash
+ * functions.
  *
  * [0] M. Charikar, K. Chen, M. Farach-Colton. Finding frequent items in data
  * streams. Theoretical Computer Science. 2004.
@@ -38,21 +38,24 @@ using krowkee::stream::Element;
  * @tparam HashType The hash functor type to use to define CountSketch random
  * mappings.
  * @tparam RangeSize The power-of-two embedding dimension.
+ * @tparam ReplicationCount The number of replicated CountSketch transforms to
+ * use.
  */
 template <typename RegType, template <std::size_t> class HashType,
-          std::size_t RangeSize>
-class CountSketchFunctor {
+          std::size_t RangeSize, std::size_t ReplicationCount>
+class SparseJLT {
  public:
   using register_type = RegType;
   using hash_type     = HashType<RangeSize>;
-  using self_type     = CountSketchFunctor<register_type, HashType, RangeSize>;
+  using self_type =
+      SparseJLT<register_type, HashType, RangeSize, ReplicationCount>;
 
  private:
-  hash_type _hash;
+  std::vector<hash_type> _hashes;
 
  public:
   /**
-   * @brief Construct a new Count Sketch Functor object by initializing hash
+   * @brief Construct a new SparseJLT Functor object by initializing hash
    * functors.
    *
    * Depending on the hash functor to be used, the effective embedding dimension
@@ -67,11 +70,15 @@ class CountSketchFunctor {
    * @param args Any additional parameters required by the hash functions.
    */
   template <typename... Args>
-  CountSketchFunctor(const std::uint64_t seed = krowkee::hash::default_seed,
-                     const Args &...args)
-      : _hash(seed, args...) {}
+  SparseJLT(std::uint64_t seed, const Args &...args) {
+    _hashes.reserve(ReplicationCount);
+    for (int i(0); i < ReplicationCount; ++i) {
+      _hashes.emplace_back(seed, args...);
+      seed = krowkee::hash::wang64(seed);
+    }
+  }
 
-  CountSketchFunctor() {}
+  SparseJLT() {}
 
   //////////////////////////////////////////////////////////////////////////////
   // Cereal Archives
@@ -79,14 +86,14 @@ class CountSketchFunctor {
 
 #if __has_include(<cereal/cereal.hpp>)
   /**
-   * @brief Serialize CountSketchFunctor object to/from `cereal` archive.
+   * @brief Serialize SparseJLT object to/from `cereal` archive.
    *
    * @tparam Archive `cereal` archive type.
    * @param archive The `cereal` archive to which to serialize the transform.
    */
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_hash);
+    archive(_hashes);
   }
 #endif
 
@@ -139,11 +146,14 @@ class CountSketchFunctor {
   constexpr void _apply_to_container(ContainerType &registers,
                                      const ItemArgs &...item_args) const {
     const Element<register_type> stream_element(item_args...);
-    const auto [index, polarity] = _hash(stream_element.item);
-    register_type &reg           = registers[index];
-    reg = MergeOp()(reg, polarity * stream_element.multiplicity);
-    if (reg == 0) {
-      registers.erase(index);
+    for (int i(0); i < ReplicationCount; ++i) {
+      auto [index, polarity] = _hashes[i](stream_element.item);
+      index += i * range_size();
+      register_type &reg = registers[index];
+      reg = MergeOp()(reg, polarity * stream_element.multiplicity);
+      if (reg == 0) {
+        registers.erase(index);
+      }
     }
   }
 
@@ -152,24 +162,52 @@ class CountSketchFunctor {
   // Getters
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * @brief Get the maximum number of range values returnable by the outer hash
-   * function.
+   * @brief Get the maximum number of range values returnable by the register
+   * hash function.
    *
-   * This is equivalent to the maximum number of elements in passed containers.
+   * This is equivalent to the number of registers in each replicated tile in
+   * passed containers.
    *
    * @return constexpr std::size_t The range size.
    */
-  constexpr std::size_t range_size() const { return _hash.size(); }
+  static constexpr std::size_t range_size() { return hash_type::size(); }
+
+  /**
+   * @brief Get the number of replicated CountSketch transforms.
+   *
+   * @return constexpr std::size_t The replication count.
+   */
+  static constexpr std::size_t replication_count() { return ReplicationCount; }
+
+  /**
+   * @brief Get the scaling factor to be used for projections.
+   *
+   * @return constexpr std::size_t The replication count.
+   */
+  static constexpr RegType scaling_factor =
+      std::sqrt((RegType)replication_count());
+
+  /**
+   * @brief Get the total number of addressable registers across all hash
+   * functions.
+   *
+   * This is equivalent to the range size times the number of replicated tiles.
+   *
+   * @return constexpr std::size_t The range size.
+   */
+  static constexpr std::size_t size() {
+    return range_size() * replication_count();
+  }
 
   /** Get the random seed. */
-  constexpr std::uint64_t seed() const { return _hash.seed(); }
+  constexpr std::uint64_t seed() const { return _hashes[0].seed(); }
 
   /**
    * @brief Return a description of the transform type.
    *
    * @return std::string "CountSketch"
    */
-  static inline std::string name() { return "CountSketch"; }
+  static constexpr std::string name() { return "CountSketch"; }
 
   /**
    * @brief Return a description of the fully-qualified transform type.
@@ -177,15 +215,16 @@ class CountSketchFunctor {
    * @return std::string Transform description, e.g. "CountSketch using
    * MulAddShift hashes and 4 byte registers"
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << name() << " using " << hash_type::name() << " hashes and "
-       << RangeSize << " " << sizeof(register_type) << "-byte registers";
+    ss << name() << " using " << ReplicationCount << " replications of "
+       << hash_type::full_name() << " and " << sizeof(register_type)
+       << "-byte registers";
     return ss.str();
   }
 
   /**
-   * @brief Check for equality between two CountSketchFunctors.
+   * @brief Check for equality between two SparseJLTs.
    *
    * @param lhs The left-hand functor.
    * @param rhs The right-hand functor.
@@ -193,11 +232,16 @@ class CountSketchFunctor {
    * @return false The seeds or range sizes disagree.
    */
   friend constexpr bool operator==(const self_type &lhs, const self_type &rhs) {
-    return lhs._hash == rhs._hash;
+    for (int i(0); i < ReplicationCount; ++i) {
+      if (lhs._hashes[i] != rhs._hashes[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
-   * @brief Check for inequality between two CountSketchFunctors.
+   * @brief Check for inequality between two SparseJLTs.
    *
    * @param lhs The left-hand functor.
    * @param rhs The right-hand functor.

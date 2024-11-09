@@ -55,12 +55,10 @@ set(KROWKEE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Promotable.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sketch.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sparse.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/interface.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Element.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Multi.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Summary.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/interface.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/CountSketch.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/sketch.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/Element.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/SparseJLT.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/FWHT.hpp
 )
 
 set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/include/)

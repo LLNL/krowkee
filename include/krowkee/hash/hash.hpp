@@ -55,9 +55,9 @@ struct Base {
   }
 
   constexpr std::size_t seed() const { return _seed; }
-  inline std::string    state() const {
+  constexpr std::string state() const {
     std::stringstream ss;
-    ss << "size: " << size() << ", seed: " << seed();
+    ss << "seed: " << seed();
     return ss.str();
   }
 
@@ -114,13 +114,18 @@ struct WangHash : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "WangHash"; }
+  static constexpr std::string name() { return "WangHash"; }
 
-  inline std::string state() const {
+  /**
+   * Print full functor name.
+   */
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << "size: " << this->size();
+    ss << name() << " with range " << self_type::size();
     return ss.str();
   }
+
+  constexpr std::string state() const { return full_name(); }
 
   friend constexpr bool operator==(const WangHash &lhs, const WangHash &rhs) {
     return lhs._log2_kernel_range_size == rhs._log2_kernel_range_size &&
@@ -176,8 +181,7 @@ struct MulShift : public Base<RangeSize> {
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulShift(const std::uint64_t seed = default_seed, const ARGS &...)
-      : base_type(seed) {
+  MulShift(const std::uint64_t seed, const ARGS &...) : base_type(seed) {
     std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist(
         1, std::numeric_limits<std::uint64_t>::max());
@@ -206,11 +210,18 @@ struct MulShift : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "MulShift"; }
+  static constexpr std::string name() { return "MulShift"; }
 
-  inline std::string state() const {
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << base_type::state() << ", multiplicand: " << _multiplicand;
+    ss << name() << " with range " << self_type::size();
+    return ss.str();
+  }
+
+  constexpr std::string state() const {
+    std::stringstream ss;
+    ss << full_name() << ", " << base_type::state()
+       << ", multiplicand: " << _multiplicand;
     return ss.str();
   }
 
@@ -263,8 +274,7 @@ struct MulAddShift : public Base<RangeSize> {
    * @param seed the random seed.
    */
   template <typename... ARGS>
-  MulAddShift(const std::uint64_t seed = default_seed, const ARGS &...)
-      : base_type(seed) {
+  MulAddShift(const std::uint64_t seed, const ARGS &...) : base_type(seed) {
     std::mt19937_64                              rnd_gen(wang64(this->_seed));
     std::uniform_int_distribution<std::uint64_t> udist_multiplicand(
         0, std::numeric_limits<std::uint64_t>::max());
@@ -295,12 +305,21 @@ struct MulAddShift : public Base<RangeSize> {
   /**
    * Print functor name.
    */
-  static inline std::string name() { return "MulAddShift"; }
+  static constexpr std::string name() { return "MulAddShift"; }
 
-  inline std::string state() const {
+  /**
+   * Print full functor name.
+   */
+  static constexpr std::string full_name() {
     std::stringstream ss;
-    ss << base_type::state() << ", multiplicand: " << _multiplicand
-       << ",  summand: " << _summand;
+    ss << name() << " with range " << self_type::size();
+    return ss.str();
+  }
+
+  constexpr std::string state() const {
+    std::stringstream ss;
+    ss << full_name() << ", " << base_type::state()
+       << ", multiplicand: " << _multiplicand << ",  summand: " << _summand;
     return ss.str();
   }
 

@@ -68,7 +68,7 @@ class Sketch {
   Sketch(const transform_ptr_type &sf_ptr,
          const std::size_t         compaction_threshold = 100,
          const std::size_t         promotion_threshold  = 4096)
-      : _con(sf_ptr->range_size(), compaction_threshold, promotion_threshold),
+      : _con(sf_ptr->size(), compaction_threshold, promotion_threshold),
         _transform_ptr(sf_ptr) {}
 
   /**
@@ -141,7 +141,7 @@ class Sketch {
    * @param args Arguments describing the stream object.
    */
   template <typename... ItemArgs>
-  inline void insert(const ItemArgs &...args) {
+  constexpr void insert(const ItemArgs &...args) {
     (*_transform_ptr)(_con, args...);
   }
 
@@ -201,8 +201,8 @@ class Sketch {
    * @param rhs The right-hand sketch object.
    * @return self_type The merge of the two sketch objects.
    */
-  inline friend self_type operator+(const self_type &lhs,
-                                    const self_type &rhs) {
+  constexpr friend self_type operator+(const self_type &lhs,
+                                       const self_type &rhs) {
     self_type ret(lhs);
     ret += rhs;
     return ret;
@@ -239,7 +239,7 @@ class Sketch {
    *
    * @return std::string Sketch description, e.g. "Dense CountSketch"
    */
-  static inline std::string name() {
+  static constexpr std::string name() {
     std::stringstream ss;
     ss << container_type::name() << " " << transform_type::name();
     return ss.str();
@@ -254,7 +254,7 @@ class Sketch {
    * std::allocator<std::pair<unsigned int const, int> > > CountSketch using
    * MulAddShift hashes and 4 byte registers"
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << container_type::full_name() << " " << transform_type::full_name();
     return ss.str();
@@ -284,8 +284,8 @@ class Sketch {
    *
    * @return constexpr std::size_t The size of the sketch functor range.
    */
-  constexpr std::size_t range_size() const {
-    return _transform_ptr->range_size();
+  static constexpr std::size_t range_size() {
+    return transform_type::range_size();
   }
 
   /**
@@ -304,6 +304,19 @@ class Sketch {
    */
   std::vector<register_type> register_vector() const {
     return _con.register_vector();
+  }
+
+  /**
+   * @brief Get a copy of the scaled vector of registers in the container.
+   *
+   * @return std::vector<register_type> The scaled register vector.
+   */
+  std::vector<register_type> scaled_registers() const {
+    std::vector<register_type> registers(register_vector());
+    for (int i(0); i < registers.size(); ++i) {
+      registers[i] /= transform_type::scaling_factor;
+    }
+    return registers;
   }
 
   //////////////////////////////////////////////////////////////////////////////

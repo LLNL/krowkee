@@ -51,7 +51,7 @@ class Promotable {
  private:
   dense_ptr_type       _dense_ptr;
   sparse_ptr_type      _sparse_ptr;
-  std::size_t          _range_size;
+  std::size_t          _size;
   std::size_t          _compaction_threshold;
   std::size_t          _promotion_threshold;
   promotable_mode_type _mode;
@@ -60,21 +60,20 @@ class Promotable {
   /**
    * @brief Initialize the size parameters and create the base container.
    *
-   * @param range_size Size argument for constructing dense container.
+   * @param size Size argument for maximum number of registers.
    * @param compaction_threshold Size argument for constructing sparse
    *     container.
    * @param promotion_threshold Threshold from promoting from Sparse
    * representation to Dense representation.
    */
-  Promotable(const std::size_t range_size,
-             const std::size_t compaction_threshold,
+  Promotable(const std::size_t size, const std::size_t compaction_threshold,
              const std::size_t promotion_threshold)
-      : _range_size(range_size),
+      : _size(size),
         _compaction_threshold(compaction_threshold),
         _promotion_threshold(promotion_threshold),
         _mode(promotable_mode_type::sparse),
-        _sparse_ptr(
-            std::make_unique<sparse_type>(range_size, compaction_threshold)) {}
+        _sparse_ptr(std::make_unique<sparse_type>(size, compaction_threshold)) {
+  }
 
   /**
    * @brief Copy constructor.
@@ -85,7 +84,7 @@ class Promotable {
    * @param rhs container to be copied.
    */
   Promotable(const self_type &rhs)
-      : _range_size(rhs._range_size),
+      : _size(rhs._size),
         _compaction_threshold(rhs._compaction_threshold),
         _promotion_threshold(rhs._promotion_threshold),
         _mode(rhs._mode) {
@@ -126,7 +125,7 @@ class Promotable {
    * @param rhs The right-hand containr.
    */
   friend void swap(self_type &lhs, self_type &rhs) {
-    std::swap(lhs._range_size, rhs._range_size);
+    std::swap(lhs._size, rhs._size);
     std::swap(lhs._compaction_threshold, rhs._compaction_threshold);
     std::swap(lhs._promotion_threshold, rhs._promotion_threshold);
     std::swap(lhs._mode, rhs._mode);
@@ -150,7 +149,7 @@ class Promotable {
    */
   template <class Archive>
   void save(Archive &oarchive) const {
-    oarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
+    oarchive(_size, _compaction_threshold, _promotion_threshold, _mode);
     if (_mode == promotable_mode_type::sparse) {
       oarchive(_sparse_ptr);
     } else {
@@ -166,7 +165,7 @@ class Promotable {
    */
   template <class Archive>
   void load(Archive &iarchive) {
-    iarchive(_range_size, _compaction_threshold, _promotion_threshold, _mode);
+    iarchive(_size, _compaction_threshold, _promotion_threshold, _mode);
     if (_mode == promotable_mode_type::sparse) {
       iarchive(_sparse_ptr);
     } else {
@@ -202,7 +201,7 @@ class Promotable {
    *
    * @return std::string "Promotable"
    */
-  static inline std::string name() { return "Promotable"; }
+  static constexpr std::string name() { return "Promotable"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container
@@ -210,7 +209,7 @@ class Promotable {
    * @return std::string "Promotable" plus the full name of the fully-templated
    * compacting_map type.
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();
@@ -343,8 +342,7 @@ class Promotable {
       _dense_ptr.reset(nullptr);
       _mode = promotable_mode_type::sparse;
       _sparse_ptr.reset(nullptr);
-      _sparse_ptr =
-          std::make_unique<sparse_type>(_range_size, _compaction_threshold);
+      _sparse_ptr = std::make_unique<sparse_type>(_size, _compaction_threshold);
     }
   }
 
@@ -368,7 +366,7 @@ class Promotable {
    *
    * @param index The index to erase.
    */
-  inline void erase(const std::uint64_t index) {
+  constexpr void erase(const std::uint64_t index) {
     if (_mode == promotable_mode_type::sparse) {
       _sparse_ptr->erase(index);
     } else {
@@ -500,8 +498,8 @@ class Promotable {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two containers.
    */
-  inline friend self_type operator+(const self_type &lhs,
-                                    const self_type &rhs) {
+  constexpr friend self_type operator+(const self_type &lhs,
+                                       const self_type &rhs) {
     if (rhs._mode == promotable_mode_type::dense) {
       self_type ret(rhs);
       ret += lhs;
@@ -537,7 +535,7 @@ class Promotable {
       throw std::logic_error("Attempt to promote uncompacted container!");
     }
 
-    _dense_ptr = std::make_unique<dense_type>(_sparse_ptr->range_size());
+    _dense_ptr = std::make_unique<dense_type>(_size);
     merge_from_sparse(*this);
     _sparse_ptr.reset(nullptr);
     _mode = promotable_mode_type::dense;

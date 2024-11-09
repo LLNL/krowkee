@@ -46,31 +46,30 @@ class Sparse {
 
  protected:
   registers_type _registers;
-  std::size_t    _range_size;
+  std::size_t    _size;
 
  public:
   /**
    * @brief Construct a new Sparse container object
    *
    * @tparam Args Other args (ignored)
-   * @param range_size The number of registers, equal to the range size of the
-   * sketch functor.
+   * @param size The number of registers, equal to the range size of the
+   * sketch functor times the number of replications.
    * @param compaction_threshold The size at which the compacting_map buffer
    * triggers compaction.
    * @param args Ignored by Dense.
    */
   template <typename... Args>
-  Sparse(const std::size_t range_size, const std::size_t compaction_threshold,
+  Sparse(const std::size_t size, const std::size_t compaction_threshold,
          const Args &...args)
-      : _range_size(range_size), _registers(compaction_threshold) {}
+      : _size(size), _registers(compaction_threshold) {}
 
   /**
    * @brief Copy constructor.
    *
    * @param rhs The base Sparse container to copy.
    */
-  Sparse(const self_type &rhs)
-      : _range_size(rhs._range_size), _registers(rhs._registers) {}
+  Sparse(const self_type &rhs) : _size(rhs._size), _registers(rhs._registers) {}
 
   /**
    * @brief Default constructor for Dense
@@ -99,7 +98,7 @@ class Sparse {
    * @param rhs The right-hand container.
    */
   friend void swap(self_type &lhs, self_type &rhs) {
-    std::swap(lhs._range_size, rhs._range_size);
+    std::swap(lhs._size, rhs._size);
     swap(lhs._registers, rhs._registers);
   }
 
@@ -115,7 +114,7 @@ class Sparse {
    */
   template <class Archive>
   void serialize(Archive &archive) {
-    archive(_range_size, _registers);
+    archive(_size, _registers);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -128,7 +127,7 @@ class Sparse {
    * @return true The update buffer is empty.
    * @return false The update buffer is not empty.
    */
-  inline bool is_compact() const { return _registers.is_compact(); }
+  constexpr bool is_compact() const { return _registers.is_compact(); }
 
   /** Flush the update buffer. */
   void compactify() { _registers.compactify(); }
@@ -156,7 +155,7 @@ class Sparse {
    *
    * @param index The map index to erase.
    */
-  inline void erase(const std::uint64_t index) { _registers.erase(index); }
+  constexpr void erase(const std::uint64_t index) { _registers.erase(index); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Merge operators
@@ -173,7 +172,7 @@ class Sparse {
    * merge sketches of different types.
    * @throw std::logic_error if invoked on uncompacted sketches.
    */
-  inline void merge(const self_type &rhs) {
+  constexpr void merge(const self_type &rhs) {
     _registers.merge(rhs._registers, MergeOp());
   }
 
@@ -202,7 +201,7 @@ class Sparse {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two containers.
    */
-  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
+  constexpr friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -232,7 +231,7 @@ class Sparse {
    * @brief Const access Sparse at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return constexpr const register_type& A const refernce to
    * `_registers[index]`.
    */
@@ -244,7 +243,7 @@ class Sparse {
    * @brief Access Sparse at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return register_type& A refernce to `_registers[index]`.
    */
   register_type &operator[](const std::uint64_t index) {
@@ -255,7 +254,7 @@ class Sparse {
    * @brief Access Sparse at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return register_type& A refernce to `_registers.at(index)`.
    */
   register_type &at(const std::uint64_t index) { return _registers.at(index); }
@@ -264,7 +263,7 @@ class Sparse {
    * @brief Access Sparse at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @param def The default value to return if the index does not exist.
    * @return register_type& A refernce to `_registers.at(index)`.
    */
@@ -281,7 +280,7 @@ class Sparse {
    *
    * @return std::string "Sparse"
    */
-  static inline std::string name() { return "Sparse"; }
+  static constexpr std::string name() { return "Sparse"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container
@@ -289,7 +288,7 @@ class Sparse {
    * @return std::string "Sparse" plus the full name of the fully-templated
    * compacting_map type.
    */
-  static inline std::string full_name() {
+  static constexpr std::string full_name() {
     std::stringstream ss;
     ss << name() << " using " << krowkee::hash::type_name<map_type>();
     return ss.str();
@@ -305,7 +304,7 @@ class Sparse {
   constexpr std::size_t reg_size() const { return sizeof(register_type); }
 
   /** The maximum possible size of the compacting_map. */
-  constexpr std::size_t range_size() const { return _range_size; }
+  constexpr std::size_t max_size() const { return _size; }
 
   /** The size at which the compaction buffer will flush. */
   constexpr std::size_t compaction_threshold() const {
@@ -323,7 +322,7 @@ class Sparse {
     if (is_compact() == false) {
       throw std::logic_error("Bad attempt to export uncompacted map!");
     }
-    std::vector<register_type> ret(range_size());
+    std::vector<register_type> ret(_size);
     std::for_each(std::cbegin(_registers), std::cend(_registers),
                   [&ret](const std::pair<KeyType, register_type> &elem) {
                     ret[elem.first] = elem.second;
@@ -335,14 +334,14 @@ class Sparse {
   // Equality operators
   //////////////////////////////////////////////////////////////////////////////
   /**
-   * @brief Checks whether another Sparse container has the same range_size.
+   * @brief Checks whether another Sparse container has the same size.
    *
    * @param rhs The other container.
    * @return true The sizes agree.
    * @return false The sizes disagree.
    */
   constexpr bool same_parameters(const self_type &rhs) const {
-    return _range_size == rhs._range_size;
+    return _size == rhs._size;
   }
 
   /**

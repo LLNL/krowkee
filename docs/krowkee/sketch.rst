@@ -33,6 +33,7 @@ is fundamental to the statistical guarantees of the associated sketch.
    :maxdepth: 2
    :caption: Transform Types:
 
-   transform/CountSketch
+   transform/SparseJLT
+   transform/FWHT
 
 .. doxygenclass:: krowkee::sketch::Sketch

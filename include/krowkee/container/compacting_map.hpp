@@ -177,11 +177,11 @@ class compacting_map {
   // Getters
   //////////////////////////////////////////////////////////////////////////////
 
-  inline std::size_t size() const {
+  constexpr std::size_t size() const {
     return _archive_map.size() + _dynamic_map.size();
   }
 
-  inline bool is_compact() const {
+  constexpr bool is_compact() const {
     return _dynamic_map.size() == 0 && _erased_count == 0;
   }
 
@@ -189,17 +189,17 @@ class compacting_map {
     return _compaction_threshold;
   }
 
-  inline std::size_t erased_count() const { return _erased_count; }
+  constexpr std::size_t erased_count() const { return _erased_count; }
 
-  inline std::size_t erased_count_manual() const {
+  constexpr std::size_t erased_count_manual() const {
     std::size_t erased_count(
         std::count(std::begin(_erased), std::end(_erased), true));
     return erased_count;
   }
 
-  static inline std::string name() { return "compacting_map"; }
+  static constexpr std::string name() { return "compacting_map"; }
 
-  inline std::string full_name() const {
+  constexpr std::string full_name() const {
     std::stringstream ss;
     ss << name() << " using " << krowkee::hash::type_name<map_type>()
        << " with threshold " << _compaction_threshold;
@@ -559,7 +559,7 @@ class compacting_map {
    * @throw std::logic_error if invoked on uncompacted maps.
    */
   template <typename MergeOp>
-  inline void merge(const self_type &rhs, MergeOp merge_op) {
+  constexpr void merge(const self_type &rhs, MergeOp merge_op) {
     if (is_compact() == false) {
       throw std::logic_error(
           "Bad attempt to merge on uncompacted left hand side!");
@@ -619,7 +619,7 @@ class compacting_map {
    * found else the end iterator. Returns a status code indicating whether the
    * desired key is absent, present, or present but deleted.
    */
-  inline std::pair<vec_iter_type, archive_code_t> archive_find(
+  constexpr std::pair<vec_iter_type, archive_code_t> archive_find(
       const KeyType &key) {
     auto axv_lb = std::lower_bound(std::begin(_archive_map),
                                    std::end(_archive_map), key, compare_first);
@@ -640,7 +640,7 @@ class compacting_map {
   /**
    * Const version of `archive_find`.
    */
-  inline std::pair<vec_citer_type, archive_code_t> archive_find(
+  constexpr std::pair<vec_citer_type, archive_code_t> archive_find(
       const KeyType &key) const {
     auto axv_lb = std::lower_bound(std::cbegin(_archive_map),
                                    std::cend(_archive_map), key, compare_first);
@@ -664,7 +664,7 @@ class compacting_map {
    * Calls the dynamic map's `insert` function. If this causes the size to
    * reach the compaction threshold, the compacts.
    */
-  inline std::pair<map_iter_type, dynamic_code_t> dynamic_insert(
+  constexpr std::pair<map_iter_type, dynamic_code_t> dynamic_insert(
       const pair_type &pair) {
     // this call to std::make_pair introduces an unnecessary copy, but seems
     // to be needed for compilation when `_dynamic_map` is a
@@ -689,7 +689,7 @@ class compacting_map {
    * the key is present but deleted, the insert occurs in-place. If the key is
    * absent, call `dynamic_insert` and insert into the dynamic buffer.
    */
-  inline bool try_insert_archive(const pair_type &pair) {
+  constexpr bool try_insert_archive(const pair_type &pair) {
     auto [axv_lb, axv_code] = archive_find(pair.first);
 
     if (axv_code == archive_code_t::present) {

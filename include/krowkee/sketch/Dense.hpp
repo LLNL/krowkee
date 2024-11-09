@@ -46,13 +46,12 @@ class Dense {
    * @brief Construct a new Dense container object
    *
    * @tparam Args Other args (ignored)
-   * @param range_size The number of registers, equal to the range size of the
-   * sketch functor.
+   * @param size The number of registers, equal to the range size of the sketch
+   * functor times its replication count.
    * @param args Ignored by Dense.
    */
   template <typename... Args>
-  Dense(const std::size_t range_size, const Args &...args)
-      : _registers(range_size) {}
+  Dense(const std::size_t size, const Args &...args) : _registers(size) {}
 
   /**
    * @brief Copy constructor.
@@ -131,7 +130,7 @@ class Dense {
   // Erase
   //////////////////////////////////////////////////////////////////////////////
 
-  inline void erase(const std::uint64_t index) {}
+  constexpr void erase(const std::uint64_t index) {}
 
   //////////////////////////////////////////////////////////////////////////////
   // Merge operators
@@ -144,7 +143,7 @@ class Dense {
    * merge sketches of different types.
    * @throws std::invalid_argument if the register sizes do not match.
    */
-  inline void merge(const self_type &rhs) {
+  constexpr void merge(const self_type &rhs) {
     if (size() != rhs.size()) {
       std::stringstream ss;
       ss << "error: attempting to merge embedding 1 of dimension " << size()
@@ -176,7 +175,7 @@ class Dense {
    * @param rhs The right-hand container.
    * @return self_type The merge of the two container objects.
    */
-  inline friend self_type operator+(self_type lhs, const self_type &rhs) {
+  constexpr friend self_type operator+(self_type lhs, const self_type &rhs) {
     lhs += rhs;
     return lhs;
   }
@@ -214,7 +213,7 @@ class Dense {
    * @brief Const access Dense at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return constexpr const register_type& A const reference to
    * `_registers[index]`.
    */
@@ -226,7 +225,7 @@ class Dense {
    * @brief Access Dense at `index`.
    *
    * @param index The index of the underlying vector to index. Must be less than
-   * `range_size`.
+   * `size`.
    * @return register_type& A reference to `_registers[index]`.
    */
   register_type &operator[](const std::uint64_t index) {
@@ -242,20 +241,23 @@ class Dense {
    *
    * @return std::string "Dense"
    */
-  static inline std::string name() { return "Dense"; }
+  static constexpr std::string name() { return "Dense"; }
 
   /**
    * @brief Returns a description of the fully-qualified type of container.
    *
    * @return std::string "Dense"
    */
-  static inline std::string full_name() { return name(); }
+  static constexpr std::string full_name() { return name(); }
 
   /** Dense is also not Sparse. */
   constexpr bool is_sparse() const { return false; }
 
   /** The size of the registers vector. */
   constexpr std::size_t size() const { return _registers.size(); }
+
+  /** The size of the registers vector. */
+  constexpr std::size_t max_size() const { return _registers.size(); }
 
   /** The number of bytes used by each register. */
   constexpr std::size_t reg_size() const { return sizeof(register_type); }
