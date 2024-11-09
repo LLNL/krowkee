@@ -56,7 +56,7 @@ set(KROWKEE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sketch.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch/Sparse.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/sketch.hpp
-    ${PROJECT_SOURCE_DIR}/include/krowkee/stream/Element.hpp
+    ${PROJECT_SOURCE_DIR}/include/krowkee/transform/Element.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/transform/SparseJLT.hpp
     ${PROJECT_SOURCE_DIR}/include/krowkee/transform/FWHT.hpp
 )
