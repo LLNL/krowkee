@@ -205,14 +205,14 @@ class SparseJLT {
   /**
    * @brief Return a description of the transform type.
    *
-   * @return std::string "CountSketch"
+   * @return std::string "SparseJLT"
    */
-  static constexpr std::string name() { return "CountSketch"; }
+  static constexpr std::string name() { return "SparseJLT"; }
 
   /**
    * @brief Return a description of the fully-qualified transform type.
    *
-   * @return std::string Transform description, e.g. "CountSketch using
+   * @return std::string Transform description, e.g. "SparseJLT using
    * MulAddShift hashes and 4 byte registers"
    */
   static constexpr std::string full_name() {
