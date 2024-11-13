@@ -78,10 +78,11 @@ class FWHT {
    * @param[in] x the object to be inserted.
    * @param[in] multiplicity a multiple to modulate insertion.
    */
-  template <template <typename, typename> class ContainerType, typename MergeOp,
-            typename... ItemArgs>
-  constexpr void operator()(ContainerType<RegType, MergeOp> &registers,
+  template <typename ContainerType, typename... ItemArgs>
+  constexpr void operator()(ContainerType &registers,
                             const ItemArgs &...item_args) const {
+    static_assert(std::is_same<register_type,
+                               typename ContainerType::register_type>::value);
     const Element<RegType> stream_element(item_args...);
     const std::uint64_t    col_index    = stream_element.item;
     const std::uint64_t    row_index    = stream_element.identifier;

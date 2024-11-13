@@ -54,31 +54,29 @@ using make_ptr_functor = krowkee::make_shared_functor<T>;
 using register_type = float;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using Dense32SparseJLT =
-    krowkee::sketch::SparseJLT<krowkee::sketch::Dense, register_type, RangeSize,
-                               ReplicationCount, ptr_type>;
+using Dense32SparseJLT = krowkee::sketch::SparseJLT<register_type, RangeSize,
+                                                    ReplicationCount, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
 using MapSparse32SparseJLT =
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapSparse32, register_type,
-                               RangeSize, ReplicationCount, ptr_type>;
+    krowkee::sketch::sparse::SparseJLT<register_type, RangeSize,
+                                       ReplicationCount, std::map, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using MapPromotable32SparseJLT =
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapPromotable32, register_type,
-                               RangeSize, ReplicationCount, ptr_type>;
+using MapPromotable32SparseJLT = krowkee::sketch::promotable::SparseJLT<
+    register_type, RangeSize, ReplicationCount, std::map, ptr_type>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
 template <std::size_t RangeSize, std::size_t ReplicationCount>
 using FlatMapSparse32SparseJLT =
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapSparse32, register_type,
-                               RangeSize, ReplicationCount, ptr_type>;
+    krowkee::sketch::sparse::SparseJLT<register_type, RangeSize,
+                                       ReplicationCount,
+                                       boost::container::flat_map, ptr_type>;
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>
-using FlatMapPromotable32SparseJLT =
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapPromotable32,
-                               register_type, RangeSize, ReplicationCount,
-                               ptr_type>;
+using FlatMapPromotable32SparseJLT = krowkee::sketch::promotable::SparseJLT<
+    register_type, RangeSize, ReplicationCount, boost::container::flat_map,
+    ptr_type>;
 #endif
 
 template <std::size_t RangeSize, std::size_t ReplicationCount>

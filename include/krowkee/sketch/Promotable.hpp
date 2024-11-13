@@ -26,18 +26,18 @@ enum class promotable_mode_type : std::uint8_t { sparse, dense };
  * seamless "promotion" of a Sparse representation to a Dense one.
  *
  * @tparam RegType The type held by each register.
- * @tparam MergeOp An element-wise merge operator to combine two sketches,
- * templated on RegType.
+ * @tparam MergeOp An template merge operator to combine two sketches.
  * @tparam MapType The underlying map class to use for buffered updates to the
  * underlying compacting_map.
  * @tparam KeyType The key type to use for this underlying compacting map.
  */
-template <typename RegType, typename MergeOp,
+template <typename RegType, template <typename> class MergeOp,
           template <typename, typename> class MapType, typename KeyType>
 class Promotable {
  public:
   /** Alias for the fully-templated Dense container. */
   using register_type  = RegType;
+  using merge_type     = MergeOp<register_type>;
   using dense_type     = krowkee::sketch::Dense<register_type, MergeOp>;
   using dense_ptr_type = std::unique_ptr<dense_type>;
   /** Alias for the fully-templated Sparse container. */
@@ -559,7 +559,7 @@ class Promotable {
     }
     for_each(*rhs._sparse_ptr, [&](const auto &p) {
       register_type &val((*_dense_ptr)[p.first]);
-      val = MergeOp()(val, p.second);
+      val = merge_type()(val, p.second);
     });
   }
 
