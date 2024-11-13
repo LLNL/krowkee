@@ -16,5 +16,6 @@ function (add_krowkee_example example_name)
     add_test(${example_exe} "${CMAKE_CURRENT_BINARY_DIR}/${example_exe}")
 endfunction ()
 
+add_krowkee_example(cli)
 add_krowkee_example(sparse_jlt)
 add_krowkee_example(verbose_templates)
