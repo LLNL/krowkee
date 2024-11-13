@@ -85,22 +85,19 @@ int main(int argc, char **argv) {
   // ---------------------------------------------------------------------------
 
   // Using krowkee requires the selection of a sketch type, here encapsulated as
-  // `sketch_type`. We use the `SparseJLT` type defined in `krowkee/sketch.hpp`.
-  // This type has five template parameters:
-  //   1. the internal container type (here `krowkee::sketch::Dense`, because
-  //      we are storing the sketch as a dense vector),
-  //   2. the numeric type to be used by each register (here `float`),
-  //   3. a `std::size_t` parameter `range_size` indicating the number of
+  // `sketch_type`. We use the `SparseJLT` type defined in the simple API in
+  // `krowkee/sketch.hpp`. This type has four template parameters:
+  //   1. the numeric type to be used by each register (here `float`),
+  //   2. a `std::size_t` parameter `range_size` indicating the number of
   //      registers used by each instance of the internal transform,
-  //   4. a `std::size_t` parameter `replication_count` indicating the number of
+  //   3. a `std::size_t` parameter `replication_count` indicating the number of
   //      instances of the transform to be used, and
-  //   5. a shared pointer type to be used by the shared transform object
+  //   4. a shared pointer type to be used by the shared transform object
   //      (`std::shared_ptr` for shared memory implementations).
   constexpr const std::size_t range_size        = 8;
   constexpr const std::size_t replication_count = 3;
   using sketch_type =
-      krowkee::sketch::SparseJLT<krowkee::sketch::Dense, register_type,
-                                 range_size, replication_count,
+      krowkee::sketch::SparseJLT<register_type, range_size, replication_count,
                                  std::shared_ptr>;
 
   // Most krowkee classes support `name()` and `full_name()` static functions
@@ -192,11 +189,10 @@ int main(int argc, char **argv) {
 
   // Here we loop over each observation, record its empirical multiplicative
   // error, and compare it to the target. We record the mean empirical error and
-  // the rate at which the empirical error is smaller than the target. We expect
-  // that these successes should happen > 50% of the time. The success rate for
-  // a fixed `range_size` can be improved by increasing the `replication_count`
-  // at the expense of multiplicatively increasing the memory required by each
-  // sketch.
+  // the rate at which the empirical error is smaller than the target. The
+  // success rate for a fixed `range_size` can be improved by increasing the
+  // `replication_count` at the expense of multiplicatively increasing the
+  // memory required by each sketch.
   std::cout << std::endl;
   std::cout << "Empirical approximation measurements:" << std::endl;
   double success_rate(0.0);

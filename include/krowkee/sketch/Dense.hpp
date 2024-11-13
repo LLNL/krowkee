@@ -28,14 +28,14 @@ namespace sketch {
  * pairs of register vectors.
  *
  * @tparam RegType The type held by each register.
- * @tparam MergeOp An element-wise merge operator to combine two sketches,
- * templated on RegType.
+ * @tparam MergeOp An template merge operator to combine two sketches.
  */
-template <typename RegType, typename MergeOp>
+template <typename RegType, template <typename> class MergeOp>
 class Dense {
  public:
   using register_type  = RegType;
   using registers_type = std::vector<register_type>;
+  using merge_type     = MergeOp<register_type>;
   using self_type      = Dense<register_type, MergeOp>;
 
  protected:
@@ -152,7 +152,7 @@ class Dense {
     }
     std::transform(std::begin(_registers), std::end(_registers),
                    std::begin(rhs._registers), std::begin(_registers),
-                   MergeOp());
+                   merge_type());
   }
 
   /**

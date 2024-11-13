@@ -25,19 +25,15 @@ namespace sketch {
  * @tparam SketchFunc A sketch functor such as
  * `krowkee::transform::CountSketchFunctor` whose first template parameter is
  * set by `RegType`.
- * @tparam ContainerType A container class such as `krowkee::sketch::Dense`
- * whose first two template parameters are set by `RegType` and
- * `MergeOp<RegType>`, respectively.
- * @tparam MergeOp A bivariate merge operator on arrays of `RegType`s.
+ * @tparam ContainerType A container class such as `krowkee::sketch::Dense`.
  * @tparam PtrType The type of shared pointer used to wrap the sketch functor.
  * Should be `std::shared_ptr`in shared memory and `ygm::ygm_ptr` in distributed
  * memory.
  * @tparam Args Additional template parameters for `SketchFunc`, such as a hash
  * functor.
  */
-template <typename SketchFunc,
-          template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, template <typename> class PtrType>
+template <typename SketchFunc, typename ContainerType,
+          template <typename> class PtrType>
 class Sketch {
  public:
   /** Alias for fully-templated sketch functor type*/
@@ -47,9 +43,12 @@ class Sketch {
   /** Alias for Register type */
   using register_type = typename transform_type::register_type;
   /** Alias for fully-templated container type */
-  using container_type = ContainerType<register_type, MergeOp<register_type>>;
+  using container_type = ContainerType;
   /** Alias for fully-templated self type*/
-  using self_type = Sketch<transform_type, ContainerType, MergeOp, PtrType>;
+  using self_type = Sketch<transform_type, ContainerType, PtrType>;
+
+  static_assert(std::is_same<register_type,
+                             typename container_type::register_type>::value);
 
  private:
   transform_ptr_type _transform_ptr;

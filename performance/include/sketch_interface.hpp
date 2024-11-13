@@ -100,93 +100,69 @@ struct MapGraphSketch {
 const static std::size_t RANGE_SIZE(32);
 const static std::size_t REPLICATION_COUNT(1);
 
-template <typename ValueType>
-using dense32_cs_hist =
-    HistSketch<krowkee::sketch::SparseJLT<krowkee::sketch::Dense, std::int32_t,
-                                          RANGE_SIZE, REPLICATION_COUNT>,
-               ValueType>;
-template <typename ValueType>
-using map_sparse32_cs_hist = HistSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-template <typename ValueType>
-using map_promotable32_cs_hist = HistSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapPromotable32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-#if __has_include(<boost/container/flat_map.hpp>)
-template <typename ValueType>
-using flatmap_sparse32_cs_hist = HistSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+using dense_type =
+    krowkee::sketch::SparseJLT<std::int32_t, RANGE_SIZE, REPLICATION_COUNT>;
+using sparse_map_type =
+    krowkee::sketch::sparse::SparseJLT<std::int32_t, RANGE_SIZE,
+                                       REPLICATION_COUNT, std::map>;
+using promotable_map_type =
+    krowkee::sketch::promotable::SparseJLT<std::int32_t, RANGE_SIZE,
+                                           REPLICATION_COUNT, std::map>;
 
 template <typename ValueType>
-using flatmap_promotable32_cs_hist = HistSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapPromotable32,
-                               std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-#endif
+using dense32_cs_hist = HistSketch<dense_type, ValueType>;
+template <typename ValueType>
+using map_sparse32_cs_hist = HistSketch<sparse_map_type, ValueType>;
+template <typename ValueType>
+using map_promotable32_cs_hist = HistSketch<promotable_map_type, ValueType>;
 
 // vector graph sketch types
 
 template <typename ValueType>
-using dense32_cs_vector_graph = VectorGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::Dense, std::int32_t, RANGE_SIZE,
-                               REPLICATION_COUNT>,
-    ValueType>;
+using dense32_cs_vector_graph = VectorGraphSketch<dense_type, ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_vector_graph = VectorGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+using map_sparse32_cs_vector_graph =
+    VectorGraphSketch<sparse_map_type, ValueType>;
 template <typename ValueType>
-using map_promotable32_cs_vector_graph = VectorGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapPromotable32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-#if __has_include(<boost/container/flat_map.hpp>)
-template <typename ValueType>
-using flatmap_sparse32_cs_vector_graph = VectorGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-
-template <typename ValueType>
-using flatmap_promotable32_cs_vector_graph = VectorGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapPromotable32,
-                               std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
-#endif
+using map_promotable32_cs_vector_graph =
+    VectorGraphSketch<promotable_map_type, ValueType>;
 
 // map graph sketch types
 
 template <typename ValueType>
-using dense32_cs_map_graph = MapGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::Dense, std::int32_t, RANGE_SIZE,
-                               REPLICATION_COUNT>,
-    ValueType>;
+using dense32_cs_map_graph = MapGraphSketch<dense_type, ValueType>;
 template <typename ValueType>
-using map_sparse32_cs_map_graph = MapGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+using map_sparse32_cs_map_graph = MapGraphSketch<sparse_map_type, ValueType>;
 template <typename ValueType>
-using map_promotable32_cs_map_graph = MapGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::MapPromotable32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+using map_promotable32_cs_map_graph =
+    MapGraphSketch<promotable_map_type, ValueType>;
+
 #if __has_include(<boost/container/flat_map.hpp>)
-template <typename ValueType>
-using flatmap_sparse32_cs_map_graph = MapGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapSparse32, std::int32_t,
-                               RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+
+using sparse_flatmap_type = krowkee::sketch::sparse::SparseJLT<
+    std::int32_t, RANGE_SIZE, REPLICATION_COUNT, boost::container::flat_map>;
+using promotable_flatmap_type = krowkee::sketch::promotable::SparseJLT<
+    std::int32_t, RANGE_SIZE, REPLICATION_COUNT, boost::container::flat_map>;
 
 template <typename ValueType>
-using flatmap_promotable32_cs_map_graph = MapGraphSketch<
-    krowkee::sketch::SparseJLT<krowkee::sketch::FlatMapPromotable32,
-                               std::int32_t, RANGE_SIZE, REPLICATION_COUNT>,
-    ValueType>;
+using flatmap_sparse32_cs_hist = HistSketch<sparse_flatmap_type, ValueType>;
+
+template <typename ValueType>
+using flatmap_promotable32_cs_hist =
+    HistSketch<promotable_flatmap_type, ValueType>;
+template <typename ValueType>
+using flatmap_sparse32_cs_vector_graph =
+    VectorGraphSketch<sparse_flatmap_type, ValueType>;
+
+template <typename ValueType>
+using flatmap_promotable32_cs_vector_graph =
+    VectorGraphSketch<promotable_flatmap_type, ValueType>;
+
+template <typename ValueType>
+using flatmap_sparse32_cs_map_graph =
+    MapGraphSketch<sparse_flatmap_type, ValueType>;
+
+template <typename ValueType>
+using flatmap_promotable32_cs_map_graph =
+    MapGraphSketch<promotable_flatmap_type, ValueType>;
 #endif

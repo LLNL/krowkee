@@ -24,18 +24,18 @@ namespace sketch {
  * element-wise operator on pairs with matching indices.
  *
  * @tparam RegType The type held by each register.
- * @tparam MergeOp An element-wise merge operator to combine two sketches,
- * templated on RegType.
+ * @tparam MergeOp An template merge operator to combine two sketches.
  * @tparam MapType The underlying map class to use for buffered updates to the
  * underlying compacting_map.
  * @tparam KeyType The key type to use for this underlying compacting map.
  */
-template <typename RegType, typename MergeOp,
+template <typename RegType, template <typename> class MergeOp,
           template <typename, typename> class MapType, typename KeyType>
 class Sparse {
  public:
   /** Alias for the fully-templated register compacting map type. */
   using register_type = RegType;
+  using merge_type    = MergeOp<register_type>;
   using registers_type =
       krowkee::container::compacting_map<KeyType, register_type, MapType>;
   using vec_iter_type  = typename registers_type::vec_iter_type;
@@ -163,7 +163,7 @@ class Sparse {
   /**
    * @brief Merge other Sparse registers into `this`.
    *
-   * MergeOp determines how register lists are combined .For linear
+   * `merge_type` determines how register lists are combined. For linear
    * sketches, merge amounts to the element-wise addition of register
    * arrays.
    *
@@ -173,7 +173,7 @@ class Sparse {
    * @throw std::logic_error if invoked on uncompacted sketches.
    */
   constexpr void merge(const self_type &rhs) {
-    _registers.merge(rhs._registers, MergeOp());
+    _registers.merge(rhs._registers, merge_type());
   }
 
   /**

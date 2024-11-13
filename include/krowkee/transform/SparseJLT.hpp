@@ -105,52 +105,22 @@ class SparseJLT {
    * @brief Update a register container with an observation.
    *
    * @tparam ContainerType The type of the register data structure.
-   * @tparam MergeOp The merge operator used to combine registers.
    * @tparam ItemArgs Types of stream item observables.
    * @param registers The register container.
    * @param item_args Stream item observables.
    */
-  template <template <typename, typename> class ContainerType, typename MergeOp,
-            typename... ItemArgs>
-  constexpr void operator()(ContainerType<RegType, MergeOp> &registers,
+  template <typename ContainerType, typename... ItemArgs>
+  constexpr void operator()(ContainerType &registers,
                             const ItemArgs &...item_args) const {
-    _apply_to_container<MergeOp>(registers, item_args...);
-  }
-
-  /**
-   * @brief Update a register container with an observation.
-   *
-   * Overload to prior operator for sparse containers.
-   *
-   * @tparam ContainerType The type of the register data structure.
-   * @tparam MergeOp The merge operator used to combine registers.
-   * @tparam MapType The compacting map type used by the container.
-   * @tparam KeyType The key type used by the compacting map.
-   * @tparam ItemArgs Types of stream item observables.
-   * @param registers The register container.
-   * @param item_args Stream item observables.
-   */
-  template <template <typename, typename, template <typename, typename> class,
-                      typename>
-            class ContainerType,
-            typename MergeOp, template <typename, typename> class MapType,
-            typename KeyType, typename... ItemArgs>
-  constexpr void operator()(
-      ContainerType<register_type, MergeOp, MapType, KeyType> &registers,
-      const ItemArgs &...item_args) const {
-    _apply_to_container<MergeOp>(registers, item_args...);
-  }
-
- private:
-  template <typename MergeOp, typename ContainerType, typename... ItemArgs>
-  constexpr void _apply_to_container(ContainerType &registers,
-                                     const ItemArgs &...item_args) const {
+    static_assert(std::is_same<register_type,
+                               typename ContainerType::register_type>::value);
+    using merge_type = typename ContainerType::merge_type;
     const Element<register_type> stream_element(item_args...);
     for (int i(0); i < ReplicationCount; ++i) {
       auto [index, polarity] = _hashes[i](stream_element.item);
       index += i * range_size();
       register_type &reg = registers[index];
-      reg = MergeOp()(reg, polarity * stream_element.multiplicity);
+      reg = merge_type()(reg, polarity * stream_element.multiplicity);
       if (reg == 0) {
         registers.erase(index);
       }

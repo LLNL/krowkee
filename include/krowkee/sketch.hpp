@@ -31,76 +31,42 @@
 namespace krowkee {
 namespace sketch {
 
-template <typename SketchFunc,
-          template <typename, typename> class ContainerType,
-          template <typename> class MergeOp, template <typename> class PtrType,
-          typename... Args>
-using LocalSketch =
-    Sketch<SketchFunc, ContainerType, MergeOp, PtrType, Args...>;
-
-template <template <typename, typename> class ContainerType, typename RegType,
-          std::size_t RangeSize, std::size_t ReplicationCount,
+template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,
           template <typename> class PtrType = std::shared_ptr>
-using SparseJLT = LocalSketch<
+using SparseJLT = krowkee::sketch::Sketch<
     krowkee::transform::SparseJLT<RegType, krowkee::hash::CountSketchHash,
                                   RangeSize, ReplicationCount>,
-    ContainerType, std::plus, PtrType>;
+    krowkee::sketch::Dense<RegType, std::plus>, PtrType>;
 
 template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,
           template <typename> class PtrType = std::shared_ptr>
-using FWHT =
-    LocalSketch<krowkee::transform::FWHT<RegType, RangeSize, ReplicationCount>,
-                krowkee::sketch::Dense, std::plus, PtrType>;
+using FWHT = krowkee::sketch::Sketch<
+    krowkee::transform::FWHT<RegType, RangeSize, ReplicationCount>,
+    krowkee::sketch::Dense<RegType, std::plus>, PtrType>;
 
-}  // namespace sketch
-}  // namespace krowkee
+namespace sparse {
+template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,
+          template <typename, typename> class MapType,
+          template <typename> class PtrType = std::shared_ptr>
+using SparseJLT = krowkee::sketch::Sketch<
+    krowkee::transform::SparseJLT<RegType, krowkee::hash::CountSketchHash,
+                                  RangeSize, ReplicationCount>,
+    krowkee::sketch::Sparse<RegType, std::plus, MapType, std::uint32_t>,
+    PtrType>;
 
-////////////////////////////////////////////////////////////////////////////////
-// Sparse Container Presets
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace sparse
 
-namespace krowkee {
-namespace sketch {
+namespace promotable {
+template <typename RegType, std::size_t RangeSize, std::size_t ReplicationCount,
+          template <typename, typename> class MapType,
+          template <typename> class PtrType = std::shared_ptr>
+using SparseJLT = krowkee::sketch::Sketch<
+    krowkee::transform::SparseJLT<RegType, krowkee::hash::CountSketchHash,
+                                  RangeSize, ReplicationCount>,
+    krowkee::sketch::Promotable<RegType, std::plus, MapType, std::uint32_t>,
+    PtrType>;
 
-template <typename RegType, typename MergeOp, typename KeyType>
-using MapSparse = Sparse<RegType, MergeOp, std::map, KeyType>;
-
-template <typename RegType, typename MergeOp>
-using MapSparse32 = MapSparse<RegType, MergeOp, std::uint32_t>;
-
-#if __has_include(<boost/container/flat_map.hpp>)
-template <typename RegType, typename MergeOp, typename KeyType>
-using FlatMapSparse =
-    Sparse<RegType, MergeOp, boost::container::flat_map, KeyType>;
-
-template <typename RegType, typename MergeOp>
-using FlatMapSparse32 = FlatMapSparse<RegType, MergeOp, std::uint32_t>;
-#endif
-
-}  // namespace sketch
-}  // namespace krowkee
-
-////////////////////////////////////////////////////////////////////////////////
-// Promotable Container Presets
-////////////////////////////////////////////////////////////////////////////////
-
-namespace krowkee {
-namespace sketch {
-
-template <typename RegType, typename MergeOp, typename KeyType>
-using MapPromotable = Promotable<RegType, MergeOp, std::map, KeyType>;
-
-template <typename RegType, typename MergeOp>
-using MapPromotable32 = MapPromotable<RegType, MergeOp, std::uint32_t>;
-
-#if __has_include(<boost/container/flat_map.hpp>)
-template <typename RegType, typename MergeOp, typename KeyType>
-using FlatMapPromotable =
-    Promotable<RegType, MergeOp, boost::container::flat_map, KeyType>;
-
-template <typename RegType, typename MergeOp>
-using FlatMapPromotable32 = FlatMapPromotable<RegType, MergeOp, std::uint32_t>;
-#endif
+}  // namespace promotable
 
 }  // namespace sketch
 }  // namespace krowkee
