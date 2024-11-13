@@ -17,3 +17,4 @@ function (add_krowkee_example example_name)
 endfunction ()
 
 add_krowkee_example(sparse_jlt)
+add_krowkee_example(verbose_templates)
