@@ -18,6 +18,7 @@ endfunction ()
 
 add_krowkee_example(cli)
 add_krowkee_example(sparse_jlt)
+add_krowkee_example(merge)
 add_krowkee_example(verbose_templates)
 
 if (KROWKEE_USE_YGM)
