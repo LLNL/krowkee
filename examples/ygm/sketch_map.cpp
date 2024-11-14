@@ -12,21 +12,6 @@
 #include <iostream>
 #include <random>
 
-// We are using floats as our feature type in this example.
-using register_type = float;
-
-// This function computes squared l2 distance, and will be used to verify the
-// guarantees of the Johnson-Lindenstrauss lemma.
-template <typename T>
-double l2_distance_sq(const std::vector<T> &lhs, const std::vector<T> &rhs) {
-  assert(lhs.size() == rhs.size());
-  double dist_sq(0);
-  for (int i(0); i < lhs.size(); ++i) {
-    dist_sq += std::pow(lhs[i] - rhs[i], 2);
-  }
-  return dist_sq;
-}
-
 int main(int argc, char **argv) {
   // We create the YGM communicator to be used. The example proceeds similarly
   // to `examples/sparse_jlt.cpp`, where we sample some large-dimensional data
@@ -52,6 +37,7 @@ int main(int argc, char **argv) {
     //      (`ygm::ygm_ptr` for shared memory implementations).
     constexpr const std::size_t range_size        = 8;
     constexpr const std::size_t replication_count = 2;
+    using register_type                           = float;
     using sketch_type =
         krowkee::sketch::SparseJLT<register_type, range_size, replication_count,
                                    ygm::ygm_ptr>;
