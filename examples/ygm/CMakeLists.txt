@@ -1,0 +1,1 @@
+add_krowkee_example(sketch_map)
