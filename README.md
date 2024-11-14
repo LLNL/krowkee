@@ -27,13 +27,15 @@ such as the
 # Getting started
 
 ## Reqirements
-* C++17 - GCC verions 8-11 are tested. 
+* C++17 - GCC versions 10-11 are tested. 
 Your mileage may vary with other compilers.
 * Optional dependencies:
-    - [YGM](https://github.com/LLNL/ygm) 0.3 or greater for distributed memory
-      communication. 
+    - [YGM](https://github.com/LLNL/ygm) 0.7 or greater for distributed memory
+      communication.
       Toggle with CMake option `KROWKEE_USE_YGM`. 
-      Default `ON`.
+      Default `OFF`.
+      YGM is not used within the library, but is used in some tests and examples
+      that are only compiled if `KROWKEE_USE_YGM` is `ON`.
       If package `ygm` is not installed, `krowkee` will attempt to clone and
       install via 
       [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html). Includes additional dependencies:
@@ -86,7 +88,7 @@ endif ()
 These instructions assume that you have a relatively modern C++ compiler 
 (C++17 required, only tested using GCC).
 If included, `krowkee`'s CMake build makes use of find-else-fetch semantics for 
-its `ygm` and `cereal` dependencies.
+its optional `ygm` and `cereal` dependencies.
 `krowkee` will try to find local installations of the libraries, and will clone
 and link the repositories internally if none are found.
 
