@@ -3,22 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Klugy, but includes need to be in this order.
-
 #include <krowkee/sketch.hpp>
 
-#include <getopt.h>
-#include <stdio.h>
-#include <unistd.h>
-
-#include <algorithm>
-#include <cstring>
 #include <iostream>
 #include <random>
 
 // We are using floats as our feature type in this example.
 using register_type = float;
 
+// This function computes squared l2 distance, and will be used to verify the
+// guarantees of the Johnson-Lindenstrauss lemma.
 template <typename T>
 double l2_distance_sq(const std::vector<T> &lhs, const std::vector<T> &rhs) {
   assert(lhs.size() == rhs.size());
@@ -111,7 +105,8 @@ int main(int argc, char **argv) {
   // to create a shared pointer to a transform functor. The sketch type includes
   // typedefs of the transform and pointer types. This is where the random seed
   // is used. Transforms of the same type sharing the same seed will behave
-  // identically.
+  // identically. As this is a shared-memory code, we create a std::shared_ptr
+  // of the transform to be used to define the sketch data structures.
   using transform_type     = typename sketch_type::transform_type;
   using transform_ptr_type = typename sketch_type::transform_ptr_type;
   transform_ptr_type transform_ptr(std::make_shared<transform_type>(seed));
