@@ -13,7 +13,12 @@ endif ()
 
 # Controls whether to set up install boilerplate for project and depencencies.
 # Expects CMAKE_INSTALL_PREFIX to be set to a suitable directory.
+option(JUST_INSTALL_KROWKEE "Skip executable compilation" OFF)
 option(KROWKEE_INSTALL "Generate the install target" ${KROWKEE_MAIN_PROJECT})
+option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
+option(KROWKEE_USE_CEREAL "Compile using CEREAL memory features" ON)
+option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
+option(KROWKEE_BUILD_DOCS "Build documentation with Doxygen and SPHINX" OFF)
 
 if (KROWKEE_MAIN_PROJECT)
 
@@ -44,111 +49,55 @@ endif ()
 # Prepare to invoke FetchContent
 include(FetchContent)
 
-option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
-set(krowkee_boost_VERSION 1.48)
-if (KROWKEE_USE_BOOST)
-    # find_package(Boost 1.75 COMPONENTS container)
-    find_package(Boost ${krowkee_boost_VERSION} QUIET)
+if (NOT boost_POPULATED)
+    cmake_policy(VERSION 3.30)
+    cmake_policy(SET CMP0167 NEW)
+    find_package(Boost 1.78)
     if (Boost_FOUND)
         message(STATUS ${PROJECT_NAME} " found boost include dirs: "
                        ${Boost_INCLUDE_DIRS}
         )
     else ()
-        message(STATUS ${PROJECT_NAME} " could not find boost. skipping...")
+        FetchContent_Declare(
+            Boost
+            URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz
+        )
+        set(BOOST_INCLUDE_LIBRARIES container)
+        FetchContent_MakeAvailable(Boost)
     endif ()
-else ()
-    message(STATUS ${PROJECT_NAME} " building without boost")
 endif ()
 
-option(KROWKEE_USE_CEREAL "Compile using CEREAL memory features" ON)
-option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
 if (KROWKEE_USE_CEREAL)
+    #
     # Load cereal
-    set(KROWKEE_CEREAL_VERSION 1.3.0)
-    # Will do something like this upon new release and fix to spack
-    # distribution. find_package(cereal ${KROWKEE_CEREAL_VERSION} CONFIG QUIET)
-    set(KROWKEE_CEREAL_TARGET "cereal::cereal")
-    find_package(cereal CONFIG QUIET)
-    if (NOT cereal_FOUND)
-        # Currently cereal version 1.3.0 has an outdated CMakeLists.txt, so we
-        # need to use this commit for now.
-        FetchContent_Declare(
-            cereal
-            GIT_REPOSITORY https://github.com/USCiLab/cereal.git
-            GIT_TAG af0700efb25e7dc7af637b9e6f970dbb94813bff
-        )
-        FetchContent_GetProperties(cereal)
-        if (cereal_POPULATED)
-            message(STATUS ${PROJECT_NAME}
-                           " found already populated cereal dependency: "
-                           ${cereal_SOURCE_DIR}
+    #
+    if (NOT cereal_POPULATED)
+        find_package(cereal CONFIG QUIET)
+        if (NOT cereal_FOUND)
+            set(JUST_INSTALL_CEREAL TRUE)
+            FetchContent_Declare(
+                cereal
+                GIT_REPOSITORY https://github.com/USCiLab/cereal.git
+                GIT_TAG v1.3.2
             )
-        else ()
-            # Do not compile any cereal tests
-            set(JUST_INSTALL_CEREAL ON)
-            # Install cereal at ${CMAKE_INSTALL_PREFIX}
-            set(CEREAL_INSTALL ${KROWKEE_INSTALL})
-            # Populate cereal
-            FetchContent_Populate(cereal)
-            # Include cereal root cmake boilerplate
-            add_subdirectory(${cereal_SOURCE_DIR} ${cereal_BINARY_DIR})
-            message(STATUS ${PROJECT_NAME} " cloned cereal dependency: "
-                           ${cereal_SOURCE_DIR}
-            )
-        endif ()
-    else ()
-        # cereal installed with spack creates library target "cereal", whereas
-        # installing from source creates target "cereal::cereal". This is the
-        # only simple way I could figure out how to differentiate the two, but
-        # this will cause problems if a spack instance installs headers to a
-        # path that does not include the substring "spack".
-        message(STATUS ${PROJECT_NAME} " found installed cereal dependency: "
-                       ${cereal_DIR}
-        )
-        if (${cereal_SOURCE_DIR} MATCHES "*_deps*")
-            add_subdirectory(${cereal_SOURCE_DIR} ${cereal_BINARY_DIR})
-        endif ()
-        if (${cereal_DIR} MATCHES ".*spack.*")
-            set(KROWKEE_CEREAL_TARGET "cereal")
-        else ()
-            # target should still be cereal::cereal
+            FetchContent_MakeAvailable(cereal)
         endif ()
     endif ()
 
     if (KROWKEE_USE_YGM)
+        #
         # Load YGM
-        set(KROWKEE_YGM_VERSION 0.7)
-        find_package(ygm ${KROWKEE_YGM_VERSION} CONFIG QUIET)
-        if (NOT ygm_FOUND)
-            FetchContent_Declare(
-                ygm
-                GIT_REPOSITORY https://github.com/LLNL/ygm.git
-                # GIT_TAG v${KROWKEE_YGM_VERSION}
-                GIT_TAG v0.7-dev
-            )
-            FetchContent_GetProperties(ygm)
-            if (ygm_POPULATED)
-                message(STATUS ${PROJECT_NAME}
-                               " found already populated ygm dependency: "
-                               ${ygm_SOURCE_DIR}
+        #
+        if (NOT ygm_POPULATED)
+            find_package(ygm CONFIG QUIET)
+            if (NOT ygm_FOUND)
+                set(JUST_INSTALL_YGM TRUE)
+                FetchContent_Declare(
+                    ygm
+                    GIT_REPOSITORY https://github.com/bwpriest/ygm.git
+                    GIT_TAG feature/cmake_3.30_tweaks
                 )
-            else ()
-                # Do not compile any ygm tests
-                set(JUST_INSTALL_YGM ON)
-                # Install ygm at ${CMAKE_INSTALL_PREFIX}
-                set(YGM_INSTALL ${KROWKEE_INSTALL})
-                # Populate ygm
-                FetchContent_Populate(ygm)
-                # Include ygm cmake boilerplate
-                add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
-                message(STATUS ${PROJECT_NAME} " cloned ygm dependency "
-                               ${ygm_SOURCE_DIR}
-                )
-            endif ()
-        else ()
-            message(STATUS ${PROJECT_NAME} " found ygm dependency " ${ygm_DIR})
-            if (${ygm_SOURCE_DIR} MATCHES "*_deps*")
-                add_subdirectory(${ygm_SOURCE_DIR} ${ygm_BINARY_DIR})
+                FetchContent_MakeAvailable(ygm)
             endif ()
         endif ()
     else ()
@@ -174,8 +123,6 @@ endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
 endif ()
-
-option(TEST_WITH_SLURM "Run tests with Slurm" OFF)
 
 if (KROWKEE_INSTALL)
     include(GNUInstallDirs)
@@ -223,12 +170,9 @@ if (KROWKEE_INSTALL)
 
 endif ()
 
-option(JUST_INSTALL_KROWKEE "Skip executable compilation" OFF)
 if (JUST_INSTALL_KROWKEE)
     return()
 endif ()
-
-option(KROWKEE_BUILD_DOCS "Build documentation with Doxygen and SPHINX" OFF)
 
 if (KROWKEE_MAIN_PROJECT)
     if (KROWKEE_BUILD_DOCS)
