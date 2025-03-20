@@ -45,10 +45,10 @@ jobs:
           g++-${{ matrix.gcc-version }} --version
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }}
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_BUILD_TESTS=ON  -DKROWKEE_BUILD_EXAMPLES=ON -DKROWKEE_BUILD_PERFORMANCE=ON
           make -j
       - name: Make test (mpich)
-        run: |
+o        run: |
           echo Run 'make test' with mpich, gcc-${{ matrix.gcc-version }}
           cd build
           ctest -VV -C ${{env.BUILD_TYPE}}
@@ -93,10 +93,5 @@ jobs:
           g++-${{ matrix.gcc-version }} --version
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_BUILD_DOCS=ON
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_DOXYGEN=ON
           make -j
-      - name: Make test (mpich)
-        run: |
-          echo Run 'make test' with mpich, gcc-${{ matrix.gcc-version }}
-          cd build
-          ctest -VV -C ${{env.BUILD_TYPE}}

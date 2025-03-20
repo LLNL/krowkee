@@ -7,37 +7,34 @@ project(
     LANGUAGES CXX
 )
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set(KROWKEE_MAIN_PROJECT ON)
-endif ()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Controls whether to set up install boilerplate for project and depencencies.
-# Expects CMAKE_INSTALL_PREFIX to be set to a suitable directory.
-option(JUST_INSTALL_KROWKEE "Skip executable compilation" OFF)
-option(KROWKEE_INSTALL "Generate the install target" ${KROWKEE_MAIN_PROJECT})
+#
+# Configuration options for krowkee.
+#
+option(KROWKEE_BUILD_TESTS "Build tests" OFF)
+option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
+option(KROWKEE_BUILD_TOOLS "Build tools" OFF)
+option(KROWKEE_INSTALL "Generate the install target" OFF)
 option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
 option(KROWKEE_USE_CEREAL "Compile using CEREAL memory features" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
-option(KROWKEE_BUILD_DOCS "Build documentation with Doxygen and SPHINX" OFF)
+option(KROWKEE_DOXYGEN "Adds targets for generating Doxygen documentation" OFF)
+option(KROWKEE_RTD_ONLY
+       "Run Cmake for only generating documentation for Read the Docs" OFF
+)
 
-if (KROWKEE_MAIN_PROJECT)
-
-    # Let's nicely support folders in IDEs
-    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-    # Testing only available if this is the main app NOTE: this needs to be done
-    # in the main CMakeLists because it calls enable_testing, which must be in
-    # the main CMakeLists
-    include(CTest)
-
-    # # Docs only available if this is the main app find_package(Doxygen) if
-    # (Doxygen_FOUND) # add_subdirectory(docs) message(STATUS "Doxygen found,
-    # skipping docs") else () message(STATUS "Doxygen not found, not building
-    # docs") endif ()
-    set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
+#
+# Doxygen and Read the Docs (RTD) Documentation
+#
+if (KROWKEE_DOXYGEN OR KROWKEE_RTD_ONLY)
+    add_subdirectory(docs)
+    if (KROWKEE_RTD_ONLY)
+        return()
+    endif ()
 endif ()
 
+# Require out-of-source builds
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
 if (EXISTS "${LOC_PATH}")
     message(
@@ -170,15 +167,14 @@ if (KROWKEE_INSTALL)
 
 endif ()
 
-if (JUST_INSTALL_KROWKEE)
-    return()
+if (KROWKEE_BUILD_TESTS)
+    add_subdirectory(test)
 endif ()
 
-if (KROWKEE_MAIN_PROJECT)
-    if (KROWKEE_BUILD_DOCS)
-        add_subdirectory(docs)
-    endif ()
+if (KROWKEE_BUILD_EXAMPLES)
     add_subdirectory(examples)
-    add_subdirectory(test)
+endif ()
+
+if (KROWKEE_BUILD_PERFORMANCE)
     add_subdirectory(performance)
 endif ()
