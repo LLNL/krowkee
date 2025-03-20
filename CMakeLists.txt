@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 
+# ---------------------------------------------------------------------------- #
+# CMake policy
+# ---------------------------------------------------------------------------- #
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.30")
+    cmake_policy(SET CMP0167 NEW)
+endif ()
+
+# ---------------------------------------------------------------------------- #
+# krowkee configuration
+# ---------------------------------------------------------------------------- #
 project(
     krowkee
     VERSION 0.1
@@ -91,8 +101,8 @@ if (KROWKEE_USE_CEREAL)
                 set(JUST_INSTALL_YGM TRUE)
                 FetchContent_Declare(
                     ygm
-                    GIT_REPOSITORY https://github.com/bwpriest/ygm.git
-                    GIT_TAG feature/cmake_3.30_tweaks
+                    GIT_REPOSITORY https://github.com/LLNL/ygm.git
+                    GIT_TAG v0.8-dev
                 )
                 FetchContent_MakeAvailable(ygm)
             endif ()
@@ -168,6 +178,7 @@ if (KROWKEE_INSTALL)
 endif ()
 
 if (KROWKEE_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(test)
 endif ()
 
