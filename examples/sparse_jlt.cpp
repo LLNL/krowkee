@@ -5,6 +5,7 @@
 
 #include <krowkee/sketch.hpp>
 
+#include <cassert>
 #include <iostream>
 #include <random>
 
