@@ -11,34 +11,42 @@ env:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        gcc-version: [11, 12]
+        os: [ubuntu-24.04, ubuntu-22.04]
+        gcc-version: [11, 12, 13, 14]
         use-ygm: ["ON", "OFF"]
+        exclude:
+          - os: ubuntu-22.04
+            gcc-version: 13
+          - os: ubuntu-22.04
+            gcc-version: 14
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
+      - name: Update apt
+        run: |
+          sudo add-apt-repository -y universe
+          sudo apt-get update
       - name: Cache boost
         uses: actions/cache@v4
         id: cache-boost
         with:
-          path: "~/boost_1_87_0"
-          key: ${{ runner.os }}-libboost1.87
+          path: "~/boost_1_77_0"
+          key: ${{ runner.os }}-libboost1.77
       - name: Install boost
-        env:
-          CACHE_HIT: ${{ steps.cache-boost.outputs.cache-hit }}
         if: steps.cache-boost.outputs.cache-hit != 'true'
         run: |
           cd ~
-          wget --no-verbose https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2
-          tar -xjf boost_1_87_0.tar.bz2
+          wget --no-verbose https://archives.boost.io/release/1.77.0/source/boost_1_77_0.tar.bz2
+          tar -xjf boost_1_77_0.tar.bz2
       - name: Install mpich
         run: sudo apt-get install mpich
       - name: Install GCC-${{ matrix.gcc-version }}
-        if: ${{ matrix.gcc-version == '8' || matrix.gcc-version == '11' }}
-        run: sudo apt-get install gcc-${{ matrix.gcc-version }} g++-${{ matrix.gcc-version }}
+        if: (matrix.gcc-version == '11' && matrix.os == 'ubuntu-24.04')
+        run: sudo apt-get install gcc-11 g++-11
       - name: Make
         run: |
           echo Run 'make'
@@ -46,7 +54,7 @@ jobs:
           g++-${{ matrix.gcc-version }} --version
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_87_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }}
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }}
           make -j
       - name: Make test (mpich)
         run: |
@@ -59,30 +67,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gcc-version: [11]
+        gcc-version: [14]
         use-ygm: ["OFF"]
 
     steps:
       - uses: actions/checkout@v4
+      - name: Update apt
+        run: |
+          sudo add-apt-repository -y universe
+          sudo apt-get update
       - name: Cache boost
         uses: actions/cache@v4
         id: cache-boost
         with:
-          path: "~/boost_1_87_0"
-          key: ${{ runner.os }}-libboost1.87
+          path: "~/boost_1_77_0"
+          key: ${{ runner.os }}-libboost1.77
       - name: Install boost
-        env:
-          CACHE_HIT: ${{ steps.cache-boost.outputs.cache-hit }}
         if: steps.cache-boost.outputs.cache-hit != 'true'
         run: |
           cd ~
-          wget --no-verbose https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2
-          tar -xjf boost_1_87_0.tar.bz2
+          wget --no-verbose https://archives.boost.io/release/1.77.0/source/boost_1_77_0.tar.bz2
+          tar -xjf boost_1_77_0.tar.bz2
       - name: Install mpich
         run: sudo apt-get install mpich
-      - name: Install GCC-${{ matrix.gcc-version }}
-        if: ${{ matrix.gcc-version == '8' || matrix.gcc-version == '11' }}
-        run: sudo apt-get install gcc-${{ matrix.gcc-version }} g++-${{ matrix.gcc-version }}
       - name: Install Docs Requirements
         run: |
           sudo apt-get install doxygen
@@ -95,7 +102,7 @@ jobs:
           g++-${{ matrix.gcc-version }} --version
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_87_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_BUILD_DOCS=ON
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_BUILD_DOCS=ON
           make -j
       - name: Make test (mpich)
         run: |
