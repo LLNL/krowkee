@@ -19,9 +19,9 @@ jobs:
         use-ygm: ["ON", "OFF"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Cache boost
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: cache-boost
         with:
           path: "~/boost_1_77_0"
@@ -63,9 +63,9 @@ jobs:
         use-ygm: ["OFF"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Cache boost
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: cache-boost
         with:
           path: "~/boost_1_77_0"
