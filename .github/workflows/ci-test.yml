@@ -85,7 +85,7 @@ jobs:
         run: |
           sudo apt-get install doxygen
           sudo apt-get install python3-sphinx
-          pip install -r docs/requirements.txt
+          pip install -r docs/rtd/requirements.txt
       - name: Make
         run: |
           echo Run 'make'
