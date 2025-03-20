@@ -7,6 +7,7 @@
 
 #if __has_include(<cereal/cereal.hpp>)
 #if __has_include(<ygm/detail/ygm_cereal_archive.hpp>)
+#include <ygm/detail/byte_vector.hpp>
 #include <ygm/detail/ygm_cereal_archive.hpp>
 #endif
 
@@ -48,7 +49,7 @@ bool ss_json_archive_test(const T &obj) {
 #if __has_include(<ygm/detail/ygm_cereal_archive.hpp>)
 template <typename T>
 bool ygm_archive_test(const T &obj1) {
-  std::vector<std::byte> packed;
+  ygm::detail::byte_vector packed;
   {
     cereal::YGMOutputArchive oarchive(packed);
     oarchive(obj1);
