@@ -48,7 +48,7 @@ jobs:
           cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_BUILD_TESTS=ON  -DKROWKEE_BUILD_EXAMPLES=ON -DKROWKEE_BUILD_PERFORMANCE=ON
           make -j
       - name: Make test (mpich)
-o        run: |
+        run: |
           echo Run 'make test' with mpich, gcc-${{ matrix.gcc-version }}
           cd build
           ctest -VV -C ${{env.BUILD_TYPE}}
