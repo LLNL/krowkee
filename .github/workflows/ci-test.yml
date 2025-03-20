@@ -94,4 +94,4 @@ jobs:
           mkdir build
           cd build
           cmake ../ -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_COMPILER=g++-${{ matrix.gcc-version }} -DBOOST_ROOT=~/boost_1_77_0 -DKROWKEE_USE_YGM=${{ matrix.use-ygm }} -DKROWKEE_DOXYGEN=ON
-          make -j
+          make sphinx
