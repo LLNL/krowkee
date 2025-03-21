@@ -27,7 +27,6 @@ option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
 option(KROWKEE_BUILD_TOOLS "Build tools" OFF)
 option(KROWKEE_INSTALL "Generate the install target" OFF)
 option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
-option(KROWKEE_USE_CEREAL "Compile using CEREAL memory features" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
 option(KROWKEE_DOXYGEN "Adds targets for generating Doxygen documentation" OFF)
 option(KROWKEE_RTD_ONLY
@@ -72,44 +71,24 @@ if (NOT boost_POPULATED)
     endif ()
 endif ()
 
-if (KROWKEE_USE_CEREAL)
+if (KROWKEE_USE_YGM)
     #
-    # Load cereal
+    # Load YGM
     #
-    if (NOT cereal_POPULATED)
-        find_package(cereal CONFIG QUIET)
-        if (NOT cereal_FOUND)
-            set(JUST_INSTALL_CEREAL TRUE)
+    if (NOT ygm_POPULATED)
+        find_package(ygm CONFIG QUIET)
+        if (NOT ygm_FOUND)
+            set(JUST_INSTALL_YGM TRUE)
             FetchContent_Declare(
-                cereal
-                GIT_REPOSITORY https://github.com/USCiLab/cereal.git
-                GIT_TAG v1.3.2
+                ygm
+                GIT_REPOSITORY https://github.com/LLNL/ygm.git
+                GIT_TAG v0.8-dev
             )
-            FetchContent_MakeAvailable(cereal)
+            FetchContent_MakeAvailable(ygm)
         endif ()
-    endif ()
-
-    if (KROWKEE_USE_YGM)
-        #
-        # Load YGM
-        #
-        if (NOT ygm_POPULATED)
-            find_package(ygm CONFIG QUIET)
-            if (NOT ygm_FOUND)
-                set(JUST_INSTALL_YGM TRUE)
-                FetchContent_Declare(
-                    ygm
-                    GIT_REPOSITORY https://github.com/LLNL/ygm.git
-                    GIT_TAG v0.8-dev
-                )
-                FetchContent_MakeAvailable(ygm)
-            endif ()
-        endif ()
-    else ()
-        message(STATUS ${PROJECT_NAME} " building without ygm")
     endif ()
 else ()
-    message(STATUS ${PROJECT_NAME} " building without cereal")
+    message(STATUS ${PROJECT_NAME} " building without ygm")
 endif ()
 
 add_library(krowkee INTERFACE)
@@ -119,11 +98,8 @@ target_include_directories(
                       $<INSTALL_INTERFACE:include>
 )
 target_compile_features(krowkee INTERFACE cxx_std_20)
-if (KROWKEE_USE_CEREAL)
-    target_link_libraries(krowkee INTERFACE ${KROWKEE_CEREAL_TARGET})
-    if (KROWKEE_USE_YGM)
-        target_link_libraries(krowkee INTERFACE ygm::ygm)
-    endif ()
+if (KROWKEE_USE_YGM)
+    target_link_libraries(krowkee INTERFACE ygm::ygm)
 endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
