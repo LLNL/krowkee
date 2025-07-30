@@ -24,7 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #
 option(KROWKEE_BUILD_TESTS "Build tests" OFF)
 option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
-option(KROWKEE_BUILD_TOOLS "Build tools" OFF)
 option(KROWKEE_INSTALL "Generate the install target" OFF)
 option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
