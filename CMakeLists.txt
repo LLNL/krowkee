@@ -24,7 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #
 option(KROWKEE_BUILD_TESTS "Build tests" OFF)
 option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
-option(KROWKEE_INSTALL "Generate the install target" OFF)
 option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
 option(KROWKEE_DOXYGEN "Adds targets for generating Doxygen documentation" OFF)
@@ -102,52 +101,6 @@ if (KROWKEE_USE_YGM)
 endif ()
 if (Boost_FOUND)
     target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
-endif ()
-
-if (KROWKEE_INSTALL)
-    include(GNUInstallDirs)
-    include(CMakePackageConfigHelpers)
-
-    set(KROWKEE_EXPORT_TARGETS krowkee)
-
-    install(
-        TARGETS ${KROWKEE_EXPORT_TARGETS}
-        EXPORT ${PROJECT_NAME}Targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-
-    install(
-        EXPORT ${PROJECT_NAME}Targets
-        FILE ${PROJECT_NAME}Targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/krowkee
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-    # create version file
-    write_basic_package_version_file(
-        "${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY ExactVersion
-    )
-
-    # create config file
-    configure_package_config_file(
-        "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
-        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
-    install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
 endif ()
 
 if (KROWKEE_BUILD_TESTS)
