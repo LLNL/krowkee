@@ -24,14 +24,21 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #
 option(KROWKEE_BUILD_TESTS "Build tests" OFF)
 option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
-option(KROWKEE_BUILD_TOOLS "Build tools" OFF)
-option(KROWKEE_INSTALL "Generate the install target" OFF)
-option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
 option(KROWKEE_DOXYGEN "Adds targets for generating Doxygen documentation" OFF)
 option(KROWKEE_RTD_ONLY
        "Run Cmake for only generating documentation for Read the Docs" OFF
 )
+
+#
+# FetchContent dependencies that can be overridden on the command line.
+#
+set(YGM_FETCH_GIT
+    "https://github.com/LLNL/ygm.git"
+    CACHE STRING "GIT to fetch ygm")
+set(YGM_FETCH_TAG
+    "v0.9-dev"
+    CACHE STRING "Tag to fetch ygm")
 
 #
 # Doxygen and Read the Docs (RTD) Documentation
@@ -55,41 +62,6 @@ endif ()
 # Prepare to invoke FetchContent
 include(FetchContent)
 
-if (NOT boost_POPULATED)
-    find_package(Boost 1.78)
-    if (Boost_FOUND)
-        message(STATUS ${PROJECT_NAME} " found boost include dirs: "
-                       ${Boost_INCLUDE_DIRS}
-        )
-    else ()
-        FetchContent_Declare(
-            Boost
-            URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz
-        )
-        set(BOOST_INCLUDE_LIBRARIES container)
-        FetchContent_MakeAvailable(Boost)
-    endif ()
-endif ()
-
-if (KROWKEE_USE_YGM)
-    #
-    # Load YGM
-    #
-    if (NOT ygm_POPULATED)
-        find_package(ygm CONFIG QUIET)
-        if (NOT ygm_FOUND)
-            set(JUST_INSTALL_YGM TRUE)
-            FetchContent_Declare(
-                ygm
-                GIT_REPOSITORY https://github.com/LLNL/ygm.git
-                GIT_TAG v0.8-dev
-            )
-            FetchContent_MakeAvailable(ygm)
-        endif ()
-    endif ()
-else ()
-    message(STATUS ${PROJECT_NAME} " building without ygm")
-endif ()
 
 add_library(krowkee INTERFACE)
 add_library(krowkee::krowkee ALIAS krowkee)
@@ -98,57 +70,24 @@ target_include_directories(
                       $<INSTALL_INTERFACE:include>
 )
 target_compile_features(krowkee INTERFACE cxx_std_20)
+
+#
+# Optionally link YGM (mostly for testing)
+#
 if (KROWKEE_USE_YGM)
+    if (NOT ygm_POPULATED)
+        find_package(ygm CONFIG QUIET)
+        if (NOT ygm_FOUND)
+            set(JUST_INSTALL_YGM TRUE)
+            FetchContent_Declare(
+                ygm
+                GIT_REPOSITORY ${YGM_FETCH_GIT}
+                GIT_TAG ${YGM_FETCH_TAG}
+            )
+            FetchContent_MakeAvailable(ygm)
+        endif ()
+    endif ()
     target_link_libraries(krowkee INTERFACE ygm::ygm)
-endif ()
-if (Boost_FOUND)
-    target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
-endif ()
-
-if (KROWKEE_INSTALL)
-    include(GNUInstallDirs)
-    include(CMakePackageConfigHelpers)
-
-    set(KROWKEE_EXPORT_TARGETS krowkee)
-
-    install(
-        TARGETS ${KROWKEE_EXPORT_TARGETS}
-        EXPORT ${PROJECT_NAME}Targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-
-    install(
-        EXPORT ${PROJECT_NAME}Targets
-        FILE ${PROJECT_NAME}Targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/krowkee
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-
-    # create version file
-    write_basic_package_version_file(
-        "${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY ExactVersion
-    )
-
-    # create config file
-    configure_package_config_file(
-        "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
-        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
-    install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-    )
-
 endif ()
 
 if (KROWKEE_BUILD_TESTS)

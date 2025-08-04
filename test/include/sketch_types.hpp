@@ -9,7 +9,7 @@
 #include <krowkee/util/runtime.hpp>
 
 #if __has_include(<ygm/comm.hpp>)
-#include <ygm/detail/ygm_ptr.hpp>
+#include <ygm/comm.hpp>
 
 template <typename T>
 using ptr_type = ygm::ygm_ptr<T>;
