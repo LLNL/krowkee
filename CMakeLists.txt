@@ -31,6 +31,16 @@ option(KROWKEE_RTD_ONLY
 )
 
 #
+# FetchContent dependencies that can be overridden on the command line.
+#
+set(YGM_FETCH_GIT
+    "https://github.com/LLNL/ygm.git"
+    CACHE STRING "GIT to fetch ygm")
+set(YGM_FETCH_TAG
+    "v0.9-dev"
+    CACHE STRING "Tag to fetch ygm")
+
+#
 # Doxygen and Read the Docs (RTD) Documentation
 #
 if (KROWKEE_DOXYGEN OR KROWKEE_RTD_ONLY)
@@ -52,25 +62,6 @@ endif ()
 # Prepare to invoke FetchContent
 include(FetchContent)
 
-if (KROWKEE_USE_YGM)
-    #
-    # Load YGM
-    #
-    if (NOT ygm_POPULATED)
-        find_package(ygm CONFIG QUIET)
-        if (NOT ygm_FOUND)
-            set(JUST_INSTALL_YGM TRUE)
-            FetchContent_Declare(
-                ygm
-                GIT_REPOSITORY https://github.com/LLNL/ygm.git
-                GIT_TAG v0.8-dev
-            )
-            FetchContent_MakeAvailable(ygm)
-        endif ()
-    endif ()
-else ()
-    message(STATUS ${PROJECT_NAME} " building without ygm")
-endif ()
 
 add_library(krowkee INTERFACE)
 add_library(krowkee::krowkee ALIAS krowkee)
@@ -79,7 +70,23 @@ target_include_directories(
                       $<INSTALL_INTERFACE:include>
 )
 target_compile_features(krowkee INTERFACE cxx_std_20)
+
+#
+# Optionally link YGM (mostly for testing)
+#
 if (KROWKEE_USE_YGM)
+    if (NOT ygm_POPULATED)
+        find_package(ygm CONFIG QUIET)
+        if (NOT ygm_FOUND)
+            set(JUST_INSTALL_YGM TRUE)
+            FetchContent_Declare(
+                ygm
+                GIT_REPOSITORY ${YGM_FETCH_GIT}
+                GIT_TAG ${YGM_FETCH_TAG}
+            )
+            FetchContent_MakeAvailable(ygm)
+        endif ()
+    endif ()
     target_link_libraries(krowkee INTERFACE ygm::ygm)
 endif ()
 
