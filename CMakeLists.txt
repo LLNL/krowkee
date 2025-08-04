@@ -12,7 +12,7 @@ endif ()
 # ---------------------------------------------------------------------------- #
 project(
     krowkee
-    VERSION 0.1
+    VERSION 0.2
     DESCRIPTION "HPC multi-stream sketching library"
     LANGUAGES CXX
 )
