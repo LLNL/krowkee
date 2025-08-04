@@ -37,8 +37,6 @@ using krowkee::do_test;
 using krowkee::make_shared_functor;
 using krowkee::print_line;
 
-using cmap_impl_type = krowkee::util::cmap_impl_type;
-
 using cmap_type = krowkee::container::compacting_map<int, int>;
 
 #if __has_include(<boost/container/flat_map.hpp>)
@@ -77,7 +75,6 @@ struct Parameters {
   std::uint32_t    count;
   std::size_t      thresh;
   std::uint32_t    seed;
-  cmap_impl_type   cmap_impl;
   bool             verbose;
 };
 
@@ -424,7 +421,6 @@ void parse_args(int argc, char **argv, Parameters &params) {
     int                  option_index(0);
     static struct option long_options[] = {
         {"count", required_argument, NULL, 'c'},
-        {"map-type", required_argument, NULL, 'm'},
         {"seed", required_argument, NULL, 's'},
         {"thresh", required_argument, NULL, 't'},
         {"verbose", no_argument, NULL, 'v'},
@@ -432,7 +428,7 @@ void parse_args(int argc, char **argv, Parameters &params) {
         {NULL, 0, NULL, 0}};
 
     int curind = optind;
-    c = getopt_long(argc, argv, "-:c:m:s:t:vh", long_options, &option_index);
+    c = getopt_long(argc, argv, "-:c:s:t:vh", long_options, &option_index);
     if (c == -1) {
       break;
     }
@@ -454,9 +450,6 @@ void parse_args(int argc, char **argv, Parameters &params) {
         break;
       case 'c':
         params.count = std::atol(optarg);
-        break;
-      case 'm':
-        params.cmap_impl = krowkee::util::get_cmap_impl_type(optarg);
         break;
       case 's':
         params.seed = std::atol(optarg);
@@ -490,22 +483,18 @@ int main(int argc, char **argv) {
   std::uint32_t  count(1000);
   std::uint32_t  seed(0);
   std::size_t    thresh(5);
-  cmap_impl_type cmap_impl(cmap_impl_type::std);
   bool           verbose(false);
 
   Parameters params{
-      get_random_vector(count, seed), count, thresh, seed, cmap_impl, verbose};
+      get_random_vector(count, seed), count, thresh, seed, verbose};
 
   parse_args(argc, argv, params);
 
   params.to_insert = get_random_vector(params.count, params.seed);
 
-  if (params.cmap_impl == cmap_impl_type::std) {
-    do_experiment<cmap_type>(params);
+  do_experiment<cmap_type>(params);
 #if __has_include(<boost/container/flat_map.hpp>)
-  } else if (params.cmap_impl == cmap_impl_type::boost) {
-    do_experiment<cmap_boost_type>(params);
+  do_experiment<cmap_boost_type>(params);
 #endif
-  }
   return 0;
 }
