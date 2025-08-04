@@ -24,7 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #
 option(KROWKEE_BUILD_TESTS "Build tests" OFF)
 option(KROWKEE_BUILD_EXAMPLES "Build examples" OFF)
-option(KROWKEE_USE_BOOST "Compile using boost::container::flat_map" ON)
 option(KROWKEE_USE_YGM "Compile using YGM features (only for testing)" OFF)
 option(KROWKEE_DOXYGEN "Adds targets for generating Doxygen documentation" OFF)
 option(KROWKEE_RTD_ONLY
@@ -52,22 +51,6 @@ endif ()
 
 # Prepare to invoke FetchContent
 include(FetchContent)
-
-if (NOT boost_POPULATED)
-    find_package(Boost 1.78)
-    if (Boost_FOUND)
-        message(STATUS ${PROJECT_NAME} " found boost include dirs: "
-                       ${Boost_INCLUDE_DIRS}
-        )
-    else ()
-        FetchContent_Declare(
-            Boost
-            URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.gz
-        )
-        set(BOOST_INCLUDE_LIBRARIES container)
-        FetchContent_MakeAvailable(Boost)
-    endif ()
-endif ()
 
 if (KROWKEE_USE_YGM)
     #
@@ -98,9 +81,6 @@ target_include_directories(
 target_compile_features(krowkee INTERFACE cxx_std_20)
 if (KROWKEE_USE_YGM)
     target_link_libraries(krowkee INTERFACE ygm::ygm)
-endif ()
-if (Boost_FOUND)
-    target_include_directories(krowkee INTERFACE ${Boost_INCLUDE_DIRS})
 endif ()
 
 if (KROWKEE_BUILD_TESTS)
